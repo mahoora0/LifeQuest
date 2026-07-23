@@ -1,0 +1,610 @@
+<meta charset="utf-8">
+<title>Life Quest — 팀 설계 정렬 문서</title>
+<style>
+  :root {
+    --font-sans: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", Roboto, "Noto Sans KR", sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, Cambria, serif;
+    --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
+
+    --step--1: 0.83rem;
+    --step-0: 1.0625rem;
+    --step-1: 1.28rem;
+    --step-2: 1.6rem;
+    --step-3: 2.1rem;
+    --step-4: 2.9rem;
+
+    --bg: #F5F3FB;
+    --surface: #FFFFFF;
+    --surface-2: #FBFAFE;
+    --ink: #1B1826;
+    --ink-soft: #4A4560;
+    --ink-mute: #7C7690;
+    --border: #E6E1F1;
+    --border-strong: #D6CFE7;
+    --accent: #5B4BC8;
+    --accent-ink: #4B3CB0;
+    --accent-soft: #EEEBFA;
+    --gold: #A9720E;
+    --gold-soft: #FBF0D8;
+    --diagram-bg: #FBFAFE;
+
+    --tier-common: #857F90;
+    --tier-rare: #3D7BD6;
+    --tier-epic: #8B5CF6;
+    --tier-legend: #B4820F;
+
+    --shadow: 0 1px 2px rgba(27,24,38,.04), 0 8px 24px -12px rgba(27,24,38,.14);
+    --maxw: 880px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121020; --surface: #1C1930; --surface-2: #221E39;
+      --ink: #ECE9F6; --ink-soft: #B7B1CE; --ink-mute: #857FA2;
+      --border: #2E2A46; --border-strong: #3B3658;
+      --accent: #9A8CF3; --accent-ink: #B3A8F7; --accent-soft: #241F3C;
+      --gold: #E7B25A; --gold-soft: #2A2338; --diagram-bg: #F4F2FA;
+      --tier-common: #9C97A8; --tier-rare: #5B93E0; --tier-epic: #A784F5; --tier-legend: #E7B25A;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F5F3FB; --surface: #FFFFFF; --surface-2: #FBFAFE;
+    --ink: #1B1826; --ink-soft: #4A4560; --ink-mute: #7C7690;
+    --border: #E6E1F1; --border-strong: #D6CFE7;
+    --accent: #5B4BC8; --accent-ink: #4B3CB0; --accent-soft: #EEEBFA;
+    --gold: #A9720E; --gold-soft: #FBF0D8; --diagram-bg: #FBFAFE;
+    --tier-common: #857F90; --tier-rare: #3D7BD6; --tier-epic: #8B5CF6; --tier-legend: #B4820F;
+    --shadow: 0 1px 2px rgba(27,24,38,.04), 0 8px 24px -12px rgba(27,24,38,.14);
+  }
+  :root[data-theme="dark"] {
+    --bg: #121020; --surface: #1C1930; --surface-2: #221E39;
+    --ink: #ECE9F6; --ink-soft: #B7B1CE; --ink-mute: #857FA2;
+    --border: #2E2A46; --border-strong: #3B3658;
+    --accent: #9A8CF3; --accent-ink: #B3A8F7; --accent-soft: #241F3C;
+    --gold: #E7B25A; --gold-soft: #2A2338; --diagram-bg: #F4F2FA;
+    --tier-common: #9C97A8; --tier-rare: #5B93E0; --tier-epic: #A784F5; --tier-legend: #E7B25A;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 500px at 78% -8%, var(--accent-soft), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--step-0);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+  header.hero { padding: 68px 0 30px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: var(--step--1); font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent-ink);
+  }
+  .eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--accent); border-radius: 2px; }
+  h1.title { font-size: var(--step-4); line-height: 1.05; font-weight: 800; letter-spacing: -.025em; margin: 18px 0 0; text-wrap: balance; }
+  h1.title .accent { color: var(--accent); }
+  .pitch { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.5; margin: 20px 0 0; text-wrap: pretty; font-weight: 450; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+  .chip { font-size: var(--step--1); font-weight: 550; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--ink-soft); box-shadow: var(--shadow); }
+  .chip b { color: var(--ink); font-weight: 700; }
+
+  main { padding: 20px 0 40px; }
+  section { padding: 34px 0; border-top: 1px solid var(--border); }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+  .sec-num { font-family: var(--font-serif); font-size: var(--step-2); font-weight: 700; color: var(--gold); font-style: italic; line-height: 1; flex: none; font-variant-numeric: lining-nums; }
+  h2 { font-size: var(--step-3); font-weight: 800; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+  h3 { font-size: var(--step-1); font-weight: 700; letter-spacing: -.01em; margin: 26px 0 10px; }
+  .lead { color: var(--ink-soft); margin: 6px 0 0; }
+  p { margin: 12px 0; }
+  strong { font-weight: 700; }
+  a { color: var(--accent-ink); text-underline-offset: 3px; }
+
+  .callout { margin: 22px 0; padding: 24px 26px; border-radius: 16px; background: linear-gradient(180deg, var(--surface), var(--surface-2)); border: 1px solid var(--border-strong); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .callout::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(var(--accent), var(--gold)); }
+  .callout .big { font-size: var(--step-2); line-height: 1.4; font-weight: 700; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+  .callout .big .u { color: var(--accent); }
+  .callout .sub { color: var(--ink-soft); margin: 12px 0 0; }
+
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .vs > div { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .vs .us { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); background: var(--accent-soft); }
+  .vs .k { font-size: var(--step--1); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--ink-mute); }
+  .vs .us .k { color: var(--accent-ink); }
+  .vs p { margin: 8px 0 0; font-size: var(--step-0); }
+
+  .sys-card { margin-top: 18px; border: 1px solid var(--border-strong); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+  .sys-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 20px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, var(--surface-2), var(--surface)); }
+  .sys-key { font-family: var(--font-serif); font-style: italic; font-weight: 700; font-size: var(--step-2); color: var(--accent); width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--accent-soft); }
+  .sys-title { font-size: var(--step-1); font-weight: 800; letter-spacing: -.01em; margin: 0; }
+  .sys-sub { font-size: var(--step--1); color: var(--ink-mute); margin: 2px 0 0; font-weight: 550; }
+  .sys-body { padding: 20px 24px 24px; }
+  .sys-head-spacer { flex: 1 1 auto; }
+
+  .badge { font-size: 0.74rem; font-weight: 700; letter-spacing: .04em; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+  .badge--core { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  .badge--diff { background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent); }
+  .badge--phase { background: var(--surface-2); color: var(--ink-mute); border: 1px solid var(--border); }
+
+  ul.clean { margin: 12px 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  ul.clean li { position: relative; padding-left: 22px; color: var(--ink-soft); }
+  ul.clean li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); transform: rotate(45deg); }
+  ul.clean li b, ul.clean li strong { color: var(--ink); }
+
+  .absorb { margin-top: 16px; font-size: var(--step--1); color: var(--ink-mute); padding-top: 14px; border-top: 1px dashed var(--border-strong); }
+  .absorb b { color: var(--ink-soft); }
+  .tag { display: inline-block; font-size: 0.76rem; font-weight: 600; padding: 2px 9px; border-radius: 6px; margin: 2px 3px 2px 0; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-soft); }
+
+  pre.code { margin: 16px 0; padding: 18px 20px; border-radius: 12px; overflow-x: auto; background: var(--surface-2); border: 1px solid var(--border-strong); font-family: var(--font-mono); font-size: 0.86rem; line-height: 1.7; color: var(--ink); }
+  pre.code .c { color: var(--ink-mute); font-style: italic; }
+  pre.code .kw { color: var(--accent-ink); font-weight: 600; }
+  pre.code .fn { color: var(--gold); }
+
+  .stats { margin: 16px 0; display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
+  .stat { display: grid; grid-template-columns: 56px 1fr 34px; align-items: center; gap: 12px; }
+  .stat-label { font-size: var(--step--1); font-weight: 650; color: var(--ink-soft); }
+  .stat-track { height: 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+  .stat-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--gold))); }
+  .stat-val { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-mute); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .tiers { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .tier { font-size: var(--step--1); font-weight: 700; padding: 5px 13px; border-radius: 8px; color: #fff; display: inline-flex; align-items: center; gap: 7px; }
+  .tier small { font-weight: 500; opacity: .85; font-size: .8em; }
+  .tier--common { background: var(--tier-common); }
+  .tier--rare { background: var(--tier-rare); }
+  .tier--epic { background: var(--tier-epic); }
+  .tier--legend { background: var(--tier-legend); color: #fff; }
+
+  .table-scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.94rem; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 15px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th { background: var(--surface-2); font-weight: 700; font-size: var(--step--1); color: var(--ink-soft); letter-spacing: .01em; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, .inline-code { font-family: var(--font-mono); font-size: 0.84em; background: var(--surface-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border); color: var(--accent-ink); }
+  td.sys-a { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  td.sys-b { color: var(--accent-ink); font-weight: 700; white-space: nowrap; }
+  td.sys-c { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .phase td { color: var(--ink-mute); }
+  .phase td:first-child b { color: var(--ink-soft); }
+
+  .diagram { margin: 18px 0; padding: 20px; border-radius: 14px; overflow-x: auto; background: var(--diagram-bg); border: 1px solid var(--border-strong); }
+  .diagram pre.mermaid { margin: 0; text-align: center; background: transparent; }
+  .diagram svg .er.entityBox { fill: #FFFFFF !important; stroke: #5B4BC8 !important; }
+  .diagram svg .er.attributeBoxOdd { fill: #FBFAFE !important; stroke: #E6E1F1 !important; }
+  .diagram svg .er.attributeBoxEven { fill: #F0EDF8 !important; stroke: #E6E1F1 !important; }
+  .diagram svg .er.entityLabel { fill: #1B1826 !important; }
+  .diagram svg .er.relationshipLabelBox { fill: #FBFAFE !important; opacity: 1 !important; }
+  .diagram svg .node rect,
+  .diagram svg .node polygon,
+  .diagram svg .node circle,
+  .diagram svg .node path { fill: #FFFFFF !important; stroke: #5B4BC8 !important; }
+  .diagram svg .cluster rect { fill: #F5F3FB !important; stroke: #D6CFE7 !important; }
+  .diagram svg text { fill: #1B1826 !important; }
+  .diagram svg .nodeLabel,
+  .diagram svg .edgeLabel,
+  .diagram svg foreignObject div,
+  .diagram svg foreignObject span,
+  .diagram svg foreignObject p { color: #1B1826 !important; fill: #1B1826 !important; background: transparent !important; }
+  .diagram svg .edgePath path,
+  .diagram svg .flowchart-link,
+  .diagram svg path.relation { stroke: #8A83A0 !important; }
+  .diagram svg .marker,
+  .diagram svg marker path,
+  .diagram svg .arrowheadPath { fill: #8A83A0 !important; stroke: #8A83A0 !important; }
+  .cap { font-size: var(--step--1); color: var(--ink-mute); margin: 8px 2px 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .panel { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+  .panel h4 { margin: 0 0 6px; font-size: var(--step-0); font-weight: 750; display: flex; align-items: center; gap: 8px; }
+  .panel ul.clean li { font-size: 0.95rem; }
+  .panel .role-key { font-family: var(--font-serif); font-style: italic; color: var(--gold); font-weight: 700; margin-right: 4px; }
+
+  .script { margin: 16px 0; padding: 22px 24px 22px 28px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border-strong); box-shadow: var(--shadow); position: relative; }
+  .script::before { content: "“"; position: absolute; left: 12px; top: 2px; font-family: var(--font-serif); font-size: 3rem; color: color-mix(in srgb, var(--accent) 40%, transparent); line-height: 1; }
+  .script p { font-size: var(--step-0); color: var(--ink); margin: 0; padding-left: 8px; }
+  .script .hl { background: color-mix(in srgb, var(--gold) 22%, transparent); padding: 0 3px; border-radius: 3px; font-weight: 600; }
+  .script .hl2 { color: var(--accent-ink); font-weight: 700; }
+
+  footer { border-top: 1px solid var(--border); padding: 26px 0 60px; color: var(--ink-mute); font-size: var(--step--1); }
+  footer .fnote { max-width: none; }
+
+  @media (max-width: 620px) {
+    header.hero { padding: 44px 0 20px; }
+    .vs, .grid2 { grid-template-columns: 1fr; }
+    .sec-head { flex-direction: column; gap: 4px; }
+    :root { --step-4: 2.2rem; --step-3: 1.7rem; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    section, .callout, .sys-card { animation: rise .5s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Team Project · 설계 정렬 문서</span>
+    <h1 class="title">Life&nbsp;Quest<br><span class="accent">현실 RPG 플랫폼</span></h1>
+    <p class="pitch">습관을 유저가 세팅하는 앱이 아니라, 매일 개인화 배정되고 — 하다 보면 성향이 자라 다음 퀘스트가 갈라지는 현실 RPG.</p>
+    <div class="meta-row">
+      <span class="chip"><b>스택</b>&nbsp; Spring Boot · React · Flutter · MySQL</span>
+      <span class="chip"><b>기간</b>&nbsp; 4주 · 4인</span>
+      <span class="chip"><b>공공데이터</b>&nbsp; TourAPI · 문화포털</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <div class="sec-head"><span class="sec-num">00</span><h2>차별화 — 왜 "또 습관앱"이 아닌가</h2></div>
+    <p class="lead">우리 프로젝트의 기준점. 이 한 줄이 발표 차별화와 기술 핵심을 동시에 규정한다.</p>
+
+    <div class="callout">
+      <p class="big">시스템이 <span class="u">매일 개인화 배정</span>하고, 완료가 <span class="u">성향을 키워</span> 다음 퀘스트가 갈라진다.</p>
+      <p class="sub">배정 엔진과 성향 분기가 이 앱의 "뇌"이자, 이 프로젝트의 기술 하이라이트이자 발표 차별화 포인트다.</p>
+      <div class="vs">
+        <div class="them">
+          <div class="k">기존 습관앱 (Habitica 류)</div>
+          <p>유저가 스스로 목표를 세팅하고 반복 체크. 화면은 달라도 캐릭터는 모두 같다.</p>
+        </div>
+        <div class="us">
+          <div class="k">Life Quest</div>
+          <p>성향 벡터를 읽어 제약·가중 샘플링으로 배정. 유저마다 캐릭터가 갈라진다 — <b>"같은 앱인데 내 플레이가 다르다."</b></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>아키텍처 — 3 코어 엔진 + 매칭</h2></div>
+    <p class="lead">기능 나열(15개)을 버리지 않는다. 3개 시스템으로 흡수하면 "위시리스트"가 "설계된 시스템"이 된다. 핵심은 완료 이벤트가 도는 루프이고, 협동 퀘스트를 묶는 System D 매칭 엔진이 그 루프에 인접한다.</p>
+
+    <div class="diagram">
+      <pre class="mermaid">
+%%{init: {'theme':'neutral', 'flowchart':{'curve':'basis'}}}%%
+flowchart LR
+  U([퀘스트 수행]) --> E{{완료 이벤트}}
+  E --> B[B · 성향 벡터 갱신]
+  E --> C[C · 파생 상태 갱신<br/>업적 · 도감 · 콤보]
+  B --> A[A · 일일 배정 엔진]
+  A --> Q([내일의 개인화 퀘스트])
+  Q --> U
+  C -.해금 신호.-> A
+      </pre>
+    </div>
+    <p class="cap">완료 → 성향 성장 → 다음 배정이 갈라지는 폐루프. B와 C는 완료 이벤트를 구독하고, A는 그 결과를 읽어 배정한다.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>System A — 퀘스트 배정 엔진</h2></div>
+    <p class="lead">앱의 뇌. "이 유저가 왜 이 퀘스트를 받았는가"를 설명할 수 있는 알고리즘 = 이 프로젝트의 기술 하이라이트.</p>
+
+    <div class="sys-card">
+      <div class="sys-top">
+        <div class="sys-key">A</div>
+        <div>
+          <p class="sys-title">일일 배정 엔진</p>
+          <p class="sys-sub">CONSTRAINT-BASED WEIGHTED SAMPLING</p>
+        </div>
+        <span class="sys-head-spacer"></span>
+        <span class="badge badge--core">● 기술 하이라이트</span>
+      </div>
+      <div class="sys-body">
+        <p>매일 자정 배치(또는 첫 로그인 트리거)로 유저별 N개를 배정한다. 하드 제약으로 후보를 거르고, 소프트 가중으로 성향·다양성·난이도를 반영한 뒤 가중 샘플링한다.</p>
+        <ul class="clean">
+          <li><b>하드 제약</b> — 최근 K일 중복 제외 · 레벨 게이팅(전설은 Lv 조건) · 위치 반경(선택)</li>
+          <li><b>소프트 가중</b> — 성향 점수 · 카테고리 다양성(편중 방지) · 난이도 믹스(쉬운 것 + 도전 하나)</li>
+          <li><b>Exploration vs Exploitation</b> — 성향 편식만 주면 도감이 안 채워진다. ε 확률로 안 해본 카테고리를 섞어 <b>도감 완성 동기와 개인화를 동시에</b>. 멀티암드밴딧의 향기를 ε-greedy로 단순 구현.</li>
+        </ul>
+
+        <pre class="code"><span class="kw">function</span> <span class="fn">assignDaily</span>(user, N):
+  pool = quests
+    .filter(q → q.level_req &lt;= user.level)          <span class="c"># 하드: 레벨 게이팅</span>
+    .filter(q → q.id <span class="kw">not in</span> recentHistory(user, K))  <span class="c"># 하드: 최근 K일 중복 제외</span>
+    .filter(q → withinRadius(q.place, user.loc))      <span class="c"># 하드: 위치(선택)</span>
+
+  <span class="kw">for</span> q <span class="kw">in</span> pool:
+    q.weight = base
+      * dispositionWeight(user.disposition, q.tags)   <span class="c"># 소프트: 성향 가중</span>
+      * diversityPenalty(picked.categories, q.category)<span class="c"># 소프트: 편중 방지</span>
+      * difficultyFit(user.level, q.tier)             <span class="c"># 소프트: 난이도 믹스</span>
+
+  selected = []
+  <span class="kw">repeat</span> N <span class="kw">times</span>:
+    <span class="kw">if</span> random() &lt; EPSILON:                <span class="c"># exploration → 도감 유도</span>
+      pick = uniformFrom(unseenCategories(pool))
+    <span class="kw">else</span>:                                <span class="c"># exploitation → 성향 최적</span>
+      pick = <span class="fn">weightedSample</span>(pool)
+    selected.add(pick); pool.remove(pick)  <span class="c"># 비복원 추출</span>
+
+  <span class="kw">return</span> selected</pre>
+
+        <p class="cap">설계 논점: 배치 vs 실시간 트레이드오프 · ε 값 튜닝 · 성향 편식과 다양성의 균형.</p>
+        <div class="absorb"><b>흡수한 기능 →</b>
+          <span class="tag">오늘의 퀘스트</span><span class="tag">퀘스트 등급</span><span class="tag">NPC 의뢰</span><span class="tag">랜덤 이벤트 (Lucky Day)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>System B — 성향 프로파일</h2></div>
+    <p class="lead">차별화의 깃발. 아이디어 중 "성향 성장 → 퀘스트 분기"가 진짜 웨지다.</p>
+
+    <div class="sys-card">
+      <div class="sys-top">
+        <div class="sys-key">B</div>
+        <div>
+          <p class="sys-title">성향 벡터 &amp; 해금</p>
+          <p class="sys-sub">DISPOSITION VECTOR</p>
+        </div>
+        <span class="sys-head-spacer"></span>
+        <span class="badge badge--diff">◇ 차별화 코어</span>
+      </div>
+      <div class="sys-body">
+        <p>유저마다 5축 성향 벡터를 가진다. 완료 퀘스트의 성향 태그가 해당 축을 올리고, 배정 엔진(A)이 이 점수를 읽어 가중한다. 특정 축이 임계를 넘으면 계열 퀘스트·도감·칭호가 <b>해금</b>된다.</p>
+
+        <div class="stats" role="img" aria-label="성향 벡터 예시 — 탐험 82, 미식 61, 문화 44, 소셜 30, 운동 18">
+          <div class="stat"><span class="stat-label">탐험</span><div class="stat-track"><div class="stat-fill" style="width:82%"></div></div><span class="stat-val">82</span></div>
+          <div class="stat"><span class="stat-label">미식</span><div class="stat-track"><div class="stat-fill" style="width:61%"></div></div><span class="stat-val">61</span></div>
+          <div class="stat"><span class="stat-label">문화</span><div class="stat-track"><div class="stat-fill" style="width:44%"></div></div><span class="stat-val">44</span></div>
+          <div class="stat"><span class="stat-label">소셜</span><div class="stat-track"><div class="stat-fill" style="width:30%"></div></div><span class="stat-val">30</span></div>
+          <div class="stat"><span class="stat-label">운동</span><div class="stat-track"><div class="stat-fill" style="width:18%"></div></div><span class="stat-val">18</span></div>
+        </div>
+        <p class="cap">예시 유저 — 탐험 축이 임계(80)를 넘어 "여행 계열" 퀘스트·도감·칭호(<i>여행자</i>)가 해금됨. 배정 엔진이 이 벡터를 읽어 여행 퀘스트 비중을 높인다.</p>
+
+        <p><b>발표 데모 킬러컷:</b> A/B 두 유저를 나란히 — 같은 날, 같은 앱, 완전히 다른 퀘스트 목록. "친구랑 같은 앱인데 내 캐릭터가 다르다"를 한 화면으로 증명.</p>
+
+        <div class="absorb"><b>흡수한 기능 →</b>
+          <span class="tag">칭호</span><span class="tag">지역 해금</span><span class="tag">숨겨진 스토리 (챕터)</span><span class="tag">퀘스트 선택 → 성향 성장</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>System C — 파생 상태 엔진</h2></div>
+    <p class="lead">완료는 이벤트다. 이벤트 하나가 여러 파생 집계를 갱신하는 도메인 이벤트 패턴 — 데이터 정합성의 핵심.</p>
+
+    <div class="sys-card">
+      <div class="sys-top">
+        <div class="sys-key">C</div>
+        <div>
+          <p class="sys-title">파생 상태 &amp; 정합성</p>
+          <p class="sys-sub">EVENT-DRIVEN AGGREGATION</p>
+        </div>
+        <span class="sys-head-spacer"></span>
+        <span class="badge badge--core">● 정합성</span>
+      </div>
+      <div class="sys-body">
+        <p>완료 이벤트가 발행되면 핸들러들이 각자 파생 상태를 갱신한다. 하드코딩이 아니라 이벤트 구독 구조.</p>
+        <ul class="clean">
+          <li><b>파생 집계</b> — 업적 진행도(카페 10/30/100 = I~V 단계) · 도감 등록 · 수집률(%) · 콤보 스트릭(연속일)</li>
+          <li><b>비밀 업적 = 조건 룰 테이블</b> — "비 오는 날 + 산 정상 = Storm Walker". 하드코딩 아닌 등록형 룰로 확장 가능하게.</li>
+          <li><b>정합성 앵글</b> — 완료 트랜잭션의 <b>멱등 처리</b>(같은 완료 두 번 눌러도 EXP·집계 중복 금지, idempotency key) · 주간 랭킹 리셋 배치의 스냅샷 일관성.</li>
+        </ul>
+        <p class="cap">멱등 처리가 없으면 중복 완료·연타에 EXP·업적이 오염된다 — 배포 품질의 최소 기준선.</p>
+        <div class="absorb"><b>흡수한 기능 →</b>
+          <span class="tag">업적 진화 I~V</span><span class="tag">LifeDex 수집률</span><span class="tag">컬렉션 배지</span><span class="tag">콤보</span><span class="tag">레벨업 보상</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>System D — 동행 매칭 엔진</h2></div>
+    <p class="lead">협동 퀘스트를 함께할 사람을 묶는다. 스케일을 키우지 않는 게 원칙 — 먼저 가벼운 로비로 붙이고, 자동 매칭은 그 위에 얹는 심화 층.</p>
+
+    <div class="sys-card">
+      <div class="sys-top">
+        <div class="sys-key">D</div>
+        <div>
+          <p class="sys-title">동행 매칭 엔진</p>
+          <p class="sys-sub">QUEUE-BASED MATCHMAKING</p>
+        </div>
+        <span class="sys-head-spacer"></span>
+        <span class="badge badge--core">● 기술 하이라이트</span>
+      </div>
+      <div class="sys-body">
+        <p><b>2층 구조로 스코프 통제.</b> ① 로비(경량 기본) — 방 생성 → 근처 사람 요청/수락 → 방 형성. ② 매칭 엔진(심화) — 대기열에 넣으면 성향·위치·시간으로 <b>자동 페어링</b>. 로비만으로도 동행 기능은 배포되고, 엔진은 그 뒤에 얹는다.</p>
+        <ul class="clean">
+          <li><b>스코어링</b> — 하드 필터(인증·평점·상호차단·같은 퀘스트·지역버킷) 후 <code class="inline-code">성향 유사도 + 위치 근접 + 시간 겹침 − 레벨격차</code>. <b>성향 벡터는 System B 재사용.</b></li>
+          <li><b>큐 매치메이킹</b> — 대기 풀 + 주기적 매처. 수락 문턱 τ가 <b>대기시간에 따라 완화</b> = 기아(starvation) 방지.</li>
+          <li><b>동시성</b> — 두 유저를 <b>원자적으로 함께</b> WAITING→PROPOSED로 CAS. 자원을 락으로 점유하는 게 아니라 <b>큐 기반 낙관적 매칭</b> + 실패 시 재큐.</li>
+          <li><b>안전 훅(경량)</b> — 공공장소 POI에서만 만남 · 만나기 전 인앱 채팅 · 사후 평가/신고. 본격 신뢰·안전은 별도 트랙.</li>
+        </ul>
+
+        <pre class="code"><span class="c"># 매처: 지역·퀘스트 버킷마다 T초 주기</span>
+<span class="kw">for</span> a <span class="kw">in</span> pool sorted by waitTime desc:      <span class="c"># 오래 기다린 유저 우선 = 기아 방지</span>
+    tau = base - <span class="fn">relax</span>(a.waitTime)          <span class="c"># 대기 길수록 문턱↓ = 반경 확장</span>
+    b   = argmax(score(a, c) <span class="kw">for</span> c <span class="kw">in</span> pool)
+    <span class="kw">if</span> score(a, b) &gt;= tau <span class="kw">and</span> <span class="fn">claim</span>(a, b):  <span class="c"># 원자적 동시 클레임</span>
+        <span class="fn">propose</span>(a, b)                       <span class="c"># 2단계 확정</span>
+
+<span class="c"># claim: 둘 다 WAITING일 때만 함께 PROPOSED (compare-and-set)</span>
+UPDATE match_pool SET status='PROPOSED'
+WHERE user_id IN (a, b) AND status='WAITING'   <span class="c"># affected==2 이면 성공</span></pre>
+
+        <p><b>2단계 확정 사가</b> — propose → 양쪽 수락(TTL 60s) → coop_room 생성. 한쪽 거절/타임아웃이면 <b>보상</b>: 수락자 풀 복귀 + (a,b) 재매칭 쿨다운. 멱등키로 부분 실패 복구.</p>
+        <p class="cap">설계 논점: 큐 매치메이킹(문턱 완화·기아) · 낙관적 매칭 + 확정 사가·보상·멱등 · geohash 공간 인덱스 · N&gt;2 그룹 = 클러스터링(로드맵).</p>
+        <div class="absorb"><b>흡수한 기능 →</b>
+          <span class="tag">협동 퀘스트</span><span class="tag">길드(파티)</span><span class="tag">친구와 함께</span><span class="tag">소셜 동행</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>데이터 모델 (ERD)</h2></div>
+    <p class="lead">퀘스트 풀 · 성향 · 배정 인스턴스 · 파생 상태를 분리. 퀘스트 정의(<code class="inline-code">QUEST</code>)와 배정 인스턴스(<code class="inline-code">ASSIGNMENT</code>)를 나누는 게 핵심. 동행 매칭은 대기 풀(<code class="inline-code">MATCH_POOL</code>)과 형성 방(<code class="inline-code">COOP_ROOM</code>)으로 분리.</p>
+
+    <div class="diagram">
+      <pre class="mermaid">
+%%{init: {'theme':'neutral'}}%%
+erDiagram
+  USER ||--|| DISPOSITION : has
+  USER ||--o{ ASSIGNMENT : receives
+  QUEST ||--o{ ASSIGNMENT : instanced_as
+  ASSIGNMENT ||--o| COMPLETION : completed_by
+  PLACE ||--o{ QUEST : sources
+  USER ||--o{ ACHIEVEMENT_PROGRESS : accrues
+  USER ||--o{ LIFEDEX_ENTRY : collects
+  SECRET_RULE ||--o{ ACHIEVEMENT_PROGRESS : triggers
+  USER ||--o{ MATCH_POOL : queues
+  QUEST ||--o{ MATCH_POOL : coop_for
+  MATCH_POOL ||--o| COOP_ROOM : forms
+
+  USER { bigint id PK }
+  DISPOSITION { int explore "탐험" }
+  QUEST { bigint id PK }
+  PLACE { string tour_api_id "TourAPI" }
+  ASSIGNMENT { date assigned_on }
+  COMPLETION { string idempotency_key }
+  ACHIEVEMENT_PROGRESS { int tier "I~V" }
+  LIFEDEX_ENTRY { int rate "수집률" }
+  MATCH_POOL { string status "WAITING.." }
+  COOP_ROOM { string state "FORMING.." }
+      </pre>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>테이블</th><th>역할</th><th>핵심 컬럼</th></tr></thead>
+        <tbody>
+          <tr><td><code>quest</code></td><td>퀘스트 <b>정의</b>(풀). 공공데이터로 시드</td><td>category, tier, exp, level_req, disposition_tags, place_id</td></tr>
+          <tr><td><code>place</code></td><td>위치 콘텐츠</td><td>tour_api_id, name, lat, lng, category</td></tr>
+          <tr><td><code>disposition</code></td><td>유저별 성향 벡터 (5축)</td><td>explore, food, culture, social, fitness</td></tr>
+          <tr><td><code>assignment</code></td><td>배정 <b>인스턴스</b> (유저×날짜×퀘스트)</td><td>user_id, quest_id, assigned_on, status</td></tr>
+          <tr><td><code>completion</code></td><td>완료 이벤트</td><td>assignment_id, completed_at, <b>idempotency_key</b></td></tr>
+          <tr><td><code>achievement_progress</code></td><td>파생 — 업적 진행도</td><td>user_id, achievement_id, count, tier</td></tr>
+          <tr><td><code>lifedex_entry</code></td><td>파생 — 도감/수집률</td><td>user_id, category, collected, total, rate</td></tr>
+          <tr><td><code>secret_rule</code></td><td>비밀 업적 조건 룰</td><td>condition_json, achievement_id</td></tr>
+          <tr><td><code>match_pool</code></td><td>동행 매칭 대기 엔트리</td><td>user_id, quest_id, geohash, time_window, <b>status</b></td></tr>
+          <tr><td><code>match_proposal</code></td><td>2단계 확정 대기</td><td>participants, status, expires_at</td></tr>
+          <tr><td><code>coop_room</code></td><td>형성된 동행 방</td><td>quest_id, members, state</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2>컨텐츠 — 공공데이터로 실데이터화</h2></div>
+    <p class="lead">"카페 100곳"이 하드코딩이면 죽은 콘텐츠. 공공 API로 채우면 강사 가점 + 배정 엔진에 진짜 콘텐츠 공급, 두 마리를 잡는다.</p>
+    <div class="grid2">
+      <div class="panel">
+        <h4>🗺️ 한국관광공사 TourAPI</h4>
+        <ul class="clean">
+          <li>전국 관광지 · 문화시설 · 음식점 좌표</li>
+          <li>위치 퀘스트의 <b>place</b> 시드</li>
+          <li>카테고리 → 성향 태그 매핑 자동화</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h4>🎭 문화포털 API</h4>
+        <ul class="clean">
+          <li>전시 · 공연 · 지역 문화행사</li>
+          <li>"문화" 성향 퀘스트 · 시즌/한정 퀘스트 소스</li>
+          <li>날짜 기반 → 자연스러운 신선도</li>
+        </ul>
+      </div>
+    </div>
+    <p>퀘스트 스키마: <code class="inline-code">{ 카테고리, 난이도(tier), 조건, EXP, 위치(TourAPI 좌표), 성향태그[] }</code> — 공공데이터가 이 풀을 실시간으로 채운다.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">08</span><h2>기능 매핑 — 15개 → 4 시스템</h2></div>
+    <p class="lead">쏟아진 기능 아이디어를 어느 엔진이 흡수하는지, 무엇을 Phase 2로 미루는지 정렬.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>제안 기능</th><th>담당 시스템</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>오늘의 퀘스트 · 퀘스트 등급 · NPC 의뢰</td><td class="sys-a">A 배정</td><td>가중 샘플링 결과</td></tr>
+          <tr><td>랜덤 이벤트 (Lucky Day, EXP 2배)</td><td class="sys-a">A 배정</td><td>배정 파라미터 조정</td></tr>
+          <tr><td>칭호 · 지역 해금 · 숨겨진 스토리</td><td class="sys-b">B 성향</td><td>성향 임계 해금 룰</td></tr>
+          <tr><td>퀘스트 선택 → 성향 성장/분기</td><td class="sys-b">B 성향</td><td><b>차별화 웨지</b></td></tr>
+          <tr><td>업적 진화 I~V · 컬렉션 배지</td><td class="sys-c">C 파생</td><td>완료 이벤트 집계</td></tr>
+          <tr><td>LifeDex 수집률 · 콤보 · 레벨업 보상</td><td class="sys-c">C 파생</td><td>파생 상태</td></tr>
+          <tr><td>비밀 업적</td><td class="sys-c">C 파생</td><td>조건 룰 테이블</td></tr>
+          <tr><td>협동 퀘스트 · 길드(파티) · 소셜 동행</td><td class="sys-b">D 매칭</td><td>큐 매치메이킹 · 확정 사가</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Phase 2 확장 로드맵 (4주 이후)</h3>
+    <p>4주 MVP를 먼저 <b>배포 가능한 완성도</b>로 끝내고, 아래는 이후 확장 트랙으로 남긴다. 조원들이 낸 화려한 기능은 버리는 게 아니라 <b>순서를 뒤로</b> 두는 것 — 미완성·버그를 만들지 않기 위한 규율.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>확장 기능</th><th>트랙 / 성격</th></tr></thead>
+        <tbody>
+          <tr class="phase"><td><b>AR 현실 퀘스트</b> (포켓몬 GO식)</td><td>앱(Flutter) 심화 트랙 — 3엔진 위에 얹는 표현 레이어. 발표 데모 스파이스</td></tr>
+          <tr class="phase"><td><b>시즌패스</b></td><td>운영 주기 시스템 — 라이브 서비스 단계</td></tr>
+          <tr class="phase"><td><b>보물상자 · 프로필 꾸미기</b></td><td>수집 크롬 — 코어 안정화 후 폴리시</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">09</span><h2>스코프 &amp; 역할 도메인</h2></div>
+    <p class="lead">MVP는 핵심 8기능으로 고정. 역할은 도메인으로 나눠두고 <b>배정은 팀 미팅에서</b> — 4개 도메인이 백엔드·프론트·앱으로 균형 잡힌다.</p>
+
+    <div class="grid2">
+      <div class="panel">
+        <h4>✅ MVP (4주 배포 타겟)</h4>
+        <ul class="clean">
+          <li>회원가입 / 로그인 (JWT)</li>
+          <li><b>퀘스트 배정 엔진 (A)</b></li>
+          <li>완료 · EXP · 레벨</li>
+          <li><b>도감 / 업적 파생 (C)</b></li>
+          <li>친구 주간 랭킹</li>
+          <li>마이페이지 · 성향 화면 (B)</li>
+          <li>동행 로비 (경량 · D 엔진은 심화)</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h4>👥 역할 도메인 (미팅에서 배정)</h4>
+        <ul class="clean">
+          <li><span class="role-key">1</span> 백엔드 — 배정·성향 엔진 (A·B)</li>
+          <li><span class="role-key">2</span> 백엔드 — 파생상태·랭킹·정합성 (C) · 동행 매칭 (D)</li>
+          <li><span class="role-key">3</span> 웹 프론트 (React) — 퀘스트·도감·마이페이지</li>
+          <li><span class="role-key">4</span> 앱 (Flutter) — 모바일 + Phase 2 AR 트랙</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>퀘스트 등급 (레어리티)</h3>
+    <div class="tiers">
+      <span class="tier tier--common">일반 <small>일상</small></span>
+      <span class="tier tier--rare">희귀 <small>주 1~2회</small></span>
+      <span class="tier tier--epic">영웅 <small>도전</small></span>
+      <span class="tier tier--legend">전설 <small>일출·불꽃축제·등산</small></span>
+    </div>
+    <p class="cap">전설 퀘스트는 레벨 게이팅으로 잠금 — 배정 엔진의 하드 제약이자 장기 동기.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">10</span><h2>발표 오프닝 스크립트</h2></div>
+    <p class="lead">이 한 문단으로 심사자에게 "또 습관앱"이 아님을 30초에 각인시킨다.</p>
+    <div class="script">
+      <p>Habitica류 습관앱은 유저가 목표를 세팅하지만, Life Quest는 <span class="hl2">성향 벡터를 읽어 제약·가중 샘플링으로 매일 개인화 배정</span>하고, 완료 이벤트가 성향을 갱신해 <span class="hl">다음 퀘스트가 갈라지는</span> 구조입니다. 여기 두 유저를 나란히 보시면 — 같은 날, 같은 앱인데 <span class="hl">완전히 다른 퀘스트 목록</span>이죠. exploration 항으로 도감 완성 동기와 개인화를 동시에 잡았고, 완료는 멱등 처리로 정합성을 보장합니다.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p class="fnote">Life Quest 팀 설계 정렬 문서 · 부트캠프 4주 팀 프로젝트. 스코프·아키텍처·역할 도메인의 공유 기준. 확정 세부(ERD 컬럼 타입·API 명세·역할 배정)는 팀 미팅에서 확정한다.</p>
+</footer>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+</script>
