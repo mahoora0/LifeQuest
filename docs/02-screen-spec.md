@@ -7,7 +7,8 @@
 
 ```mermaid
 flowchart TD
-    Login["로그인 / 회원가입"] --> Home
+    Login["로그인 / 회원가입"] --> LocationConsent["위치 권한 안내"]
+    LocationConsent --> Home
     subgraph Tab["하단 탭 내비게이션"]
         Home["홈 - 오늘의 퀘스트"]
         Map["지도"]
@@ -16,7 +17,8 @@ flowchart TD
         My["마이페이지"]
     end
     Home --> QuestDetail["퀘스트 상세"]
-    QuestDetail --> GpsAuth["GPS 위치 인증"]
+    QuestDetail -->|"LOCATION"| GpsAuth["GPS 위치 인증"]
+    QuestDetail -->|"SELF_REPORT"| Result
     GpsAuth --> Result["완료 결과"]
     Map --> QuestDetail
     Dex --> DexDetail["도감 상세"]
@@ -27,6 +29,7 @@ flowchart TD
     FriendList --> FriendProfile["친구 프로필 비교"]
     My --> ProfileEdit["프로필 수정"]
     My --> LevelScreen["레벨 · 보상"]
+    My -->|"ADMIN만"| AdminQuest["관리자 퀘스트 관리"]
 ```
 
 ## 2. 화면 목록
@@ -49,9 +52,9 @@ flowchart TD
 | S-07 | 메인 홈 | 오늘의 퀘스트 카드 노출 | 로딩, 오늘 배정 없음 | `GET /api/quests/today` |
 | S-08 | 퀘스트 목록 | 배정된 퀘스트 전체 목록 | 빈 목록 | `GET /api/quests/today` |
 | S-09 | 퀘스트 상세 | 퀘스트 정보·보상·장소 확인 | 로딩, 조회 실패 | `GET /api/quests/{questId}` |
-| S-10 | GPS 위치 인증 | 현재 위치·반경 판정, 인증 버튼 | 권한 거부, 반경 밖, 인증 성공 | `POST /api/quests/{questId}/complete` |
+| S-10 | GPS 위치 인증 | 현재 위치·반경 판정, 인증 버튼 | 권한 거부, GPS 비활성화, 위치 조회 실패, 정확도 부족, 반경 밖, 인증 성공 | `POST /api/daily-quests/{dailyQuestId}/complete` |
 | S-11 | 지도 | 주변 퀘스트 위치와 현재 위치 표시 | 위치 조회 실패 | `GET /api/quests/nearby` |
-| S-12 | 완료 결과 | EXP·레벨업·신규 도감/업적 결과 표시 | 레벨업 여부에 따른 분기 | `POST /api/quests/{questId}/complete` 응답 |
+| S-12 | 완료 결과 | EXP·레벨업·신규 도감/업적 결과 표시 | 레벨업 여부, 중복 요청 여부에 따른 분기 | `POST /api/daily-quests/{dailyQuestId}/complete` 응답 |
 
 ### 2-3. LifeDex·업적 (담당: 팀원 3)
 

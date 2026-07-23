@@ -11,7 +11,7 @@
 
 | 팀원 | 담당 영역 | 주요 기능 | 주요 화면 | 주요 데이터 |
 |---|---|---|---|---|
-| 팀원 1 | 회원·프로필·레벨 | 회원가입·로그인·JWT 인증, 마이페이지, 프로필 수정, EXP·레벨 시스템, 레벨업 보상, 칭호·대표 배지 설정 | 로그인, 회원가입, 마이페이지, 프로필 편집, 레벨·보상 화면 | USERS, TITLES, USER_TITLES, LEVEL_REWARDS, EXP_LOGS |
+| 팀원 1 | 회원·프로필·레벨 | 회원가입·로그인·JWT 인증, 마이페이지, 프로필 수정, EXP·레벨 시스템, 레벨업 보상, 칭호·프로필 아이템 획득 | 로그인, 회원가입, 마이페이지, 프로필 편집, 레벨·보상 화면 | USERS, TITLES, USER_TITLES, PROFILE_ITEMS, USER_PROFILE_ITEMS, LEVEL_REWARDS, EXP_LOGS |
 | 팀원 2 | 퀘스트·GPS 인증 | 오늘의 퀘스트 제공, 퀘스트 목록·상세·등급, 퀘스트 완료 처리, GPS 현재 위치 확인, 거리 계산, 인증 반경 판정, 지도 표시 | 메인 홈, 오늘의 퀘스트, 퀘스트 상세, GPS 인증, 지도 | QUESTS, USER_DAILY_QUESTS, QUEST_COMPLETIONS |
 | 팀원 3 | LifeDex·업적 | 경험 도감(카테고리·진행률·자동 등록), 업적 시스템(단계별·비밀 업적, 조건 확인) | LifeDex 목록·상세, 업적 목록·상세, 비밀 업적 해금 | LIFEDEX_CATEGORIES, LIFEDEX_ITEMS, USER_LIFEDEX, ACHIEVEMENTS, ACHIEVEMENT_STEPS, USER_ACHIEVEMENTS |
 | 팀원 4 | 친구·랭킹·관리 | 친구 검색·추가·삭제·목록·프로필 비교, EXP·레벨 랭킹, 관리자 퀘스트 등록·수정, 전체 데이터 통합 확인 | 친구 목록·검색·프로필, 랭킹, 관리자 퀘스트 관리 | FRIEND_REQUESTS, FRIENDSHIPS |
@@ -26,7 +26,7 @@ API 목록은 `04-api-spec.md` §3, 데이터 상세는 `03-database-design.md` 
 flowchart LR
     M2["팀원 2 - 퀘스트 완료 기록"] --> M1["팀원 1 - EXP · 레벨 반영"]
     M1 --> M3["팀원 3 - LifeDex · 업적 반영"]
-    M3 --> M4["팀원 4 - 랭킹 반영"]
+    M3 --> M4["랭킹 조회 시 USERS.total_exp 반영"]
 ```
 
 이 연결 때문에 **퀘스트 완료 API의 응답 형식을 1주차에 반드시 함께 정해야 한다.** 계약 상세: `04-api-spec.md` §4.
@@ -35,12 +35,16 @@ flowchart LR
 
 | 필드 그룹 | 채우는 담당 |
 |---|---|
-| `completionId`, `questId`, `grade`, `duplicated`, `location` | 팀원 2 |
+| `completionId`, `dailyQuestId`, `questId`, `grade`, `duplicated`, `location` | 팀원 2 |
 | `growth`(EXP, 레벨, 레벨업 보상) | 팀원 1 |
 | `collection`(신규 도감, 신규 업적) | 팀원 3 |
-| 랭킹 갱신(응답에는 미포함, 비동기 처리) | 팀원 4 |
+| 랭킹 조회(`USERS.total_exp` 직접 조회, 완료 응답 미포함) | 팀원 4 |
 
 전체 스키마: `04-api-spec.md` §4.
+
+완료 기록·EXP·레벨·LifeDex·업적 반영은 팀원 2가 여는 하나의 서버 트랜잭션 안에서 처리한다. 팀원 1·3은 이 트랜잭션에 참여하는 도메인 서비스를 제공하며, 팀원 4의 랭킹은 별도 갱신 없이 `USERS.total_exp`를 조회한다.
+
+`QUESTS` 엔티티와 저장소의 소유자는 팀원 2다. 팀원 4의 관리자 기능은 팀원 2가 제공하는 퀘스트 관리 서비스 인터페이스를 호출하며, `QUESTS` 저장 로직을 중복 구현하지 않는다.
 
 ## 5. 공통 작업 분담
 

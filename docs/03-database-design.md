@@ -8,6 +8,8 @@
 erDiagram
     USERS ||--o{ USER_TITLES : "보유"
     TITLES ||--o{ USER_TITLES : "부여"
+    USERS ||--o{ USER_PROFILE_ITEMS : "보유"
+    PROFILE_ITEMS ||--o{ USER_PROFILE_ITEMS : "부여"
     USERS ||--o{ EXP_LOGS : "적립"
     USERS ||--o{ USER_DAILY_QUESTS : "배정받음"
     QUESTS ||--o{ USER_DAILY_QUESTS : "배정됨"
@@ -19,6 +21,8 @@ erDiagram
     USERS ||--o{ USER_LIFEDEX : "수집"
     LIFEDEX_ITEMS ||--o{ USER_LIFEDEX : "수집됨"
     ACHIEVEMENTS ||--o{ ACHIEVEMENT_STEPS : "단계"
+    QUESTS ||--o{ ACHIEVEMENTS : "특정 퀘스트 조건"
+    LIFEDEX_CATEGORIES ||--o{ ACHIEVEMENTS : "도감 카테고리 조건"
     USERS ||--o{ USER_ACHIEVEMENTS : "달성기록"
     ACHIEVEMENTS ||--o{ USER_ACHIEVEMENTS : "달성대상"
     USERS ||--o{ FRIEND_REQUESTS : "요청관계"
@@ -29,6 +33,7 @@ erDiagram
         varchar email "UNIQUE"
         varchar password
         varchar nickname "UNIQUE"
+        varchar role "USER/ADMIN"
         varchar profile_image_url
         int total_exp
         int level
@@ -45,11 +50,27 @@ erDiagram
         bigint id PK
         bigint user_id FK
         bigint title_id FK
+        varchar source_type "LEVEL/ACHIEVEMENT/EVENT"
+        bigint source_id
+        datetime acquired_at
+    }
+    PROFILE_ITEMS {
+        bigint id PK
+        varchar code "UNIQUE"
+        varchar name
+        varchar item_type "BACKGROUND/FRAME/BADGE/OUTFIT"
+    }
+    USER_PROFILE_ITEMS {
+        bigint id PK
+        bigint user_id FK
+        bigint profile_item_id FK
+        varchar source_type "LEVEL/ACHIEVEMENT/EVENT"
+        bigint source_id
         datetime acquired_at
     }
     LEVEL_REWARDS {
         bigint id PK
-        int level "UNIQUE"
+        int level
         varchar reward_type "TITLE/PROFILE_ITEM"
         bigint reward_ref_id
     }
@@ -57,7 +78,7 @@ erDiagram
         bigint id PK
         bigint user_id FK
         varchar source_type "QUEST_COMPLETION/ACHIEVEMENT/EVENT"
-        bigint source_id
+        bigint source_id "UNIQUE with user_id/source_type"
         int exp_amount
         datetime created_at
     }
@@ -90,6 +111,7 @@ erDiagram
         decimal verified_latitude
         decimal verified_longitude
         decimal distance_m
+        decimal accuracy_m
         datetime completed_at
     }
     LIFEDEX_CATEGORIES {
@@ -116,6 +138,8 @@ erDiagram
         varchar category
         boolean is_secret
         varchar condition_type "CUMULATIVE_COUNT/SPECIFIC_QUEST/LIFEDEX_COUNT"
+        bigint target_quest_id FK
+        bigint target_lifedex_category_id FK
     }
     ACHIEVEMENT_STEPS {
         bigint id PK
@@ -149,7 +173,7 @@ erDiagram
     }
 ```
 
-**참고**: `LEVEL_REWARDS`는 레벨 번호를 키로 하는 참조 테이블로, `reward_ref_id`는 `reward_type`에 따라 `TITLES.id` 등을 가리키는 다형(polymorphic) 참조라 다이어그램에 관계선을 그리지 않았다. `FRIEND_REQUESTS`(sender/receiver)·`FRIENDSHIPS`(user/friend)는 모두 `USERS.id`를 두 번 참조하며, 다이어그램에는 대표 관계선만 표시했다.
+**참고**: `LEVEL_REWARDS`는 레벨별 보상 참조 테이블로, 한 레벨에 여러 보상을 둘 수 있다. `reward_ref_id`는 `reward_type`에 따라 `TITLES.id` 또는 `PROFILE_ITEMS.id`를 가리키는 다형(polymorphic) 참조라 다이어그램에 관계선을 그리지 않았다. `FRIEND_REQUESTS`(sender/receiver)·`FRIENDSHIPS`(user/friend)는 모두 `USERS.id`를 두 번 참조하며, 다이어그램에는 대표 관계선만 표시했다.
 
 ## 2. 테이블 정의
 
@@ -163,6 +187,7 @@ erDiagram
 | email | VARCHAR(255) | UNIQUE, NOT NULL | 로그인 이메일 |
 | password | VARCHAR(255) | NOT NULL | 암호화된 비밀번호 |
 | nickname | VARCHAR(50) | UNIQUE, NOT NULL | 닉네임 |
+| role | ENUM | NOT NULL, DEFAULT USER | USER / ADMIN |
 | profile_image_url | VARCHAR(500) | NULL | 프로필 이미지 URL |
 | total_exp | INT | NOT NULL, DEFAULT 0 | 누적 경험치 |
 | level | INT | NOT NULL, DEFAULT 1 | 현재 레벨 |
@@ -187,18 +212,42 @@ erDiagram
 | id | BIGINT | PK | ID |
 | user_id | BIGINT | FK → USERS.id | 사용자 |
 | title_id | BIGINT | FK → TITLES.id | 칭호 |
+| source_type | ENUM | NOT NULL | LEVEL / ACHIEVEMENT / EVENT |
+| source_id | BIGINT | NOT NULL | 획득 근거 ID(레벨 또는 업적 단계 ID 등) |
 | acquired_at | DATETIME | NOT NULL | 획득 일시 |
 | | | UNIQUE(user_id, title_id) | 중복 획득 방지 |
+
+**PROFILE_ITEMS**
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 프로필 아이템 ID |
+| code | VARCHAR(50) | UNIQUE, NOT NULL | 아이템 코드 |
+| name | VARCHAR(100) | NOT NULL | 아이템명 |
+| item_type | ENUM | NOT NULL | BACKGROUND / FRAME / BADGE / OUTFIT |
+
+**USER_PROFILE_ITEMS**
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | ID |
+| user_id | BIGINT | FK → USERS.id | 사용자 |
+| profile_item_id | BIGINT | FK → PROFILE_ITEMS.id | 획득 아이템 |
+| source_type | ENUM | NOT NULL | LEVEL / ACHIEVEMENT / EVENT |
+| source_id | BIGINT | NOT NULL | 획득 근거 ID |
+| acquired_at | DATETIME | NOT NULL | 획득 일시 |
+| | | UNIQUE(user_id, profile_item_id) | 중복 획득 방지 |
 
 **LEVEL_REWARDS** (참조 테이블)
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | id | BIGINT | PK | ID |
-| level | INT | UNIQUE, NOT NULL | 대상 레벨 |
+| level | INT | NOT NULL | 대상 레벨 |
 | reward_type | ENUM | NOT NULL | TITLE / PROFILE_ITEM |
-| reward_ref_id | BIGINT | NULL | 보상 유형별 참조 ID |
+| reward_ref_id | BIGINT | NOT NULL | 보상 유형별 참조 ID |
 | description | VARCHAR(255) | NULL | 보상 설명 |
+| | | UNIQUE(level, reward_type, reward_ref_id) | 한 레벨의 동일 보상 중복 방지 |
 
 **EXP_LOGS** — EXP 지급 이력(팀원 1이 실제로 적립을 확정하는 지점)
 
@@ -210,6 +259,7 @@ erDiagram
 | source_id | BIGINT | NOT NULL | 발생 근거 ID(예: quest_completions.id) |
 | exp_amount | INT | NOT NULL | 지급된 EXP(지급 시점 값 스냅샷) |
 | created_at | DATETIME | NOT NULL | 지급 일시 |
+| | | UNIQUE(user_id, source_type, source_id) | 동일 완료 건 EXP 재지급 방지 |
 
 > `exp_amount`는 지급 시점의 값을 그대로 저장한다(스냅샷). 이후 `QUESTS.exp_reward`가 조정되어도 과거 지급 이력은 변하지 않는다.
 
@@ -257,6 +307,7 @@ erDiagram
 | verified_latitude | DECIMAL(10,7) | NULL | 인증 시점 위도(LOCATION 타입) |
 | verified_longitude | DECIMAL(10,7) | NULL | 인증 시점 경도(LOCATION 타입) |
 | distance_m | DECIMAL(8,2) | NULL | 장소와의 거리(m) |
+| accuracy_m | DECIMAL(8,2) | NULL | 클라이언트가 보고한 위치 정확도(m) |
 | completed_at | DATETIME | NOT NULL | 완료 일시 |
 
 > `user_daily_quest_id`의 UNIQUE 제약이 **완료 멱등성의 근거**다 — 하나의 배정 건은 완료 기록을 하나만 가질 수 있으므로, 동일 요청이 반복돼도 DB 레벨에서 중복 생성이 차단된다.
@@ -302,6 +353,10 @@ erDiagram
 | category | VARCHAR(50) | NULL | 분류 |
 | is_secret | BOOLEAN | NOT NULL, DEFAULT FALSE | 비밀 업적 여부 |
 | condition_type | ENUM | NOT NULL | CUMULATIVE_COUNT / SPECIFIC_QUEST / LIFEDEX_COUNT |
+| target_quest_id | BIGINT | NULL, FK → QUESTS.id | SPECIFIC_QUEST의 대상 퀘스트 |
+| target_lifedex_category_id | BIGINT | NULL, FK → LIFEDEX_CATEGORIES.id | LIFEDEX_COUNT의 대상 카테고리(NULL이면 전체) |
+
+> `SPECIFIC_QUEST`는 `target_quest_id`가 필수이고, `LIFEDEX_COUNT`는 `target_lifedex_category_id`로 집계 범위를 정한다. `CUMULATIVE_COUNT`는 전체 퀘스트 완료 횟수를 기준으로 한다. 달성 기준값은 단계별 `ACHIEVEMENT_STEPS.required_count`에 저장한다.
 
 **ACHIEVEMENT_STEPS** — 단계별 업적(예: 카페 탐험가 I~V)
 
@@ -350,7 +405,7 @@ erDiagram
 | created_at | DATETIME | NOT NULL | 친구 성립 일시 |
 | | | UNIQUE(user_id, friend_id) | |
 
-> 랭킹은 MVP에서 별도 테이블 없이 `USERS.total_exp` / `level`을 직접 조회한다. 구현 방식 논의는 `05-business-rules.md` §11 참조.
+> 랭킹은 MVP에서 별도 테이블 없이 `USERS.total_exp` / `level`을 직접 조회한다. 구현 방식 논의는 `05-business-rules.md` §10 참조.
 
 > 관리자 등록 퀘스트는 별도 테이블 없이 `QUESTS.created_by = ADMIN`으로 표현하며, 배정 풀에 일반 퀘스트와 동일하게 포함된다.
 
@@ -360,6 +415,7 @@ erDiagram
 |---|---|---|
 | USER_DAILY_QUESTS | UNIQUE(user_id, quest_id, assigned_date) | 동일 배정 중복 방지 |
 | QUEST_COMPLETIONS | UNIQUE(user_daily_quest_id) | 완료 멱등성 보장(핵심) |
+| EXP_LOGS | UNIQUE(user_id, source_type, source_id) | 동일 근거의 EXP 재지급 방지 |
 | USER_LIFEDEX | UNIQUE(user_id, lifedex_item_id) | 도감 중복 등록 방지 |
 | USER_ACHIEVEMENTS | UNIQUE(user_id, achievement_id) | 업적 중복 진행 레코드 방지 |
 | USERS | INDEX(total_exp DESC) | 랭킹 정렬 조회 최적화 |
