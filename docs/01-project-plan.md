@@ -129,11 +129,11 @@ flowchart TD
 
 | 구분 | 내용 |
 |---|---|
-| Front-end | React 또는 Flutter(택 1, 팀 결정) |
+| Front-end | Flutter |
 | Back-end | Spring Boot |
 | Database | MySQL |
 | Authentication | JWT |
-| 지도·위치 | Kakao Maps API / Naver Maps API / Google Maps API 중 1종(비용·모바일 지원 고려), Geolocation API |
+| 지도·위치 | 지도 SDK는 팀 결정 전까지 보류, Flutter Geolocator로 GPS 위치 조회 |
 | 협업 도구 | GitHub, Figma, Notion |
 
 ## 11. 일정 개요

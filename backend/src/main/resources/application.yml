@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: lifequest-api
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/lifequest?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul}
+    username: ${DB_USERNAME:lifequest}
+    password: ${DB_PASSWORD:lifequest-local}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+  jwt:
+    secret: ${JWT_SECRET:change-this-local-jwt-secret-at-least-32-bytes}
