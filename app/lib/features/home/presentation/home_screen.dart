@@ -143,7 +143,7 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nickname = profile.valueOrNull?.nickname ?? '모험가';
+    final nickname = profile.value?.nickname ?? '모험가';
 
     return Row(
       children: [
@@ -289,7 +289,7 @@ class _TodayQuestCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loaded = today.valueOrNull;
+    final loaded = today.value;
 
     return LqCard(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),

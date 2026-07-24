@@ -53,7 +53,7 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
   }
 
   String? _titleOf(int dailyQuestId) {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) return null;
     for (final quest in current.quests) {
       if (quest.dailyQuestId == dailyQuestId) return quest.quest.title;
@@ -62,7 +62,7 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
   }
 
   void _markCompleted(int dailyQuestId) {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) return;
 
     state = AsyncData(

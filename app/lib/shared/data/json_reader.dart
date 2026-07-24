@@ -7,7 +7,6 @@ library;
 int? asInt(Object? value) => switch (value) {
   int v => v,
   double v => v.round(),
-  num v => v.toInt(),
   String v => int.tryParse(v),
   _ => null,
 };

@@ -34,7 +34,7 @@ class TitleCollectionNotifier extends AsyncNotifier<TitleCollection> {
 
   /// 대표 칭호 지정 / 재탭 시 해제(null 전송).
   Future<void> select(int titleId) async {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current == null) return;
 
     final next = current.representativeTitleId == titleId ? null : titleId;
