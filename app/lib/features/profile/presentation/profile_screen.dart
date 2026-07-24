@@ -14,6 +14,33 @@ import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 
+/// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
+/// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
+Future<void> _refresh(WidgetRef ref) async {
+  ref
+    ..invalidate(myProfileProvider)
+    ..invalidate(levelStatusProvider)
+    ..invalidate(rewardHistoryProvider)
+    ..invalidate(questHistoryProvider);
+
+  await Future.wait([
+    _settle(ref.read(myProfileProvider.future)),
+    _settle(ref.read(levelStatusProvider.future)),
+    _settle(ref.read(rewardHistoryProvider.future)),
+    _settle(ref.read(questHistoryProvider.future)),
+  ]);
+}
+
+/// 개별 조회 실패는 각 위젯이 오류 상태로 보여주므로
+/// 여기서는 삼켜서 새로고침 제스처 자체가 깨지지 않게 한다.
+Future<void> _settle(Future<Object?> future) async {
+  try {
+    await future;
+  } catch (_) {
+    // 무시 — 화면이 오류 상태를 렌더링한다.
+  }
+}
+
 /// S-03·S-05·S-06 마이페이지.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -32,13 +59,7 @@ class ProfileScreen extends ConsumerWidget {
           data: (value) => RefreshIndicator(
             color: LqColors.primary,
             backgroundColor: LqColors.card,
-            onRefresh: () async {
-              ref
-                ..invalidate(myProfileProvider)
-                ..invalidate(levelStatusProvider)
-                ..invalidate(rewardHistoryProvider)
-                ..invalidate(questHistoryProvider);
-            },
+            onRefresh: () => _refresh(ref),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
                 LqSpacing.screen,
