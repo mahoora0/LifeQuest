@@ -116,7 +116,14 @@ class _AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    await _attachToken(options, tokenStorage);
+    // 보안 저장소 읽기는 키스토어 초기화·앱 서명 변경 시 PlatformException을
+    // 던진다. 여기서 예외가 빠져나가면 handler가 호출되지 않아 요청 Future가
+    // 영원히 완료되지 않으므로(앱 전체 정지), 반드시 삼키고 진행한다.
+    try {
+      await _attachToken(options, tokenStorage);
+    } catch (_) {
+      // 토큰을 붙이지 못하면 401로 이어지고, 그건 onError가 처리한다.
+    }
     handler.next(options);
   }
 
@@ -140,22 +147,30 @@ class _AuthInterceptor extends Interceptor {
         failure.code == 'TOKEN_EXPIRED' ||
         failure.code == 'UNAUTHORIZED';
 
-    if (isAuthFailure && !alreadyRetried) {
-      final reissued = await _reissueOnce();
-      if (reissued) {
-        final options = err.requestOptions
-          ..extra[_retriedFlag] = true
-          ..headers.remove('Authorization');
-        try {
+    // onRequest와 같은 이유로 전체를 감싼다. 여기서 예외가 새어 나가면
+    // handler가 호출되지 않아 해당 요청이 영원히 매달린다.
+    try {
+      if (isAuthFailure && !alreadyRetried) {
+        final reissued = await _reissueOnce();
+        if (reissued) {
+          final options = err.requestOptions
+            ..extra[_retriedFlag] = true
+            ..headers.remove('Authorization');
           handler.resolve(await retryDio.fetch<dynamic>(options));
           return;
-        } on DioException catch (retryError) {
-          handler.reject(
-            retryError.copyWith(error: ApiException.from(retryError)),
-          );
-          return;
         }
+
+        // 재발급이 실패했다 = 리프레시 토큰도 죽었다.
+        // 죽은 토큰을 남겨 두면 이후 모든 요청이 401 → 재발급 실패를 무한
+        // 반복하므로 여기서 지운다. 화면 전환은 각 화면이 TOKEN_EXPIRED
+        // 문구를 보고 처리한다(인터셉터는 BuildContext를 갖지 않는다).
+        await _clearTokensQuietly();
       }
+    } on DioException catch (retryError) {
+      handler.reject(retryError.copyWith(error: ApiException.from(retryError)));
+      return;
+    } catch (_) {
+      // 저장소·플랫폼 오류 — 원래 오류로 떨어뜨려 요청을 끝낸다.
     }
 
     handler.reject(err.copyWith(error: failure));
@@ -166,11 +181,14 @@ class _AuthInterceptor extends Interceptor {
       ..whenComplete(() => _inFlightReissue = null);
   }
 
+  /// 재발급은 어떤 이유로 실패하든 false를 돌려준다.
+  /// 여기서 예외를 던지면 공유 중인 in-flight future를 통해
+  /// 대기 중인 모든 요청으로 퍼지고, 처리되지 않은 zone 오류가 된다.
   Future<bool> _reissue() async {
-    final refreshToken = await tokenStorage.readRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) return false;
-
     try {
+      final refreshToken = await tokenStorage.readRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) return false;
+
       final response = await reissueDio.post<dynamic>(
         '/auth/reissue',
         data: {'refreshToken': refreshToken},
@@ -190,8 +208,16 @@ class _AuthInterceptor extends Interceptor {
         await tokenStorage.writeRefreshToken(newRefreshToken);
       }
       return true;
-    } on DioException {
+    } catch (_) {
       return false;
+    }
+  }
+
+  Future<void> _clearTokensQuietly() async {
+    try {
+      await tokenStorage.clear();
+    } catch (_) {
+      // 지우지 못해도 원래 오류 전달을 막지 않는다.
     }
   }
 }
