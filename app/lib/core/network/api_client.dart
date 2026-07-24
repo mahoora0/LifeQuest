@@ -9,6 +9,20 @@ final tokenStorageProvider = Provider<TokenStorage>((ref) {
   return TokenStorage(const FlutterSecureStorage());
 });
 
+final sessionInvalidationProvider =
+    NotifierProvider<SessionInvalidationNotifier, bool>(
+      SessionInvalidationNotifier.new,
+    );
+
+class SessionInvalidationNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void invalidate() => state = true;
+
+  void reset() => state = false;
+}
+
 final dioProvider = Provider<Dio>((ref) {
   final tokenStorage = ref.watch(tokenStorageProvider);
 
@@ -34,6 +48,8 @@ final dioProvider = Provider<Dio>((ref) {
       tokenStorage: tokenStorage,
       reissueDio: reissueDio,
       retryDio: retryDio,
+      onSessionExpired: () =>
+          ref.read(sessionInvalidationProvider.notifier).invalidate(),
     ),
   );
 
@@ -100,6 +116,7 @@ class _AuthInterceptor extends Interceptor {
     required this.tokenStorage,
     required this.reissueDio,
     required this.retryDio,
+    required this.onSessionExpired,
   });
 
   static const _retriedFlag = 'lq.retried';
@@ -107,6 +124,7 @@ class _AuthInterceptor extends Interceptor {
   final TokenStorage tokenStorage;
   final Dio reissueDio;
   final Dio retryDio;
+  final void Function() onSessionExpired;
 
   /// 동시 401이 여러 건 나도 재발급은 한 번만 수행한다.
   Future<bool>? _inFlightReissue;
@@ -219,5 +237,6 @@ class _AuthInterceptor extends Interceptor {
     } catch (_) {
       // 지우지 못해도 원래 오류 전달을 막지 않는다.
     }
+    onSessionExpired();
   }
 }

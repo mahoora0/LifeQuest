@@ -67,7 +67,9 @@
 |---|---|---|---|
 | POST | /api/auth/signup | 회원가입 | 불필요 |
 | POST | /api/auth/login | 로그인, 토큰 발급 | 불필요 |
+| POST | /api/auth/google | Google ID Token 로그인, 앱 토큰 발급 | 불필요 |
 | POST | /api/auth/reissue | 액세스 토큰 재발급 | 리프레시 토큰 |
+| POST | /api/auth/logout | 리프레시 토큰 폐기 | 불필요 |
 | GET | /api/users/me | 내 정보 조회 | 필요 |
 | PATCH | /api/users/me | 내 정보 수정 | 필요 |
 | GET | /api/users/me/level | 레벨·EXP 진행 상태 조회 | 필요 |
@@ -122,7 +124,9 @@
 |---|---|---|---|
 | `POST /auth/signup` | `email`, `password`, `nickname` | `userId`, `email`, `nickname`, `createdAt` | `DUPLICATE_EMAIL`, `DUPLICATE_NICKNAME`, `VALIDATION_FAILED` |
 | `POST /auth/login` | `email`, `password` | `accessToken`, `refreshToken`, `expiresIn`, `user` | `UNAUTHORIZED` |
-| `POST /auth/reissue` | `refreshToken` | `accessToken`, `expiresIn` | `UNAUTHORIZED`, `TOKEN_EXPIRED` |
+| `POST /auth/google` | Google SDK에서 받은 `idToken` | `accessToken`, `refreshToken`, `expiresIn`, `user` | `INVALID_GOOGLE_TOKEN`, `AUTH_PROVIDER_NOT_CONFIGURED` |
+| `POST /auth/reissue` | `refreshToken` | 회전된 `accessToken`, `refreshToken`, `expiresIn`, `user` | `TOKEN_EXPIRED` |
+| `POST /auth/logout` | `refreshToken` | `loggedOut` | 없음(멱등 처리) |
 | `GET /users/me` | 없음 | `id`, `email`, `nickname`, `profileImageUrl`, `role`, `representativeTitle` | `UNAUTHORIZED` |
 | `PATCH /users/me` | 변경할 `nickname`, `profileImageUrl` | 변경된 사용자 정보 | `DUPLICATE_NICKNAME`, `VALIDATION_FAILED` |
 | `GET /users/me/level` | 없음 | `level`, `totalExp`, `currentLevelExp`, `nextLevelRequiredExp` | `UNAUTHORIZED` |

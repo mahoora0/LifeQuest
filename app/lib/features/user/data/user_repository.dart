@@ -12,6 +12,17 @@ class UserRepository {
     return UserProfile.fromJson(response.data);
   });
 
+  Future<UserProfile> updateProfile({
+    required String nickname,
+    required String profileImageUrl,
+  }) => _guard(() async {
+    final response = await _dio.patch<dynamic>(
+      '/users/me',
+      data: {'nickname': nickname, 'profileImageUrl': profileImageUrl},
+    );
+    return UserProfile.fromJson(response.data);
+  });
+
   Future<LevelStatus> fetchLevel() => _guard(() async {
     final response = await _dio.get<dynamic>('/users/me/level');
     return LevelStatus.fromJson(response.data);
