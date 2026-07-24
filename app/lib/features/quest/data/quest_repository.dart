@@ -44,25 +44,18 @@ class QuestRepository {
 
   /// `POST /daily-quests/{dailyQuestId}/complete`
   ///
-  /// 좌표·정확도는 `completion_type = LOCATION`인 퀘스트에만 싣는다.
+  /// 좌표는 `completion_type = LOCATION`인 퀘스트에만 싣는다.
   /// SELF_REPORT는 본문 없이 호출한다(`04-api-spec.md` §4).
+  ///
+  /// 좌표를 [CompletionCoordinates] 한 덩어리로 받아, 위경도·정확도 중
+  /// 일부만 채워진 요청이 조용히 SELF_REPORT처럼 나가는 일을 막는다.
   Future<QuestCompletionResult> complete(
     int dailyQuestId, {
-    double? latitude,
-    double? longitude,
-    double? accuracy,
+    CompletionCoordinates? coordinates,
   }) => _guard(() async {
-    final hasLocation =
-        latitude != null && longitude != null && accuracy != null;
     final response = await _dio.post<dynamic>(
       '/daily-quests/$dailyQuestId/complete',
-      data: hasLocation
-          ? {
-              'latitude': latitude,
-              'longitude': longitude,
-              'accuracy': accuracy,
-            }
-          : null,
+      data: coordinates?.toJson(),
     );
     return QuestCompletionResult.fromJson(response.data);
   });

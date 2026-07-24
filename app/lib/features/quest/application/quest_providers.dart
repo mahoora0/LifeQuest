@@ -34,18 +34,11 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
   /// 중복 완료(`duplicated=true`)도 서버가 200으로 돌려주므로 예외가 아니다.
   Future<QuestCompletionResult> complete(
     int dailyQuestId, {
-    double? latitude,
-    double? longitude,
-    double? accuracy,
+    CompletionCoordinates? coordinates,
   }) async {
     final result = await ref
         .read(questRepositoryProvider)
-        .complete(
-          dailyQuestId,
-          latitude: latitude,
-          longitude: longitude,
-          accuracy: accuracy,
-        );
+        .complete(dailyQuestId, coordinates: coordinates);
 
     _markCompleted(dailyQuestId);
     ref.invalidate(levelStatusProvider);
@@ -120,13 +113,17 @@ class NearbyQuests {
 
 /// 현재 위치 조회 → `GET /quests/nearby`.
 final nearbyQuestsProvider = FutureProvider<NearbyQuests>((ref) async {
-  final position = await ref.watch(locationServiceProvider).getCurrentPosition();
-  final quests = await ref
-      .watch(questRepositoryProvider)
-      .fetchNearby(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        radiusKm: 3,
-      );
+  // GPS fix는 10초 넘게 걸릴 수 있다. 그 사이 provider가 무효화되면
+  // await 뒤의 ref는 이미 dispose된 상태라 사용할 수 없으므로,
+  // 의존성은 첫 await 전에 모두 읽어 둔다.
+  final locationService = ref.watch(locationServiceProvider);
+  final repository = ref.watch(questRepositoryProvider);
+
+  final position = await locationService.getCurrentPosition();
+  final quests = await repository.fetchNearby(
+    latitude: position.latitude,
+    longitude: position.longitude,
+    radiusKm: 3,
+  );
   return NearbyQuests(origin: position, quests: quests);
 });

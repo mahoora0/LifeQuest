@@ -25,8 +25,35 @@ void main() {
       expect(quest.status, DailyQuestStatus.assigned);
       expect(quest.quest.title, '새로운 카페 방문하기');
       expect(quest.quest.completionType.isLocation, isTrue);
-      expect(quest.quest.effectiveRadiusM, 30);
+      expect(quest.quest.radiusM, 30);
+      expect(quest.quest.hasRadius, isTrue);
       expect(quest.quest.hasCoordinates, isTrue);
+    });
+
+    test('중첩 객체가 questId 키를 쓰면 그 값을 퀘스트 id로 삼는다', () {
+      // 최상위 questId가 없을 때 0으로 덮이면 /quests/0으로 이동해 버린다.
+      final quest = DailyQuest.fromJson({
+        'id': 901,
+        'status': 'ASSIGNED',
+        'quest': {'questId': 12, 'title': '새로운 카페 방문하기'},
+      });
+
+      expect(quest.dailyQuestId, 901);
+      expect(quest.questId, 12);
+    });
+
+    test('반경을 모르면 hasRadius가 false다 (기본값을 추측하지 않는다)', () {
+      final quest = DailyQuest.fromJson({
+        'dailyQuestId': 1,
+        'questId': 2,
+        'title': '어딘가 가기',
+        'completionType': 'LOCATION',
+        'latitude': 37.5,
+        'longitude': 127.0,
+      });
+
+      expect(quest.quest.hasRadius, isFalse);
+      expect(quest.quest.radiusM, isNull);
     });
 
     test('퀘스트 요약이 평탄화되어 오는 형태도 읽는다', () {
@@ -58,20 +85,61 @@ void main() {
     });
   });
 
-  group('TodayQuests', () {
-    test('완료 수를 센다', () {
-      final today = TodayQuests.fromJson({
-        'assignedDate': '2026-07-24',
-        'quests': [
-          {'dailyQuestId': 1, 'questId': 1, 'status': 'COMPLETED', 'title': 'A'},
-          {'dailyQuestId': 2, 'questId': 2, 'status': 'ASSIGNED', 'title': 'B'},
-          {'dailyQuestId': 3, 'questId': 3, 'status': 'ASSIGNED', 'title': 'C'},
-        ],
-      });
+  group('DailyQuestStatus.isActionable', () {
+    test('배정 상태만 완료 요청을 보낼 수 있다', () {
+      expect(DailyQuestStatus.assigned.isActionable, isTrue);
+      // 만료·완료 건은 서버가 거절하므로 UI에서도 막아야 한다.
+      expect(DailyQuestStatus.expired.isActionable, isFalse);
+      expect(DailyQuestStatus.completed.isActionable, isFalse);
+    });
+  });
 
+  group('CompletionCoordinates', () {
+    test('세 값을 항상 함께 직렬화한다', () {
+      const coordinates = CompletionCoordinates(
+        latitude: 37.5665,
+        longitude: 126.9780,
+        accuracy: 12.5,
+      );
+
+      expect(coordinates.toJson(), {
+        'latitude': 37.5665,
+        'longitude': 126.9780,
+        'accuracy': 12.5,
+      });
+    });
+  });
+
+  group('TodayQuests', () {
+    final today = TodayQuests.fromJson({
+      'assignedDate': '2026-07-24',
+      'quests': [
+        {'dailyQuestId': 1, 'questId': 11, 'status': 'COMPLETED', 'title': 'A'},
+        {'dailyQuestId': 2, 'questId': 22, 'status': 'ASSIGNED', 'title': 'B'},
+        {'dailyQuestId': 3, 'questId': 33, 'status': 'EXPIRED', 'title': 'C'},
+      ],
+    });
+
+    test('완료 수를 센다', () {
       expect(today.total, 3);
       expect(today.completedCount, 1);
       expect(today.isEmpty, isFalse);
+    });
+
+    test('배정 id로 현재 배정 상태를 찾는다', () {
+      final found = today.findAssignment(dailyQuestId: 1);
+      expect(found?.status, DailyQuestStatus.completed);
+    });
+
+    test('배정 id가 없으면 퀘스트 id로 찾는다', () {
+      final found = today.findAssignment(questId: 33);
+      expect(found?.dailyQuestId, 3);
+      expect(found?.status.isExpired, isTrue);
+    });
+
+    test('없는 항목은 null', () {
+      expect(today.findAssignment(dailyQuestId: 999), isNull);
+      expect(today.findAssignment(questId: 999), isNull);
     });
   });
 

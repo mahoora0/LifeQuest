@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:life_quest/core/location/location_service.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
+import 'package:life_quest/features/quest/domain/location_gate.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/error/lq_error_messages.dart';
@@ -37,7 +39,10 @@ enum _VerifyStage {
   /// 퀘스트에 좌표가 없어 판정할 수 없음.
   missingTarget,
 
-  /// accuracy가 min(radius_m, 100)보다 큼 — 자동 재시도.
+  /// 위치 스트림이 끊겼고 권한·GPS 문제도 아님 — 수동 재시도가 필요.
+  failed,
+
+  /// accuracy가 허용 범위를 벗어남(0 이하이거나 상한 초과) — 자동 재시도.
   lowAccuracy,
 
   /// 반경 밖.
@@ -45,6 +50,26 @@ enum _VerifyStage {
 
   /// 반경 안 — 인증 가능.
   inRadius,
+}
+
+/// 서버가 되돌려준 거절.
+///
+/// 클라이언트 계산은 안내용일 뿐이고 판정 권한은 서버에 있다.
+/// 위치 스트림은 초당 몇 번씩 흐르므로, 서버 판정을 그냥 두면 다음 틱에
+/// 클라이언트 계산으로 덮여 사라진다. 거절받은 지점을 함께 기억해 두고
+/// **실제로 그 자리를 벗어났을 때만** 해제한다.
+class _ServerRejection {
+  const _ServerRejection({
+    required this.stage,
+    required this.message,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final _VerifyStage stage;
+  final String message;
+  final double latitude;
+  final double longitude;
 }
 
 /// 디버그 빌드 전용 좌표 시뮬레이터 시나리오.
@@ -77,18 +102,22 @@ class QuestVerifyScreen extends ConsumerStatefulWidget {
 class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
   StreamSubscription<Position>? _subscription;
 
+  /// `_start()`는 여러 경로(초기화·권한 버튼·설정 복귀·시뮬레이터)에서 불린다.
+  /// 세대 번호로 뒤늦게 끝난 이전 호출이 최신 구독을 덮어쓰지 못하게 막는다.
+  int _generation = 0;
+
   _VerifyStage _stage = _VerifyStage.locating;
   Position? _position;
   double? _distanceM;
   bool _submitting = false;
-
-  /// 서버가 되돌려준 거절 사유(거리 값 포함) — 배너에 그대로 보여준다.
-  String? _serverMessage;
+  _ServerRejection? _rejection;
 
   _DebugScenario _scenario = _DebugScenario.real;
 
   LocationService get _service => ref.read(locationServiceProvider);
-  int get _radiusM => widget.quest.effectiveRadiusM;
+
+  /// 서버가 알려준 인증 반경. 모르면 null — 임의로 추측하지 않는다.
+  int? get _radiusM => widget.quest.radiusM;
 
   @override
   void initState() {
@@ -98,25 +127,36 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
 
   @override
   void dispose() {
+    _generation++;
     _subscription?.cancel();
     super.dispose();
   }
 
+  bool _isCurrent(int generation) => mounted && generation == _generation;
+
+  Future<void> _cancelSubscription() async {
+    final subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
+  }
+
   Future<void> _start() async {
+    final generation = ++_generation;
+    await _cancelSubscription();
+    if (!_isCurrent(generation)) return;
+
     if (!widget.quest.hasCoordinates) {
       setState(() => _stage = _VerifyStage.missingTarget);
       return;
     }
 
-    await _subscription?.cancel();
-    _subscription = null;
     setState(() {
       _stage = _VerifyStage.locating;
-      _serverMessage = null;
+      _rejection = null;
     });
 
     if (!await _service.isServiceEnabled()) {
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       setState(() => _stage = _VerifyStage.serviceDisabled);
       return;
     }
@@ -125,45 +165,104 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     if (permission == LocationPermission.denied) {
       permission = await _service.requestPermission();
     }
-    if (!mounted) return;
+    if (!_isCurrent(generation)) return;
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       setState(() => _stage = _VerifyStage.permissionDenied);
       return;
     }
 
-    _subscription = _service.watchPosition().listen(
+    final subscription = _service.watchPosition().listen(
       _onPosition,
-      onError: (Object _) {
-        if (mounted) setState(() => _stage = _VerifyStage.locating);
-      },
+      onError: (Object _) => _handleStreamError(),
+      onDone: _handleStreamError,
     );
+
+    // 구독을 만드는 사이에 더 새로운 _start가 시작됐다면 즉시 정리한다.
+    if (!_isCurrent(generation)) {
+      unawaited(subscription.cancel());
+      return;
+    }
+    _subscription = subscription;
+  }
+
+  /// 스트림이 끊기면 원인을 다시 진단해 대응 가능한 상태로 보낸다.
+  /// (그냥 `locating`으로 두면 더 이상 이벤트가 오지 않아 화면이 멈춘다.)
+  Future<void> _handleStreamError() async {
+    await _cancelSubscription();
+    if (!mounted) return;
+
+    final stage = await _diagnoseFailure();
+    if (!mounted) return;
+    setState(() => _stage = stage);
+  }
+
+  Future<_VerifyStage> _diagnoseFailure() async {
+    try {
+      if (!await _service.isServiceEnabled()) {
+        return _VerifyStage.serviceDisabled;
+      }
+      final permission = await _service.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return _VerifyStage.permissionDenied;
+      }
+    } catch (_) {
+      // 진단 자체가 실패하면 수동 재시도로 넘긴다.
+    }
+    return _VerifyStage.failed;
   }
 
   void _onPosition(Position position) {
     if (!mounted) return;
 
     final quest = widget.quest;
-    final distance = haversineDistanceM(
-      lat1: position.latitude,
-      lng1: position.longitude,
-      lat2: quest.latitude!,
-      lng2: quest.longitude!,
-    );
+    final distance = quest.hasCoordinates
+        ? haversineDistanceM(
+            lat1: position.latitude,
+            lng1: position.longitude,
+            lat2: quest.latitude!,
+            lng2: quest.longitude!,
+          )
+        : null;
+
+    final rejection = _surviving(_rejection, position);
 
     setState(() {
       _position = position;
       _distanceM = distance;
-      _serverMessage = null;
-      if (position.accuracy > accuracyLimitM(_radiusM)) {
-        // 스트림이 계속 흐르므로 자동으로 재시도되는 셈이다.
-        _stage = _VerifyStage.lowAccuracy;
-      } else if (distance > _radiusM) {
-        _stage = _VerifyStage.outOfRadius;
-      } else {
-        _stage = _VerifyStage.inRadius;
-      }
+      _rejection = rejection;
+      _stage = rejection?.stage ?? _stageFor(position, distance);
     });
+  }
+
+  /// 서버 거절이 아직 유효한가. 거절받은 지점에서 유의미하게 움직였으면 해제.
+  _ServerRejection? _surviving(_ServerRejection? rejection, Position position) {
+    if (rejection == null) return null;
+
+    final moved = haversineDistanceM(
+      lat1: rejection.latitude,
+      lng1: rejection.longitude,
+      lat2: position.latitude,
+      lng2: position.longitude,
+    );
+    // GPS 흔들림(accuracy 범위)보다 크게 움직였을 때만 다시 시도하게 한다.
+    final threshold = math.max(15.0, position.accuracy);
+    return moved > threshold ? null : rejection;
+  }
+
+  _VerifyStage _stageFor(Position position, double? distance) {
+    final gate = evaluateLocationGate(
+      accuracy: position.accuracy,
+      distanceM: distance,
+      radiusM: _radiusM,
+    );
+    return switch (gate) {
+      LocationGate.accuracyUnknown ||
+      LocationGate.accuracyTooLow => _VerifyStage.lowAccuracy,
+      LocationGate.outOfRadius => _VerifyStage.outOfRadius,
+      LocationGate.withinRadius => _VerifyStage.inRadius,
+    };
   }
 
   // --- 디버그 전용 좌표 시뮬레이터 (운영 빌드에서는 노출되지 않는다) ---
@@ -175,14 +274,17 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
       return;
     }
 
-    await _subscription?.cancel();
-    _subscription = null;
+    // 진행 중인 _start가 뒤늦게 구독을 붙이지 못하게 세대를 올린다.
+    _generation++;
+    await _cancelSubscription();
+    if (!mounted) return;
 
     if (scenario == _DebugScenario.denied) {
       setState(() {
         _stage = _VerifyStage.permissionDenied;
         _position = null;
         _distanceM = null;
+        _rejection = null;
       });
       return;
     }
@@ -194,10 +296,12 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     }
 
     // 위도 1도 ≈ 111km. 반경의 3배만큼 북쪽으로 밀어 반경 밖을 만든다.
+    final simulatedRadius = _radiusM ?? 50;
     final offsetDegrees = scenario == _DebugScenario.inside
         ? 0.0
-        : (_radiusM * 3) / 111000;
+        : (simulatedRadius * 3) / 111000;
 
+    _rejection = null;
     _onPosition(
       Position(
         latitude: quest.latitude! + offsetDegrees,
@@ -224,35 +328,49 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
           .read(todayQuestsProvider.notifier)
           .complete(
             widget.dailyQuestId,
-            latitude: position.latitude,
-            longitude: position.longitude,
-            accuracy: position.accuracy,
+            coordinates: CompletionCoordinates(
+              latitude: position.latitude,
+              longitude: position.longitude,
+              accuracy: position.accuracy,
+            ),
           );
       if (!mounted) return;
       await _showSuccessDialog(result);
     } on ApiException catch (error) {
       if (!mounted) return;
-      // 최종 판정은 서버다. 서버가 거절하면 해당 상태 배너로 되돌린다.
-      switch (error.code) {
-        case 'OUT_OF_RADIUS':
-          setState(() {
-            _stage = _VerifyStage.outOfRadius;
-            _serverMessage = lqErrorMessage(error);
-          });
-        case 'LOCATION_ACCURACY_TOO_LOW':
-          setState(() {
-            _stage = _VerifyStage.lowAccuracy;
-            _serverMessage = lqErrorMessage(error);
-          });
-        default:
-          showLqError(context, error);
-      }
+      _handleServerRejection(error, position);
     } catch (error) {
       if (!mounted) return;
       showLqError(context, error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  /// 서버 거절을 상태 배너로 되돌린다. 위치 판정과 관련된 코드는 모두
+  /// 대응 상태로 매핑해, CTA가 계속 열려 있는 무한 재시도를 막는다.
+  void _handleServerRejection(ApiException error, Position position) {
+    final stage = switch (error.code) {
+      'OUT_OF_RADIUS' => _VerifyStage.outOfRadius,
+      'LOCATION_ACCURACY_TOO_LOW' ||
+      'LOCATION_REQUIRED' => _VerifyStage.lowAccuracy,
+      _ => null,
+    };
+
+    if (stage == null) {
+      showLqError(context, error);
+      return;
+    }
+
+    setState(() {
+      _rejection = _ServerRejection(
+        stage: stage,
+        message: lqErrorMessage(error),
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      _stage = stage;
+    });
   }
 
   Future<void> _showSuccessDialog(QuestCompletionResult result) async {
@@ -315,7 +433,7 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
                   const SizedBox(height: LqSpacing.gap),
                   LqStatusBanner(
                     tone: _bannerTone,
-                    message: _serverMessage ?? _bannerMessage,
+                    message: _rejection?.message ?? _bannerMessage,
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -367,6 +485,7 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
           await _start();
         },
       ),
+      _VerifyStage.failed => LqButton(label: '다시 시도', onPressed: _start),
       _VerifyStage.missingTarget => const LqButton(label: '위치 정보를 확인할 수 없어요'),
       _VerifyStage.locating => const LqButton(label: '내 위치를 찾는 중…'),
       _VerifyStage.lowAccuracy => const LqButton(label: '정확도를 기다리는 중…'),
@@ -384,7 +503,8 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     _VerifyStage.outOfRadius || _VerifyStage.lowAccuracy => LqBannerTone.warn,
     _VerifyStage.permissionDenied ||
     _VerifyStage.serviceDisabled ||
-    _VerifyStage.missingTarget => LqBannerTone.danger,
+    _VerifyStage.missingTarget ||
+    _VerifyStage.failed => LqBannerTone.danger,
     _VerifyStage.locating => LqBannerTone.neutral,
   };
 
@@ -392,8 +512,11 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     _VerifyStage.permissionDenied => '위치 권한이 꺼져 있어요',
     _VerifyStage.serviceDisabled => 'GPS가 꺼져 있어요',
     _VerifyStage.missingTarget => '이 퀘스트에는 인증 좌표가 없어요',
+    _VerifyStage.failed => '위치를 받아오지 못했어요',
     _VerifyStage.locating => '내 위치를 찾는 중…',
-    _VerifyStage.lowAccuracy => '위치 정확도가 낮아요 — 잠시 후 다시',
+    _VerifyStage.lowAccuracy => (_position?.accuracy ?? 1) <= 0
+        ? '위치 정확도를 확인할 수 없어요 — 잠시 후 다시'
+        : '위치 정확도가 낮아요 — 잠시 후 다시',
     _VerifyStage.outOfRadius => '아직 반경 밖이에요 — 조금 더 가까이!',
     _VerifyStage.inRadius => '반경 안이에요! 인증할 수 있어요',
   };
@@ -401,8 +524,8 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
   String get _distanceLabel {
     final distance = _distanceM;
     final accuracy = _position?.accuracy;
-    if (distance == null || accuracy == null) {
-      return '인증 반경 ${_radiusM}m';
+    if (distance == null || accuracy == null || accuracy <= 0) {
+      return _radiusM == null ? '인증 반경은 서버가 확인해요' : '인증 반경 ${_radiusM}m';
     }
     return '목표까지 ${distance.round()}m · GPS 정확도 ±${accuracy.round()}m';
   }
@@ -416,7 +539,7 @@ class _RadarCard extends StatelessWidget {
     required this.locating,
   });
 
-  final int radiusM;
+  final int? radiusM;
   final bool inRadius;
   final bool locating;
 
@@ -465,7 +588,10 @@ class _RadarCard extends StatelessWidget {
                   width: LqShape.borderWidth,
                 ),
               ),
-              child: Text('인증 반경 ${radiusM}m', style: LqText.caption),
+              child: Text(
+                radiusM == null ? '반경은 서버가 판정' : '인증 반경 ${radiusM}m',
+                style: LqText.caption,
+              ),
             ),
           ),
         ],

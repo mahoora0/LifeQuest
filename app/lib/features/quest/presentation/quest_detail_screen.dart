@@ -34,6 +34,15 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(questDetailProvider(widget.questId));
+    // extra로 받은 배정 정보는 진입 시점의 스냅샷이라 갱신되지 않는다.
+    // GPS 인증으로 완료하고 뒤로 돌아오면 여기서 다시 읽어야 최신 상태가 된다.
+    final assignment = ref
+        .watch(todayQuestsProvider)
+        .value
+        ?.findAssignment(
+          dailyQuestId: widget.args?.dailyQuestId,
+          questId: widget.questId,
+        );
 
     return Scaffold(
       backgroundColor: LqColors.surface,
@@ -48,8 +57,9 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
                     ref.invalidate(questDetailProvider(widget.questId)),
                 data: (quest) => _DetailBody(
                   quest: quest,
-                  status: widget.args?.status,
-                  dailyQuestId: widget.args?.dailyQuestId,
+                  status: assignment?.status ?? widget.args?.status,
+                  dailyQuestId:
+                      assignment?.dailyQuestId ?? widget.args?.dailyQuestId,
                   completing: _completing,
                   onComplete: () => _complete(quest),
                   onVerify: () => _goVerify(quest),
@@ -62,9 +72,21 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
     );
   }
 
+  /// 현재 유효한 배정 id — 최신 상태를 우선하고 없으면 진입 인자를 쓴다.
+  int? get _dailyQuestId =>
+      ref
+          .read(todayQuestsProvider)
+          .value
+          ?.findAssignment(
+            dailyQuestId: widget.args?.dailyQuestId,
+            questId: widget.questId,
+          )
+          ?.dailyQuestId ??
+      widget.args?.dailyQuestId;
+
   /// SELF_REPORT 완료 — 본문 없이 호출.
   Future<void> _complete(Quest quest) async {
-    final dailyQuestId = widget.args?.dailyQuestId;
+    final dailyQuestId = _dailyQuestId;
     if (dailyQuestId == null || _completing) return;
 
     setState(() => _completing = true);
@@ -84,7 +106,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   }
 
   void _goVerify(Quest quest) {
-    final dailyQuestId = widget.args?.dailyQuestId;
+    final dailyQuestId = _dailyQuestId;
     if (dailyQuestId == null) return;
     context.push(
       '/quests/$dailyQuestId/verify',
@@ -215,7 +237,8 @@ class _InfoCard extends StatelessWidget {
             _InfoRow(
               label: '인증 반경',
               child: Text(
-                '${quest.effectiveRadiusM}m',
+                // 반경을 모르면 추측하지 않고 서버 판정에 맡긴다는 것을 그대로 알린다.
+                quest.hasRadius ? '${quest.radiusM}m' : '서버에서 확인',
                 style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
               ),
             ),

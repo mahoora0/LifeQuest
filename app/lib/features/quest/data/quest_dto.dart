@@ -35,6 +35,32 @@ enum DailyQuestStatus {
 
   bool get isCompleted => this == DailyQuestStatus.completed;
   bool get isExpired => this == DailyQuestStatus.expired;
+
+  /// 지금 완료 요청을 보낼 수 있는 상태인가.
+  /// 만료 건은 서버가 QUEST_EXPIRED로 거절하므로 UI에서도 막는다.
+  bool get isActionable => this == DailyQuestStatus.assigned;
+}
+
+/// LOCATION 퀘스트 완료에 실어 보내는 좌표 묶음.
+///
+/// 세 값을 항상 함께 갖도록 강제한다. 하나라도 빠진 채 요청이 나가면
+/// 서버가 LOCATION_REQUIRED로 거절하는데, 그때는 이미 원인을 알기 어렵다.
+class CompletionCoordinates {
+  const CompletionCoordinates({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+
+  Map<String, dynamic> toJson() => {
+    'latitude': latitude,
+    'longitude': longitude,
+    'accuracy': accuracy,
+  };
 }
 
 /// 퀘스트 마스터 정보.
@@ -65,8 +91,12 @@ class Quest {
 
   bool get hasCoordinates => latitude != null && longitude != null;
 
-  /// 인증 반경(m). 서버가 값을 주지 않으면 안내용 기본값 50m.
-  int get effectiveRadiusM => radiusM ?? 50;
+  /// 서버가 인증 반경을 알려줬는가.
+  ///
+  /// 값을 임의로 추측하지 않는다. 반경을 모르는 채 클라이언트가 기본값으로
+  /// 판정하면 실제로는 인증 가능한 퀘스트를 앱이 영구히 막아버릴 수 있다.
+  /// 반경을 모르면 클라이언트 판정을 건너뛰고 서버 판정에 맡긴다.
+  bool get hasRadius => radiusM != null;
 
   factory Quest.fromJson(Map<String, dynamic> json, {int? idOverride}) {
     return Quest(
@@ -108,8 +138,9 @@ class DailyQuest {
     // 서버가 퀘스트 요약을 중첩(`quest`)으로 줄 수도, 평탄화해서 줄 수도 있다.
     final nested = asMap(pick(json, ['quest', 'questSummary']));
     final merged = <String, dynamic>{...json, ...nested};
-    final questId =
-        asInt(pick(json, ['questId'])) ?? asInt(nested['id']) ?? 0;
+    // 0은 "못 찾았다"는 뜻이므로 override로 넘기지 않는다.
+    // 넘기면 non-null이라 Quest.fromJson의 후보 키 탐색이 통째로 죽는다.
+    final questId = asInt(pick(json, ['questId'])) ?? asInt(nested['id']);
 
     return DailyQuest(
       dailyQuestId:
@@ -131,6 +162,20 @@ class TodayQuests {
   int get total => quests.length;
   int get completedCount => quests.where((q) => q.status.isCompleted).length;
   bool get isEmpty => quests.isEmpty;
+
+  /// 배정 건 조회. 상세 화면이 `extra`로 받은 스냅샷 대신
+  /// 현재 배정 상태를 다시 확인할 때 쓴다.
+  DailyQuest? findAssignment({int? dailyQuestId, int? questId}) {
+    for (final quest in quests) {
+      if (dailyQuestId != null && quest.dailyQuestId == dailyQuestId) {
+        return quest;
+      }
+      if (dailyQuestId == null && questId != null && quest.questId == questId) {
+        return quest;
+      }
+    }
+    return null;
+  }
 
   factory TodayQuests.fromJson(Object? body) {
     final json = asMap(body);
