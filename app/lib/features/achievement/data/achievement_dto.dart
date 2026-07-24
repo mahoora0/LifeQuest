@@ -58,17 +58,27 @@ class Achievement {
     expReward: asInt(pick(json, ['expReward', 'exp'])),
   );
 
-  Achievement mergeWith(Achievement mine) => Achievement(
-    id: id,
-    name: name,
-    achieved: mine.achieved || achieved,
-    secret: secret,
-    condition: condition ?? mine.condition,
-    currentValue: mine.currentValue ?? currentValue,
-    requiredValue: mine.requiredValue ?? requiredValue,
-    currentStep: mine.currentStep ?? currentStep,
-    expReward: expReward ?? mine.expReward,
-  );
+  /// 카탈로그(`/achievements`)에 내 현황(`/users/me/achievements`)을 덮어쓴다.
+  ///
+  /// 비밀 업적은 **미달성 동안만** 카탈로그에서 마스킹된다. 달성 기록이 있으면
+  /// 내 현황이 실제 이름·조건을 갖고 있으므로 그쪽을 정본으로 삼는다.
+  /// 카탈로그를 우선하면 "완료" 도장 옆에 마스킹된 이름이 남는다.
+  Achievement mergeWith(Achievement mine) {
+    final preferMine = mine.achieved;
+    return Achievement(
+      id: id,
+      name: preferMine && mine.name.isNotEmpty ? mine.name : name,
+      achieved: mine.achieved || achieved,
+      secret: secret,
+      condition: preferMine
+          ? (mine.condition ?? condition)
+          : (condition ?? mine.condition),
+      currentValue: mine.currentValue ?? currentValue,
+      requiredValue: mine.requiredValue ?? requiredValue,
+      currentStep: mine.currentStep ?? currentStep,
+      expReward: expReward ?? mine.expReward,
+    );
+  }
 }
 
 /// 업적 탭이 쓰는 통합 뷰 모델.
