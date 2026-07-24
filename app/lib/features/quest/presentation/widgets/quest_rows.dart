@@ -26,13 +26,16 @@ class HomeQuestRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quest = dailyQuest.quest;
-    final completed = dailyQuest.status.isCompleted;
+    final status = dailyQuest.status;
+    final completed = status.isCompleted;
+    // 만료 건도 서버가 QUEST_EXPIRED로 거절하므로 완료와 같이 비활성으로 보인다.
+    final inactive = !status.isActionable;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Opacity(
-        opacity: completed ? 0.55 : 1,
+        opacity: inactive ? 0.55 : 1,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
@@ -62,6 +65,7 @@ class HomeQuestRow extends StatelessWidget {
                           LqRewardBadge.gold(quest.expReward ~/ 2),
                         if (quest.completionType.isLocation)
                           LqRewardBadge.location(),
+                        if (status.isExpired) const _ExpiredBadge(),
                       ],
                     ),
                   ],
@@ -78,7 +82,7 @@ class HomeQuestRow extends StatelessWidget {
                 QuestCheckButton(
                   checked: completed,
                   busy: busy,
-                  onTap: (completed || busy) ? null : onCheck,
+                  onTap: (inactive || busy) ? null : onCheck,
                 ),
             ],
           ),
@@ -160,10 +164,12 @@ class QuestListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quest = dailyQuest.quest;
-    final completed = dailyQuest.status.isCompleted;
+    final status = dailyQuest.status;
+    final completed = status.isCompleted;
+    final inactive = !status.isActionable;
 
     return Opacity(
-      opacity: completed ? 0.55 : 1,
+      opacity: inactive ? 0.55 : 1,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -200,6 +206,7 @@ class QuestListRow extends StatelessWidget {
                   children: [
                     LqRewardBadge.exp(quest.expReward),
                     LqRewardBadge.tag(quest.completionType.palette),
+                    if (status.isExpired) const _ExpiredBadge(),
                   ],
                 ),
               ],
@@ -212,6 +219,21 @@ class QuestListRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 만료 표시 — 완료와 구분해 "왜 누를 수 없는지"를 알린다.
+class _ExpiredBadge extends StatelessWidget {
+  const _ExpiredBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return LqRewardBadge(
+      label: '만료',
+      background: LqColors.lockedTile,
+      foreground: LqColors.textMuted,
+      border: LqColors.borderMuted,
     );
   }
 }
