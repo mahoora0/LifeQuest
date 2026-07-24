@@ -1,7 +1,10 @@
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
 *.iml
+.fvm/
 
 # OS
 .DS_Store

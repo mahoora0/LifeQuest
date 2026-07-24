@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# 프로젝트 전용 공동 디버그 키만 예외로 추적한다.
+# 릴리스/업로드 키는 절대 이 경로에 두거나 커밋하지 않는다.
+!app/debug.keystore

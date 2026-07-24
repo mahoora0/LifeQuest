@@ -47,7 +47,9 @@ class LqCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: effectiveBackground,
         borderRadius: radius,
-        border: locked ? null : Border.all(color: borderColor, width: LqShape.borderWidth),
+        border: locked
+            ? null
+            : Border.all(color: borderColor, width: LqShape.borderWidth),
         boxShadow: (shadow && !locked) ? LqShape.cardShadow : null,
       ),
       child: child,

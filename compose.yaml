@@ -3,10 +3,13 @@ services:
     image: mysql:8.4
     container_name: lifequest-mysql
     restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-lifequest}
-      MYSQL_USER: ${MYSQL_USER:-lifequest}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lifequest-local}
+      MYSQL_USER: ${MYSQL_USER:-${DB_USERNAME:-lifequest}}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-${DB_PASSWORD:-lifequest-local}}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lifequest-root-local}
       TZ: Asia/Seoul
     ports:

@@ -260,7 +260,9 @@ class _AchievementRow extends StatelessWidget {
               children: [
                 Text(
                   // 비밀 업적의 마스킹 값은 서버가 준 그대로 표시한다.
-                  hidden && achievement.name.isEmpty ? '비밀 업적' : achievement.name,
+                  hidden && achievement.name.isEmpty
+                      ? '비밀 업적'
+                      : achievement.name,
                   style: LqText.cardTitle.copyWith(
                     color: hidden ? LqColors.textMuted : LqColors.textPrimary,
                   ),
@@ -299,8 +301,7 @@ class _AchievementRow extends StatelessWidget {
                     ],
                   ),
                 ],
-                if (!achievement.achieved &&
-                    achievement.expReward != null) ...[
+                if (!achievement.achieved && achievement.expReward != null) ...[
                   const SizedBox(height: 6),
                   LqRewardBadge.exp(achievement.expReward!),
                 ],
