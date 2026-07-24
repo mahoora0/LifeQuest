@@ -2,15 +2,18 @@
 
 Spring Boot API server for LifeQuest.
 
-Run from this directory:
+Run from this directory on Windows:
 
-```bash
-./gradlew bootRun
+```powershell
+.\gradlew.bat bootRun
 ```
 
-The application reads database and JWT settings from the root `.env` values.
-Spring Boot does not load `.env` automatically, so export them in your shell or
-use the documented defaults for local development.
+The application automatically imports the repository root `.env` through Spring
+Boot Config Data. It works when launched from either `backend/` or the repository
+root. OS environment variables and command-line arguments take precedence.
+
+See [`../docs/08-local-run-guide.md`](../docs/08-local-run-guide.md) for Docker
+and locally installed MySQL setup, environment variables, and troubleshooting.
 
 Public smoke endpoints:
 

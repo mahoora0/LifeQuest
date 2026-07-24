@@ -11,6 +11,9 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+client_secret_*.json
+client_*.plist
+OAuth 클라이언트*.txt
 
 # Runtime
 *.log

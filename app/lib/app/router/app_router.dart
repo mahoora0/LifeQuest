@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/app/router/navigation_shell.dart';
+import 'package:life_quest/features/auth/application/auth_controller.dart';
+import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
+import 'package:life_quest/features/auth/presentation/login_screen.dart';
+import 'package:life_quest/features/auth/presentation/signup_screen.dart';
 import 'package:life_quest/features/achievement/presentation/achievement_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
+import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/map_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_detail_screen.dart';
@@ -20,10 +25,41 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 /// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · LifeDex · 마이.
 /// 친구·랭킹(S-18~22)은 Phase 2로 미루고 라우트를 등록하지 않는다.
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final auth = ref.watch(authControllerProvider);
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/splash',
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+      final session = auth.value;
+      if (auth.isLoading && session == null) {
+        return location == '/splash' ? null : '/splash';
+      }
+
+      final isAuthenticated = session == AuthSession.authenticated;
+      final isAuthRoute = location == '/login' || location == '/signup';
+      if (!isAuthenticated) {
+        return isAuthRoute ? null : '/login';
+      }
+      if (isAuthRoute || location == '/splash') {
+        return '/';
+      }
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const AuthSplashScreen(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             NavigationShell(navigationShell: navigationShell),
@@ -119,24 +155,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile/edit',
-        builder: (context, state) => const FeaturePlaceholderScreen(
-          title: '프로필 수정',
-          message: '프로필 수정은 다음 단계에서 열려요',
-        ),
+        builder: (context, state) => const ProfileEditScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',
         builder: (context, state) => const FeaturePlaceholderScreen(
           title: '알림 설정',
           message: '알림 설정은 다음 단계에서 열려요',
-        ),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const FeaturePlaceholderScreen(
-          title: '로그인',
-          message: '로그아웃되었어요',
-          hint: '로그인 화면은 회원 담당 범위에서 연결됩니다.',
         ),
       ),
     ],

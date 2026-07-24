@@ -14,6 +14,21 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>life_quest</string>
+	<key>GIDClientID</key>
+	<string>739740573415-9rh6h193ctlkb8p0rn273v6ki6cosign.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>739740573415-l3t2t2qes9nbe0sdf95egn84k0f6tklp.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.739740573415-9rh6h193ctlkb8p0rn273v6ki6cosign</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

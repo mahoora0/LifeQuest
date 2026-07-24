@@ -24,6 +24,14 @@ class TokenStorage {
     return _storage.write(key: _refreshTokenKey, value: token);
   }
 
+  Future<void> writeTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await writeAccessToken(accessToken);
+    await writeRefreshToken(refreshToken);
+  }
+
   Future<void> clear() {
     return _storage.deleteAll();
   }

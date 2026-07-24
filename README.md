@@ -20,62 +20,79 @@ placeholder이며 지도 패키지, API 키, 네이티브 지도 설정은 포�
 
 - Java 17
 - Flutter stable 3.38 이상
-- Docker Desktop 또는 Docker Engine + Compose
+- Docker Desktop/Engine + Compose 또는 로컬 MySQL 8.x
 
 Gradle은 `backend/gradlew`가 내려받으므로 별도 설치가 필요하지 않습니다.
 
 ## First setup
 
-```bash
-cp .env.example .env
+```powershell
+Copy-Item .env.example .env
 docker compose up -d
 ```
 
 MySQL 상태 확인:
 
-```bash
+```powershell
 docker compose ps
 ```
 
+PC 설치형 MySQL 사용법, `.env` 항목, Android 실행 방식과 문제 해결을 포함한
+전체 절차는 [`docs/08-local-run-guide.md`](docs/08-local-run-guide.md)를
+참고합니다.
+
 ## Backend
 
-기본 로컬 DB 값은 `.env.example`과 동일합니다. 다른 값을 사용할 때는 환경
-변수로 전달합니다.
+Spring Boot가 저장소 루트 `.env`를 자동으로 읽습니다. `backend` 디렉터리나
+저장소 루트에서 실행할 수 있으며, OS 환경 변수와 명령행 인자가 `.env`보다
+우선합니다.
 
-```bash
+```powershell
 cd backend
-./gradlew bootRun
+.\gradlew.bat bootRun
 ```
 
 확인:
 
-```bash
-curl http://localhost:8080/actuator/health
-curl http://localhost:8080/api/system/ping
+```powershell
+Invoke-RestMethod http://localhost:8080/actuator/health
+Invoke-RestMethod http://localhost:8080/api/system/ping
 ```
 
 테스트:
 
-```bash
+```powershell
 cd backend
-./gradlew test
+.\gradlew.bat test
 ```
 
 ## Flutter app
 
-```bash
+루트 `.env`의 `GOOGLE_CLIENT_ID`를 채운 뒤 저장소 루트에서 실행합니다.
+스크립트가 Flutter에 필요한 공개 설정만 `--dart-define`으로 전달합니다.
+
+```powershell
 cd app
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
+cd ..
+
+# Android 에뮬레이터 (기본값)
+.\run-app.ps1
+
+# USB 디버깅으로 연결한 Android 실기기
+.\run-app.ps1 -Target usb
 ```
 
-Android 에뮬레이터에서 로컬 백엔드에 접근할 때:
+Android 에뮬레이터는 모든 PC에서 호스트 주소가 `10.0.2.2`로 같으므로 IP
+설정이 필요 없습니다. USB 실기기는 스크립트가 `adb reverse`를 설정하므로
+마찬가지로 IP 입력이 필요 없습니다.
 
-```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
+Wi-Fi로 연결한 실기기만 개발 PC의 LAN IP가 필요합니다. `.env`에
+`FLUTTER_API_BASE_URL=http://192.168.x.x:8080/api`를 입력한 뒤 실행합니다.
+
+```powershell
+.\run-app.ps1 -Target lan
 ```
-
-실기기는 개발 머신의 LAN 주소를 사용해야 합니다.
 
 검증:
 
@@ -94,10 +111,17 @@ flutter test
 | `DB_USERNAME` | 애플리케이션 DB 사용자 |
 | `DB_PASSWORD` | 애플리케이션 DB 비밀번호 |
 | `JWT_SECRET` | HS256 JWT 서명 키, 최소 32자 |
+| `JWT_ACCESS_TOKEN_SECONDS` | 액세스 토큰 유효 시간(기본 900초) |
+| `JWT_REFRESH_TOKEN_SECONDS` | 리프레시 토큰 유효 시간(기본 14일) |
+| `GOOGLE_CLIENT_ID` | Google 웹 OAuth 클라이언트 ID(ID Token audience) |
+| `FLUTTER_API_BASE_URL` | Wi-Fi/LAN 실기기용 개발 PC API 주소(선택) |
 | `CORS_ALLOWED_ORIGINS` | 쉼표로 구분한 허용 origin |
-| `API_BASE_URL` | Flutter의 `--dart-define` API 주소 |
 
 실제 비밀번호, JWT 키, 향후 지도 API 키는 커밋하지 않습니다.
+
+`GOOGLE_CLIENT_ID` 하나를 백엔드 ID Token 검증과 Flutter Google 로그인에
+공통으로 사용합니다. 클라이언트 시크릿은 Flutter에 전달하지 않습니다.
+iOS 네이티브 OAuth 설정은 `docs/07-auth-setup.md`를 참고합니다.
 
 ## Development rules
 

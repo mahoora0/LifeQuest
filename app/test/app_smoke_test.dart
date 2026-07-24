@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/app/life_quest_app.dart';
+import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
@@ -20,6 +21,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          storedAuthSessionProvider.overrideWith(
+            (ref) async => AuthSession.authenticated,
+          ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
         ],
@@ -38,10 +42,32 @@ void main() {
     expect(find.text('친구'), findsNothing);
   });
 
+  testWidgets('로그아웃 상태에서는 로그인 화면을 표시한다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storedAuthSessionProvider.overrideWith(
+            (ref) async => AuthSession.unauthenticated,
+          ),
+        ],
+        child: const LifeQuestApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('다시 만난 모험가님!'), findsOneWidget);
+    expect(find.text('로그인'), findsOneWidget);
+    expect(find.text('Google로 계속하기'), findsOneWidget);
+    expect(find.text('회원가입'), findsOneWidget);
+  });
+
   testWidgets('배정된 퀘스트가 없으면 빈 상태를 보여준다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          storedAuthSessionProvider.overrideWith(
+            (ref) async => AuthSession.authenticated,
+          ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
         ],

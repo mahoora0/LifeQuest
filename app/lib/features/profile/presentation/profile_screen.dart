@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/core/config/app_config.dart';
-import 'package:life_quest/core/network/api_client.dart';
+import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
@@ -438,9 +438,7 @@ class _LogoutRow extends ConsumerWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () async {
-            await ref.read(tokenStorageProvider).clear();
-            if (!context.mounted) return;
-            context.go('/login');
+            await ref.read(authControllerProvider.notifier).logout();
           },
           child: SizedBox(
             height: LqSpacing.minTouchTarget,
