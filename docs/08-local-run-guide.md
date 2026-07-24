@@ -193,10 +193,17 @@ Google Cloud 프로젝트에는 다음 클라이언트가 필요하다.
 - 웹 애플리케이션: 루트 `.env`의 `GOOGLE_CLIENT_ID`
 - Android:
   - 패키지 이름 `com.lifequest.life_quest`
-  - 현재 PC의 debug keystore SHA-1
+  - 프로젝트 공동 debug keystore SHA-1
 - iOS: iOS 네이티브 설정용이며 Windows Android 실행에는 사용하지 않음
 
-현재 PC의 Android SHA-1 확인:
+공동 `debug.keystore`는 Git에 포함되어 다음 위치로 자동 내려온다.
+
+```text
+app/android/app/debug.keystore
+```
+
+따라서 새 개발자가 별도로 키를 만들거나 전달받을 필요가 없다. 이 공개된 개발용
+키는 릴리스 서명이나 다른 프로젝트에 재사용하지 않는다. Android SHA-1 확인:
 
 ```powershell
 cd app\android
@@ -204,8 +211,8 @@ cd app\android
 ```
 
 `Variant: debug`의 SHA1을 Google Cloud Console의 Android 클라이언트에
-등록한다. 새 PC는 일반적으로 다른 debug keystore를 만들기 때문에 새 PC의
-SHA-1도 별도로 등록해야 한다.
+등록한다. 모든 개발자가 같은 키를 사용하므로 새 PC의 SHA-1을 별도로 등록할
+필요가 없다.
 
 Google OAuth 설정 변경은 반영까지 시간이 걸릴 수 있다. `.env`의
 `GOOGLE_CLIENT_ID`를 변경했다면 다음을 모두 수행한다.
@@ -250,6 +257,19 @@ flutter build apk --debug
 ```text
 app/build/app/outputs/flutter-apk/app-debug.apk
 ```
+
+Android release App Bundle을 만들려면 디버그 키와 별개의 업로드 키가 필요하다.
+`app/android/key.properties.example`을 `key.properties`로 복사하고, 저장소
+밖에 보관한 업로드 키 경로와 비밀번호를 입력한다.
+
+```powershell
+Copy-Item app\android\key.properties.example app\android\key.properties
+cd app
+flutter build appbundle --release
+```
+
+`key.properties` 또는 업로드 키가 없으면 release 빌드는 의도적으로 실패한다.
+업로드 키 생성과 Google Play 등록 절차는 `07-auth-setup.md`를 참고한다.
 
 ## 8. 자주 발생하는 오류
 

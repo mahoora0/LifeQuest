@@ -1,0 +1,13 @@
+# 이 파일을 key.properties로 복사하고 실제 값을 입력하세요.
+# key.properties와 키스토어 파일은 Git에 커밋하지 않습니다.
+#
+# macOS 예시:
+# storeFile=/Users/USER/.android/lifequest-upload.jks
+#
+# Windows에서는 역슬래시 대신 슬래시를 사용할 수 있습니다.
+# storeFile=C:/Users/USER/.android/lifequest-upload.jks
+
+storeFile=/absolute/path/to/lifequest-upload.jks
+storePassword=CHANGE_ME
+keyAlias=lifequest-upload
+keyPassword=CHANGE_ME
