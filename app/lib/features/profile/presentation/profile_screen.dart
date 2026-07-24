@@ -9,10 +9,12 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
+import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
+import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 /// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
 /// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
@@ -424,30 +426,155 @@ class _MenuRow extends StatelessWidget {
   }
 }
 
-class _LogoutRow extends ConsumerWidget {
+class _LogoutRow extends ConsumerStatefulWidget {
   const _LogoutRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LogoutRow> createState() => _LogoutRowState();
+}
+
+class _LogoutRowState extends ConsumerState<_LogoutRow> {
+  bool _busy = false;
+
+  Future<void> _logout() async {
+    if (_busy) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: LqColors.ink.withValues(alpha: 0.45),
+      builder: (dialogContext) => _LogoutDialog(
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(authControllerProvider.notifier).logout();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showLqError(context, error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () async {
-            await ref.read(authControllerProvider.notifier).logout();
-          },
+          onTap: _busy ? null : _logout,
           child: SizedBox(
             height: LqSpacing.minTouchTarget,
             child: Center(
-              child: Text(
-                '로그아웃',
-                style: LqText.bodySm.copyWith(color: LqColors.textMuted),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _busy
+                    ? Row(
+                        key: const ValueKey('logout-busy'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: LqColors.textMuted,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '로그아웃 중…',
+                            style: LqText.bodySm.copyWith(
+                              color: LqColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        '로그아웃',
+                        key: const ValueKey('logout-idle'),
+                        style: LqText.bodySm.copyWith(
+                          color: LqColors.textMuted,
+                        ),
+                      ),
               ),
             ),
           ),
         ),
         Text('v${AppConfig.appVersion}', style: LqText.caption),
       ],
+    );
+  }
+}
+
+class _LogoutDialog extends StatelessWidget {
+  const _LogoutDialog({required this.onCancel, required this.onConfirm});
+
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: LqCard(
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: LqColors.warnBg,
+                borderRadius: LqShape.tileRadius,
+                border: LqShape.inkBorder,
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: LqColors.accent,
+                size: 27,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text('로그아웃할까요?', style: LqText.sectionTitle),
+            const SizedBox(height: 8),
+            Text(
+              '현재 기기에서만 로그아웃돼요.\n퀘스트와 성장 기록은 그대로 보관됩니다.',
+              textAlign: TextAlign.center,
+              style: LqText.bodySm,
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: LqButton(
+                    label: '취소',
+                    height: 46,
+                    background: LqColors.card,
+                    foreground: LqColors.textPrimary,
+                    onPressed: onCancel,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: LqButton(
+                    label: '로그아웃',
+                    height: 46,
+                    background: LqColors.accent,
+                    onPressed: onConfirm,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

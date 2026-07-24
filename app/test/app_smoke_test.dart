@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
+import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -80,6 +82,36 @@ void main() {
     expect(find.text('오늘 배정된 퀘스트가 없어요'), findsOneWidget);
     expect(find.text('안녕하세요, 테스터님!\n오늘도 멋진 하루가 될 거예요!'), findsOneWidget);
     expect(find.text('Lv. 3'), findsOneWidget);
+  });
+
+  testWidgets('로그아웃 전에 기록 보존 안내와 확인 선택지를 보여준다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const MaterialApp(home: ProfileScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('로그아웃'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('로그아웃'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('로그아웃할까요?'), findsOneWidget);
+    expect(
+      find.text('현재 기기에서만 로그아웃돼요.\n퀘스트와 성장 기록은 그대로 보관됩니다.'),
+      findsOneWidget,
+    );
+    expect(find.text('취소'), findsOneWidget);
+    expect(find.text('로그아웃'), findsNWidgets(2));
+
+    await tester.tap(find.text('취소'));
+    await tester.pumpAndSettle();
+    expect(find.text('로그아웃할까요?'), findsNothing);
   });
 }
 
