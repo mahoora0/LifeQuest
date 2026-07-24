@@ -50,15 +50,17 @@ cd backend
 저장소 루트의 실행 스크립트가 `.env`의 `GOOGLE_CLIENT_ID`를 Flutter의
 `GOOGLE_SERVER_CLIENT_ID`로 전달한다.
 
-```powershell
-# Android 에뮬레이터
-.\run-app.ps1
+```bash
+# 연결된 모바일 기기가 하나일 때
+dart run tool/run_app.dart
 
-# USB 연결 Android 실기기
-.\run-app.ps1 -Target usb
+# 기기 종류 지정
+dart run tool/run_app.dart --target emulator
+dart run tool/run_app.dart --target usb
+dart run tool/run_app.dart --target ios
 
-# Wi-Fi/LAN 연결 Android 실기기
-.\run-app.ps1 -Target lan
+# Wi-Fi/LAN 연결 기기 또는 iOS 실기기
+dart run tool/run_app.dart --lan
 ```
 
 전체 최초 설정과 실행 방식은 `08-local-run-guide.md`를 참고한다.
@@ -78,9 +80,14 @@ Git에서 프로젝트 전용 공동 디버그 키로 추적하므로, 개발자
 
 공동 키의 SHA-1은 다음 명령으로 확인한다.
 
-```powershell
-cd app\android
+```bash
+cd app/android
+
+# Windows
 .\gradlew.bat signingReport
+
+# macOS
+./gradlew signingReport
 ```
 
 `Variant: debug`의 SHA1을 Google Cloud Console의 Android OAuth 클라이언트에

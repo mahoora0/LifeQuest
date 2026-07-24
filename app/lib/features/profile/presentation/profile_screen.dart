@@ -181,7 +181,9 @@ class _ProfileHeader extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                level.value == null ? 'Lv. —' : 'Lv. ${level.requireValue.level}',
+                level.value == null
+                    ? 'Lv. —'
+                    : 'Lv. ${level.requireValue.level}',
                 style: LqText.levelNumber,
               ),
             ],
@@ -318,9 +320,7 @@ class _BadgeCard extends ConsumerWidget {
               for (var i = 0; i < 4; i++) ...[
                 if (i > 0) const SizedBox(width: 8),
                 Expanded(
-                  child: _BadgeSlot(
-                    item: i < items.length ? items[i] : null,
-                  ),
+                  child: _BadgeSlot(item: i < items.length ? items[i] : null),
                 ),
               ],
             ],
@@ -374,10 +374,7 @@ class _MenuCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
-          _MenuRow(
-            label: '프로필 수정',
-            onTap: () => context.push('/profile/edit'),
-          ),
+          _MenuRow(label: '프로필 수정', onTap: () => context.push('/profile/edit')),
           const LqDashedDivider(),
           _MenuRow(
             label: '칭호 선택',
@@ -413,8 +410,7 @@ class _MenuRow extends StatelessWidget {
           children: [
             Text(label, style: LqText.bodySm),
             const Spacer(),
-            if (trailing != null)
-              Text(trailing!, style: LqText.caption),
+            if (trailing != null) Text(trailing!, style: LqText.caption),
             const SizedBox(width: 4),
             const Icon(
               Icons.chevron_right,

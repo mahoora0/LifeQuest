@@ -42,8 +42,7 @@ class _LqPulseRingState extends State<LqPulseRing>
         animation: _controller,
         builder: (context, _) {
           final t = _controller.value;
-          final size =
-              widget.minSize + (widget.maxSize - widget.minSize) * t;
+          final size = widget.minSize + (widget.maxSize - widget.minSize) * t;
           return Container(
             width: size,
             height: size,

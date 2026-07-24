@@ -66,8 +66,16 @@ class LqTagPalette {
 
   static const habit = LqTagPalette('습관', Color(0xFFE9E9D4), Color(0xFF9BA76F));
   static const daily = LqTagPalette('일간', Color(0xFFF3E4C8), Color(0xFFC9A94E));
-  static const weekly = LqTagPalette('주간', Color(0xFFE4E9EC), Color(0xFF8FA3AE));
-  static const location = LqTagPalette('위치', LqColors.locBg, LqColors.locBorder);
+  static const weekly = LqTagPalette(
+    '주간',
+    Color(0xFFE4E9EC),
+    Color(0xFF8FA3AE),
+  );
+  static const location = LqTagPalette(
+    '위치',
+    LqColors.locBg,
+    LqColors.locBorder,
+  );
   static const selfReport = LqTagPalette(
     '직접 완료',
     Color(0xFFE9E9D4),

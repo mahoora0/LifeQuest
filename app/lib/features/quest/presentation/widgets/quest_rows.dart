@@ -212,11 +212,7 @@ class QuestListRow extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            size: 22,
-            color: LqColors.textMuted,
-          ),
+          const Icon(Icons.chevron_right, size: 22, color: LqColors.textMuted),
         ],
       ),
     );

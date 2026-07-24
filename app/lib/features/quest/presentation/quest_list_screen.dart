@@ -56,10 +56,7 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
               title: '퀘스트 목록',
               showBack: false,
               // 검색은 이번 범위에서 시각 요소만 둔다.
-              trailing: LqIconButton(
-                icon: Icons.search,
-                semanticLabel: '검색',
-              ),
+              trailing: LqIconButton(icon: Icons.search, semanticLabel: '검색'),
             ),
             LqChipRow(
               labels: [for (final filter in _QuestFilter.values) filter.label],

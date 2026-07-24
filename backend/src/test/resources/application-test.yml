@@ -9,3 +9,11 @@ spring:
       ddl-auto: none
   flyway:
     enabled: true
+
+app:
+  jwt:
+    secret: test-jwt-secret-that-is-at-least-32-bytes
+    access-token-seconds: 900
+    refresh-token-seconds: 1209600
+  google:
+    client-id: ""
