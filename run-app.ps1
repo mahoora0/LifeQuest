@@ -72,7 +72,8 @@ if ($Target -eq 'usb') {
         $sdkRoots = @(
             $env:ANDROID_HOME,
             $env:ANDROID_SDK_ROOT,
-            (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
+            (Join-Path $env:LOCALAPPDATA 'Android\Sdk'),
+            'C:\workspace\utils\Android'
         ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
         foreach ($sdkRoot in $sdkRoots) {
