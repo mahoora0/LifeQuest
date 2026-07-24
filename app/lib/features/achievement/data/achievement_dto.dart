@@ -38,9 +38,8 @@ class Achievement {
       requiredValue != null &&
       requiredValue! > 0;
 
-  double get progressRatio => hasProgress
-      ? (currentValue! / requiredValue!).clamp(0, 1).toDouble()
-      : 0;
+  double get progressRatio =>
+      hasProgress ? (currentValue! / requiredValue!).clamp(0, 1).toDouble() : 0;
 
   factory Achievement.fromJson(Map<String, dynamic> json) => Achievement(
     id: asInt(pick(json, ['id', 'achievementId'])) ?? 0,

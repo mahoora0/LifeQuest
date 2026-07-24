@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "LifeQuestApiApplication",
+      "request": "launch",
+      "mainClass": "com.lifequest.LifeQuestApiApplication",
+      "projectName": "lifequest-api-backend"
+    },
+    {
+      "name": "LifeQuest Flutter",
+      "type": "dart",
+      "request": "launch",
+      "program": "tool/run_app.dart",
+      "cwd": "${workspaceFolder}",
+      "console": "terminal",
+      "args": [
+        "--device",
+        "${command:flutter.getSelectedDeviceId}"
+      ]
+    }
+  ]
+}

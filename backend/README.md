@@ -2,10 +2,14 @@
 
 Spring Boot API server for LifeQuest.
 
-Run from this directory on Windows:
+Run from this directory:
 
-```powershell
+```bash
+# Windows
 .\gradlew.bat bootRun
+
+# macOS
+./gradlew bootRun
 ```
 
 The application automatically imports the repository root `.env` through Spring

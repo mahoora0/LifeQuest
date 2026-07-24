@@ -59,9 +59,7 @@ class LqRewardBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: LqShape.pillRadius,
-        border: border == null
-            ? null
-            : Border.all(color: border!, width: 1.6),
+        border: border == null ? null : Border.all(color: border!, width: 1.6),
       ),
       child: Text(
         label,

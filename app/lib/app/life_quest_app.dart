@@ -33,9 +33,10 @@ ThemeData _buildTheme() {
   );
 
   return base.copyWith(
-    textTheme: GoogleFonts.gaeguTextTheme(
-      base.textTheme,
-    ).apply(bodyColor: LqColors.textPrimary, displayColor: LqColors.textPrimary),
+    textTheme: GoogleFonts.gaeguTextTheme(base.textTheme).apply(
+      bodyColor: LqColors.textPrimary,
+      displayColor: LqColors.textPrimary,
+    ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
   );

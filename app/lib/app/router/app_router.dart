@@ -52,10 +52,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         builder: (context, state) => const AuthSplashScreen(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
@@ -66,7 +63,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(

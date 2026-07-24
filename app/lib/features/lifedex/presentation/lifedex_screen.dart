@@ -52,8 +52,7 @@ class _LifedexScreenState extends ConsumerState<LifedexScreen> {
           data: (value) => _Body(
             overview: value,
             selectedCategoryId: _selectedCategoryId,
-            onSelectCategory: (id) =>
-                setState(() => _selectedCategoryId = id),
+            onSelectCategory: (id) => setState(() => _selectedCategoryId = id),
           ),
         ),
       ),
@@ -120,9 +119,8 @@ class _Body extends ConsumerWidget {
           padding: EdgeInsets.zero,
           labels: ['전체', for (final category in categories) category.name],
           selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-          onSelected: (index) => onSelectCategory(
-            index == 0 ? null : categories[index - 1].id,
-          ),
+          onSelected: (index) =>
+              onSelectCategory(index == 0 ? null : categories[index - 1].id),
         ),
         const SizedBox(height: 4),
         if (selectedCategoryId == null)
@@ -141,10 +139,7 @@ class _Body extends ConsumerWidget {
               const LqImage(LqAssets.charMap, width: 52),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  '새 경험을 수집하면 도감이 하나씩 채워져요!',
-                  style: LqText.bodySm,
-                ),
+                child: Text('새 경험을 수집하면 도감이 하나씩 채워져요!', style: LqText.bodySm),
               ),
             ],
           ),
@@ -187,10 +182,7 @@ class _CollectionRate extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          LqProgressBar(
-            value: overview.ownedCount,
-            max: overview.totalCount,
-          ),
+          LqProgressBar(value: overview.ownedCount, max: overview.totalCount),
         ],
       ),
     );
@@ -320,9 +312,7 @@ class _DexTile extends StatelessWidget {
             child: locked
                 ? Text(
                     '?',
-                    style: LqText.cardTitle.copyWith(
-                      color: LqColors.textMuted,
-                    ),
+                    style: LqText.cardTitle.copyWith(color: LqColors.textMuted),
                   )
                 : null,
           ),
