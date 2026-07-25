@@ -15,6 +15,10 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 server:
   error:
@@ -36,3 +40,6 @@ app:
     refresh-token-seconds: ${JWT_REFRESH_TOKEN_SECONDS:1209600}
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
+  upload:
+    directory: ${UPLOAD_DIRECTORY:uploads}
+    max-profile-image-bytes: 5242880

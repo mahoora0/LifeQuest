@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
+import 'package:life_quest/shared/data/json_reader.dart';
 
 class UserRepository {
   const UserRepository(this._dio);
@@ -12,13 +13,40 @@ class UserRepository {
     return UserProfile.fromJson(response.data);
   });
 
-  Future<UserProfile> updateProfile({
-    required String nickname,
-    required String profileImageUrl,
-  }) => _guard(() async {
+  Future<UserProfile> updateProfile({required String nickname}) =>
+      _guard(() async {
+        final response = await _dio.patch<dynamic>(
+          '/users/me',
+          data: {'nickname': nickname},
+        );
+        return UserProfile.fromJson(response.data);
+      });
+
+  Future<UserProfile> uploadProfileImage(String path) => _guard(() async {
+    final fileName = path.split(RegExp(r'[/\\]')).last;
+    final response = await _dio.post<dynamic>(
+      '/users/me/profile-image',
+      data: FormData.fromMap({
+        'file': await MultipartFile.fromFile(path, filename: fileName),
+      }),
+    );
+    return UserProfile.fromJson(response.data);
+  });
+
+  Future<UserProfile> deleteProfileImage() => _guard(() async {
+    final response = await _dio.delete<dynamic>('/users/me/profile-image');
+    return UserProfile.fromJson(response.data);
+  });
+
+  Future<List<AvatarCharacter>> fetchCharacters() => _guard(() async {
+    final response = await _dio.get<dynamic>('/users/me/characters');
+    return asMapList(response.data).map(AvatarCharacter.fromJson).toList();
+  });
+
+  Future<UserProfile> selectCharacter(int characterId) => _guard(() async {
     final response = await _dio.patch<dynamic>(
-      '/users/me',
-      data: {'nickname': nickname, 'profileImageUrl': profileImageUrl},
+      '/users/me/character',
+      data: {'characterId': characterId},
     );
     return UserProfile.fromJson(response.data);
   });
@@ -36,6 +64,15 @@ class UserRepository {
   /// 대표 칭호 설정. 해제는 `titleId = null`.
   Future<void> updateRepresentativeTitle(int? titleId) => _guard(() async {
     await _dio.patch<dynamic>('/users/me/title', data: {'titleId': titleId});
+  });
+
+  Future<BadgeCollection> fetchBadges() => _guard(() async {
+    final response = await _dio.get<dynamic>('/users/me/badges');
+    return BadgeCollection.fromJson(response.data);
+  });
+
+  Future<void> updateRepresentativeBadge(int? badgeId) => _guard(() async {
+    await _dio.patch<dynamic>('/users/me/badge', data: {'badgeId': badgeId});
   });
 
   Future<RewardHistory> fetchRewards() => _guard(() async {

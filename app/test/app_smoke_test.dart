@@ -9,6 +9,7 @@ import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
+import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -96,7 +97,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('로그아웃'));
+    await tester.scrollUntilVisible(
+      find.text('로그아웃'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('로그아웃'));
     await tester.pumpAndSettle();
@@ -113,6 +118,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('로그아웃할까요?'), findsNothing);
   });
+
+  testWidgets('프로필 수정은 URL 입력 대신 사진 선택과 캐릭터 목록을 보여준다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const MaterialApp(home: ProfileEditScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('프로필 이미지 URL'), findsNothing);
+    expect(find.text('사진 선택'), findsOneWidget);
+    expect(find.text('내 캐릭터'), findsOneWidget);
+    expect(find.text('루키'), findsOneWidget);
+    expect(find.text('모각'), findsOneWidget);
+  });
 }
 
 class _FakeQuestRepository extends QuestRepository {
@@ -127,8 +150,16 @@ class _FakeUserRepository extends UserRepository {
   _FakeUserRepository() : super(Dio());
 
   @override
-  Future<UserProfile> fetchMe() async =>
-      const UserProfile(id: 1, nickname: '테스터');
+  Future<UserProfile> fetchMe() async => const UserProfile(
+    id: 1,
+    nickname: '테스터',
+    selectedCharacter: AvatarCharacter(
+      id: 1,
+      code: 'ROOKIE',
+      name: '루키',
+      assetKey: 'rookie.png',
+    ),
+  );
 
   @override
   Future<LevelStatus> fetchLevel() async => const LevelStatus(
@@ -137,4 +168,18 @@ class _FakeUserRepository extends UserRepository {
     currentLevelExp: 60,
     nextLevelRequiredExp: 200,
   );
+
+  @override
+  Future<List<AvatarCharacter>> fetchCharacters() async => const [
+    AvatarCharacter(id: 1, code: 'ROOKIE', name: '루키', assetKey: 'rookie.png'),
+    AvatarCharacter(id: 2, code: 'MOGAK', name: '모각', assetKey: 'mogak.png'),
+  ];
+
+  @override
+  Future<BadgeCollection> fetchBadges() async =>
+      const BadgeCollection(badges: [], representativeBadgeId: null);
+
+  @override
+  Future<RewardHistory> fetchRewards() async =>
+      const RewardHistory(titles: [], profileItems: []);
 }

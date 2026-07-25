@@ -19,4 +19,15 @@ class AppConfig {
 
   /// 마이페이지 하단 표기용. `pubspec.yaml`의 version과 함께 올린다.
   static const appVersion = '0.1.0';
+
+  static String resolveMediaUrl(String? value) {
+    if (value == null || value.isEmpty) return '';
+    final uri = Uri.tryParse(value);
+    if (uri != null && uri.hasScheme) return value;
+
+    final api = Uri.parse(apiBaseUrl);
+    return api
+        .replace(path: value.startsWith('/') ? value : '/$value')
+        .toString();
+  }
 }

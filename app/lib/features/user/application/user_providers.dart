@@ -20,6 +20,12 @@ final rewardHistoryProvider = FutureProvider<RewardHistory>((ref) {
   return ref.watch(userRepositoryProvider).fetchRewards();
 });
 
+final characterCollectionProvider = FutureProvider<List<AvatarCharacter>>((
+  ref,
+) {
+  return ref.watch(userRepositoryProvider).fetchCharacters();
+});
+
 /// 보유 칭호 + 대표 칭호 선택.
 final titleCollectionProvider =
     AsyncNotifierProvider<TitleCollectionNotifier, TitleCollection>(
@@ -47,6 +53,35 @@ class TitleCollectionNotifier extends AsyncNotifier<TitleCollection> {
       ref.invalidate(myProfileProvider);
     } catch (error, stackTrace) {
       // 실패 시 서버 상태로 되돌린다.
+      state = AsyncData(current);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+}
+
+final badgeCollectionProvider =
+    AsyncNotifierProvider<BadgeCollectionNotifier, BadgeCollection>(
+      BadgeCollectionNotifier.new,
+    );
+
+class BadgeCollectionNotifier extends AsyncNotifier<BadgeCollection> {
+  @override
+  Future<BadgeCollection> build() {
+    return ref.watch(userRepositoryProvider).fetchBadges();
+  }
+
+  Future<void> select(int badgeId) async {
+    final current = state.value;
+    if (current == null) return;
+
+    final next = current.representativeBadgeId == badgeId ? null : badgeId;
+    state = AsyncData(
+      BadgeCollection(badges: current.badges, representativeBadgeId: next),
+    );
+    try {
+      await ref.read(userRepositoryProvider).updateRepresentativeBadge(next);
+      ref.invalidate(myProfileProvider);
+    } catch (error, stackTrace) {
       state = AsyncData(current);
       Error.throwWithStackTrace(error, stackTrace);
     }

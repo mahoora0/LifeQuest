@@ -8,7 +8,9 @@ public record UserProfileResponse(
         String nickname,
         String profileImageUrl,
         String role,
-        Object representativeTitle) {
+        TitleResponse representativeTitle,
+        ProfileItemResponse representativeBadge,
+        CharacterResponse selectedCharacter) {
 
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -17,6 +19,14 @@ public record UserProfileResponse(
                 user.getNickname(),
                 user.getProfileImageUrl(),
                 user.getRole().name(),
-                null);
+                user.getRepresentativeTitle() == null
+                        ? null
+                        : TitleResponse.from(user.getRepresentativeTitle()),
+                user.getRepresentativeBadge() == null
+                        ? null
+                        : ProfileItemResponse.from(user.getRepresentativeBadge()),
+                user.getSelectedCharacter() == null
+                        ? null
+                        : CharacterResponse.from(user.getSelectedCharacter()));
     }
 }

@@ -7,10 +7,16 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import com.lifequest.profile.AvatarCharacter;
+import com.lifequest.profile.ProfileItem;
+import com.lifequest.profile.Title;
 
 @Entity
 @Table(name = "users")
@@ -41,6 +47,18 @@ public class User {
 
     @Column(nullable = false)
     private int level = 1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "selected_character_id")
+    private AvatarCharacter selectedCharacter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "representative_title_id")
+    private Title representativeTitle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "representative_badge_id")
+    private ProfileItem representativeBadge;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -83,6 +101,27 @@ public class User {
         this.profileImageUrl = profileImageUrl;
     }
 
+    public void updateProfileImage(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void selectCharacter(AvatarCharacter character) {
+        this.selectedCharacter = character;
+    }
+
+    public void selectRepresentativeTitle(Title title) {
+        this.representativeTitle = title;
+    }
+
+    public void selectRepresentativeBadge(ProfileItem badge) {
+        this.representativeBadge = badge;
+    }
+
+    public void addExp(int amount, int newLevel) {
+        this.totalExp += amount;
+        this.level = newLevel;
+    }
+
     public Long getId() {
         return id;
     }
@@ -113,6 +152,18 @@ public class User {
 
     public int getLevel() {
         return level;
+    }
+
+    public AvatarCharacter getSelectedCharacter() {
+        return selectedCharacter;
+    }
+
+    public Title getRepresentativeTitle() {
+        return representativeTitle;
+    }
+
+    public ProfileItem getRepresentativeBadge() {
+        return representativeBadge;
     }
 
     public Instant getCreatedAt() {

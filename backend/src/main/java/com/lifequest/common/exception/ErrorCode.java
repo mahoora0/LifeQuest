@@ -16,6 +16,14 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 가입된 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "DUPLICATE_NICKNAME", "이미 사용 중인 닉네임입니다."),
+    INVALID_PROFILE_IMAGE(
+            HttpStatus.BAD_REQUEST,
+            "INVALID_PROFILE_IMAGE",
+            "5MB 이하의 JPG, PNG 또는 WebP 이미지를 선택해 주세요."),
+    PROFILE_IMAGE_UPLOAD_FAILED(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "PROFILE_IMAGE_UPLOAD_FAILED",
+            "프로필 이미지를 저장하지 못했습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "대상을 찾을 수 없습니다."),
     INTERNAL_SERVER_ERROR(
             HttpStatus.INTERNAL_SERVER_ERROR,
