@@ -20,3 +20,4 @@ OAuth 클라이언트*.txt
 
 # Runtime
 *.log
+uploads/

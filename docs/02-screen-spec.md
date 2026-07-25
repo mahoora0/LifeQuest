@@ -41,9 +41,10 @@ flowchart TD
 | S-01 | 로그인 | 이메일·비밀번호로 로그인 | 입력값 오류, 로그인 실패 | `POST /api/auth/login` |
 | S-02 | 회원가입 | 신규 계정 생성 | 중복 이메일·닉네임 오류 | `POST /api/auth/signup` |
 | S-03 | 마이페이지 | 내 정보·레벨 요약 확인 | 로딩, 조회 실패 | `GET /api/users/me`, `GET /api/users/me/level` |
-| S-04 | 프로필 수정 | 닉네임·프로필 이미지 변경 | 저장 성공·실패 | `PATCH /api/users/me` |
+| S-04 | 프로필 수정 | 닉네임·프로필 사진 업로드·게임 캐릭터 선택 | 저장 성공·실패 | `PATCH /api/users/me`, `POST /api/users/me/profile-image`, `PATCH /api/users/me/character` |
 | S-05 | 레벨·보상 화면 | EXP 진행률, 레벨업 보상 이력 | 로딩, 빈 이력 | `GET /api/users/me/level`, `GET /api/users/me/rewards` |
 | S-06 | 칭호 선택 | 보유 칭호 중 대표 칭호 설정 | 빈 보유 목록 | `GET /api/users/me/titles`, `PATCH /api/users/me/title` |
+| S-06-1 | 대표 배지 선택 | 보유 배지 중 대표 배지 설정 | 빈 보유 목록 | `GET /api/users/me/badges`, `PATCH /api/users/me/badge` |
 
 ### 2-2. 퀘스트·GPS 인증 (담당: 팀원 2)
 

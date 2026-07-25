@@ -17,3 +17,5 @@ app:
     refresh-token-seconds: 1209600
   google:
     client-id: ""
+  upload:
+    directory: build/test-uploads

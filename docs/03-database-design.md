@@ -191,9 +191,21 @@ erDiagram
 | profile_image_url | VARCHAR(500) | NULL | 프로필 이미지 URL |
 | total_exp | INT | NOT NULL, DEFAULT 0 | 누적 경험치 |
 | level | INT | NOT NULL, DEFAULT 1 | 현재 레벨 |
+| selected_character_id | BIGINT | NULL, FK → AVATAR_CHARACTERS.id | 선택한 게임 캐릭터 |
 | representative_title_id | BIGINT | NULL, FK → TITLES.id | 대표 칭호 |
+| representative_badge_id | BIGINT | NULL, FK → PROFILE_ITEMS.id | 대표 배지 |
 | created_at | DATETIME | NOT NULL | 가입 일시 |
 | updated_at | DATETIME | NOT NULL | 정보 수정 일시 |
+
+**AVATAR_CHARACTERS**
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 캐릭터 ID |
+| code | VARCHAR(50) | UNIQUE, NOT NULL | 앱 에셋과 연결하는 코드 |
+| name | VARCHAR(50) | NOT NULL | 표시 이름 |
+| asset_key | VARCHAR(100) | NOT NULL | Flutter 번들 이미지 키 |
+| is_active | BOOLEAN | NOT NULL | 선택 가능 여부 |
 
 **TITLES**
 
