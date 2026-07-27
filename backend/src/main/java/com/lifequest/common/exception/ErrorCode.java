@@ -25,6 +25,13 @@ public enum ErrorCode {
             "PROFILE_IMAGE_UPLOAD_FAILED",
             "프로필 이미지를 저장하지 못했습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "대상을 찾을 수 없습니다."),
+    QUEST_EXPIRED(HttpStatus.CONFLICT, "QUEST_EXPIRED", "만료된 퀘스트는 완료할 수 없습니다."),
+    OUT_OF_RADIUS(HttpStatus.UNPROCESSABLE_CONTENT, "OUT_OF_RADIUS", "퀘스트 인증 반경 밖입니다."),
+    LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "LOCATION_REQUIRED", "위치 좌표 또는 정확도가 필요합니다."),
+    LOCATION_ACCURACY_TOO_LOW(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "LOCATION_ACCURACY_TOO_LOW",
+            "위치 정확도가 허용 기준보다 낮습니다."),
     INTERNAL_SERVER_ERROR(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "INTERNAL_SERVER_ERROR",
