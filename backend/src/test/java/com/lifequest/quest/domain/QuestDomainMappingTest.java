@@ -2,6 +2,7 @@ package com.lifequest.quest.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -160,7 +161,7 @@ class QuestDomainMappingTest {
         assertEquals(0, new BigDecimal("18.30").compareTo(found.getDistanceM()));
         assertEquals(0, new BigDecimal("12.50").compareTo(found.getAccuracyM()));
         assertEquals(1,
-                questCompletionRepository.findByUserIdOrderByCompletedAtDesc(1L, PageRequest.of(0, 20))
+                questCompletionRepository.findByUserIdOrderByCompletedAtDescIdDesc(1L, PageRequest.of(0, 20))
                         .getTotalElements());
     }
 
@@ -183,6 +184,32 @@ class QuestDomainMappingTest {
                 questCompletionRepository.findByUserDailyQuestId(assignment.getId()).orElseThrow();
         assertEquals(completedAt, found.getCompletedAt(),
                 "completed_at은 DATETIME(6)이어야 하고 초 미만이 보존되어야 한다");
+    }
+
+    @Test
+    void questCompletion_같은_시각_완료건도_페이지_경계에서_중복되지_않는다() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime sameInstant = LocalDateTime.of(2026, 7, 27, 9, 0, 0, 0);
+        for (int i = 0; i < 2; i++) {
+            Quest quest = persistLocationQuest();
+            UserDailyQuest assignment = userDailyQuestRepository.save(
+                    new UserDailyQuest(5L, quest.getId(), today, today.atTime(23, 59, 59)));
+            em.flush();
+            questCompletionRepository.save(
+                    new QuestCompletion(assignment, null, null, null, null, sameInstant));
+        }
+        em.flush();
+        em.clear();
+
+        Long firstPage = questCompletionRepository
+                .findByUserIdOrderByCompletedAtDescIdDesc(5L, PageRequest.of(0, 1))
+                .getContent().get(0).getId();
+        Long secondPage = questCompletionRepository
+                .findByUserIdOrderByCompletedAtDescIdDesc(5L, PageRequest.of(1, 1))
+                .getContent().get(0).getId();
+
+        assertNotEquals(firstPage, secondPage,
+                "완료 시각이 같아도 페이지 경계가 안정적이어야 한다 — 보조 정렬키가 없으면 한 건이 두 번 보이고 다른 건이 빠진다");
     }
 
     @Test
