@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 /**
  * 퀘스트 원본 정의(QUESTS). 배정·완료의 기준 데이터이며 소유자는 팀원 2다.
  *
- * <p>LOCATION 타입만 {@code placeName}·{@code latitude}·{@code longitude}·{@code radiusM}를 사용한다.
+ * <p>LOCATION 타입만 {@code placeName}·{@code latitude}·{@code longitude}·{@code radiusM}을 사용한다.
  * 배정/완료/GPS 판정 로직은 서비스 계층(팀원 2 직접 구현)에서 다루며, 이 엔티티는 데이터 정의에 한정한다.
  *
  * <p><b>불변식:</b> LOCATION 퀘스트는 좌표와 양수 반경을 반드시 갖는다. 생성자가 이를 강제하고

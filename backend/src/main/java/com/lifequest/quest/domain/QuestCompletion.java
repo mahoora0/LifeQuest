@@ -40,8 +40,8 @@ public class QuestCompletion {
     private Long userDailyQuestId;
 
     /**
-     * USERS.id 참조(팀원1 소유, 조회 편의 비정규화). 크로스도메인 FK는 팀원1 테이블에 제약을 발생시켜
-     * 퀘스트 도메인 담당(팀원2)이 단독으로 결정할 사안이 아니다 — BIGINT 컬럼으로만 두고,
+     * USERS.id 참조(팀원 1 소유, 조회 편의 비정규화). 크로스도메인 FK는 팀원 1 테이블에 제약을 발생시켜
+     * 퀘스트 도메인 담당(팀원 2)이 단독으로 결정할 사안이 아니다 — BIGINT 컬럼으로만 두고,
      * 값 정합성은 생성자의 배정 건 파생으로 보장한다.
      */
     @Column(name = "user_id", nullable = false)
