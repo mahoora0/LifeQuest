@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     name: Backend
@@ -60,6 +64,3 @@ jobs:
 
       - name: Test
         run: flutter test
-
-      - name: Build Android debug APK
-        run: flutter build apk --debug
