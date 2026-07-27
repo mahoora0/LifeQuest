@@ -146,7 +146,7 @@ class QuestDomainMappingTest {
         em.flush();
 
         QuestCompletion completion = new QuestCompletion(
-                assignment.getId(), 1L, quest.getId(),
+                assignment,
                 new BigDecimal("37.5446"), new BigDecimal("127.0375"),
                 new BigDecimal("18.30"), new BigDecimal("12.50"), LocalDateTime.now());
         questCompletionRepository.save(completion);
@@ -156,6 +156,7 @@ class QuestDomainMappingTest {
         QuestCompletion found =
                 questCompletionRepository.findByUserDailyQuestId(assignment.getId()).orElseThrow();
         assertEquals(quest.getId(), found.getQuestId());
+        assertEquals(1L, found.getUserId(), "user_id는 배정 건에서 파생되어야 한다");
         assertEquals(0, new BigDecimal("18.30").compareTo(found.getDistanceM()));
         assertEquals(0, new BigDecimal("12.50").compareTo(found.getAccuracyM()));
         assertEquals(1,
@@ -173,8 +174,8 @@ class QuestDomainMappingTest {
 
         // 초 미만이 잘리면 완료 이력의 순서가 무너지고, expires_at은 반올림으로 만료 경계가 밀린다.
         LocalDateTime completedAt = LocalDateTime.of(2026, 7, 27, 12, 0, 0, 700_000_000);
-        questCompletionRepository.save(new QuestCompletion(
-                assignment.getId(), 3L, quest.getId(), null, null, null, null, completedAt));
+        questCompletionRepository.save(
+                new QuestCompletion(assignment, null, null, null, null, completedAt));
         em.flush();
         em.clear();
 
@@ -182,6 +183,18 @@ class QuestDomainMappingTest {
                 questCompletionRepository.findByUserDailyQuestId(assignment.getId()).orElseThrow();
         assertEquals(completedAt, found.getCompletedAt(),
                 "completed_at은 DATETIME(6)이어야 하고 초 미만이 보존되어야 한다");
+    }
+
+    @Test
+    void questCompletion_저장되지_않은_배정_건으로는_만들_수_없다() {
+        Quest quest = persistLocationQuest();
+        LocalDate today = LocalDate.now();
+        UserDailyQuest unsaved =
+                new UserDailyQuest(4L, quest.getId(), today, today.atTime(23, 59, 59));
+
+        assertThrows(IllegalArgumentException.class, () -> new QuestCompletion(
+                unsaved, null, null, null, null, LocalDateTime.now()),
+                "배정 ID가 없으면 완료 기록이 어느 배정에 붙는지 정할 수 없다");
     }
 
     @Test
@@ -195,8 +208,8 @@ class QuestDomainMappingTest {
                 new UserDailyQuest(2L, quest.getId(), today, today.atTime(23, 59, 59)));
         em.flush();
 
-        QuestCompletion completion = new QuestCompletion(
-                assignment.getId(), 2L, quest.getId(), null, null, null, null, LocalDateTime.now());
+        QuestCompletion completion =
+                new QuestCompletion(assignment, null, null, null, null, LocalDateTime.now());
         questCompletionRepository.save(completion);
         em.flush();
         em.clear();

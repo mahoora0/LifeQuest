@@ -30,7 +30,11 @@ public class UserDailyQuest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** USERS.id 참조(팀원1). 테이블 미존재로 FK 제약은 후속 마이그레이션에서 추가한다. */
+    /**
+     * USERS.id 참조(팀원1 소유). 크로스도메인 FK는 팀원1 테이블에 제약을 발생시켜 퀘스트 도메인
+     * 담당(팀원2)이 단독으로 결정할 사안이 아니다 — BIGINT 컬럼으로만 둔다. 배정 단위 정합성은
+     * {@code uk_user_daily_quests}가 잡는다.
+     */
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
