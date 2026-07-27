@@ -87,6 +87,7 @@ class AuthController extends AsyncNotifier<AuthSession> {
     }
     await ref.read(googleAuthServiceProvider).signOut();
     await storage.clear();
+    _resetAccountScopedCache();
     ref.read(sessionInvalidationProvider.notifier).reset();
     state = const AsyncData(AuthSession.unauthenticated);
   }
@@ -101,7 +102,16 @@ class AuthController extends AsyncNotifier<AuthSession> {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         );
+    _resetAccountScopedCache();
     ref.read(sessionInvalidationProvider.notifier).reset();
     state = const AsyncData(AuthSession.authenticated);
+  }
+
+  /// 프로필뿐 아니라 레벨·퀘스트·보상 등 API 기반 회원 캐시를 함께 교체한다.
+  ///
+  /// 모든 repository가 [dioProvider]를 의존하므로 토큰이 바뀌는 시점에 API
+  /// 세션을 새로 만들면 이전 회원의 데이터가 다음 로그인에 남지 않는다.
+  void _resetAccountScopedCache() {
+    ref.invalidate(dioProvider);
   }
 }

@@ -145,7 +145,9 @@ class DailyQuest {
     return DailyQuest(
       dailyQuestId:
           asInt(pick(json, ['dailyQuestId', 'userDailyQuestId', 'id'])) ?? 0,
-      status: DailyQuestStatus.parse(pick(json, ['status', 'assignmentStatus'])),
+      status: DailyQuestStatus.parse(
+        pick(json, ['status', 'assignmentStatus']),
+      ),
       quest: Quest.fromJson(merged, idOverride: questId),
       distanceM: asDouble(pick(json, ['distanceM', 'distance'])),
     );
@@ -181,9 +183,9 @@ class TodayQuests {
     final json = asMap(body);
     return TodayQuests(
       assignedDate: asString(json['assignedDate']),
-      quests: asMapList(pick(json, ['quests', 'content', 'items']))
-          .map(DailyQuest.fromJson)
-          .toList(),
+      quests: asMapList(
+        pick(json, ['quests', 'content', 'items']),
+      ).map(DailyQuest.fromJson).toList(),
     );
   }
 }
@@ -349,17 +351,16 @@ class QuestCompletionResult {
     );
   }
 
-  QuestCompletionResult withQuestTitle(String? title) =>
-      QuestCompletionResult(
-        completionId: completionId,
-        dailyQuestId: dailyQuestId,
-        questId: questId,
-        duplicated: duplicated,
-        growth: growth,
-        collection: collection,
-        questTitle: title ?? questTitle,
-        grade: grade,
-        completedAt: completedAt,
-        location: location,
-      );
+  QuestCompletionResult withQuestTitle(String? title) => QuestCompletionResult(
+    completionId: completionId,
+    dailyQuestId: dailyQuestId,
+    questId: questId,
+    duplicated: duplicated,
+    growth: growth,
+    collection: collection,
+    questTitle: title ?? questTitle,
+    grade: grade,
+    completedAt: completedAt,
+    location: location,
+  );
 }

@@ -32,4 +32,7 @@ abstract final class LqAssets {
 
   /// 가방 아이콘(LifeDex).
   static const iconBackpack = '${_dir}icon-backpack.png';
+
+  static String character(String code) =>
+      '${_dir}characters/${code.toLowerCase()}.png';
 }

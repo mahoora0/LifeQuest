@@ -199,7 +199,9 @@ class _LevelUpPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  reward.isTitle ? '칭호 · ${reward.name}' : '아이템 · ${reward.name}',
+                  reward.isTitle
+                      ? '칭호 · ${reward.name}'
+                      : '아이템 · ${reward.name}',
                   style: LqText.bodySm,
                 ),
               ),

@@ -514,9 +514,10 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     _VerifyStage.missingTarget => '이 퀘스트에는 인증 좌표가 없어요',
     _VerifyStage.failed => '위치를 받아오지 못했어요',
     _VerifyStage.locating => '내 위치를 찾는 중…',
-    _VerifyStage.lowAccuracy => (_position?.accuracy ?? 1) <= 0
-        ? '위치 정확도를 확인할 수 없어요 — 잠시 후 다시'
-        : '위치 정확도가 낮아요 — 잠시 후 다시',
+    _VerifyStage.lowAccuracy =>
+      (_position?.accuracy ?? 1) <= 0
+          ? '위치 정확도를 확인할 수 없어요 — 잠시 후 다시'
+          : '위치 정확도가 낮아요 — 잠시 후 다시',
     _VerifyStage.outOfRadius => '아직 반경 밖이에요 — 조금 더 가까이!',
     _VerifyStage.inRadius => '반경 안이에요! 인증할 수 있어요',
   };

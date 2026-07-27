@@ -1,7 +1,10 @@
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
 *.iml
+.fvm/
 
 # OS
 .DS_Store
@@ -17,3 +20,4 @@ OAuth 클라이언트*.txt
 
 # Runtime
 *.log
+uploads/

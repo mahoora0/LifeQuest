@@ -15,6 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.mock.web.MockMultipartFile;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -76,14 +79,111 @@ class AuthFlowIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "nickname":"수정모험가",
-                                  "profileImageUrl":"https://example.com/me.png"
+                                  "nickname":"수정모험가"
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.nickname").value("수정모험가"))
+                .andExpect(jsonPath("$.data.nickname").value("수정모험가"));
+
+        mockMvc.perform(get("/api/users/me/characters")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(4));
+
+        mockMvc.perform(patch("/api/users/me/character")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"characterId":2}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.selectedCharacter.name").value("모각"));
+
+        mockMvc.perform(get("/api/users/me/titles")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.titles[0].name").value("새내기 모험가"))
+                .andExpect(jsonPath("$.data.representativeTitleId").value(1));
+
+        mockMvc.perform(get("/api/users/me/badges")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.badges[0].name").value("새싹 배지"))
+                .andExpect(jsonPath("$.data.representativeBadgeId").value(1));
+
+        mockMvc.perform(patch("/api/users/me/title")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titleId":null}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.representativeTitle").doesNotExist());
+
+        mockMvc.perform(patch("/api/users/me/title")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titleId":1}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.representativeTitle.name")
+                        .value("새내기 모험가"));
+
+        mockMvc.perform(patch("/api/users/me/badge")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"badgeId":null}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.representativeBadge").doesNotExist());
+
+        mockMvc.perform(patch("/api/users/me/badge")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"badgeId":1}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.representativeBadge.name").value("새싹 배지"));
+
+        MockMultipartFile profileImage = new MockMultipartFile(
+                "file", "profile.png", "image/png", new byte[] {1, 2, 3});
+        MvcResult upload = mockMvc.perform(multipart("/api/users/me/profile-image")
+                        .file(profileImage)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.profileImageUrl")
-                        .value("https://example.com/me.png"));
+                        .value(org.hamcrest.Matchers.startsWith("/uploads/profile/")))
+                .andReturn();
+        String profileImageUrl = JsonPath.read(
+                upload.getResponse().getContentAsString(),
+                "$.data.profileImageUrl");
+        mockMvc.perform(get(profileImageUrl))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/users/me/profile-image")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.profileImageUrl").doesNotExist());
+
+        MockMultipartFile invalidImage = new MockMultipartFile(
+                "file", "profile.txt", "text/plain", new byte[] {1, 2, 3});
+        mockMvc.perform(multipart("/api/users/me/profile-image")
+                        .file(invalidImage)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_PROFILE_IMAGE"));
+
+        mockMvc.perform(patch("/api/users/me/badge")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"badgeId":2}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
 
         MvcResult reissue = mockMvc.perform(post("/api/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)

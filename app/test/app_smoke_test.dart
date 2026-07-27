@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,8 @@ import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
+import 'package:life_quest/features/profile/presentation/profile_screen.dart';
+import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -81,6 +84,58 @@ void main() {
     expect(find.text('안녕하세요, 테스터님!\n오늘도 멋진 하루가 될 거예요!'), findsOneWidget);
     expect(find.text('Lv. 3'), findsOneWidget);
   });
+
+  testWidgets('로그아웃 전에 기록 보존 안내와 확인 선택지를 보여준다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const MaterialApp(home: ProfileScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('로그아웃'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('로그아웃'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('로그아웃할까요?'), findsOneWidget);
+    expect(
+      find.text('현재 기기에서만 로그아웃돼요.\n퀘스트와 성장 기록은 그대로 보관됩니다.'),
+      findsOneWidget,
+    );
+    expect(find.text('취소'), findsOneWidget);
+    expect(find.text('로그아웃'), findsNWidgets(2));
+
+    await tester.tap(find.text('취소'));
+    await tester.pumpAndSettle();
+    expect(find.text('로그아웃할까요?'), findsNothing);
+  });
+
+  testWidgets('프로필 수정은 URL 입력 대신 사진 선택과 캐릭터 목록을 보여준다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const MaterialApp(home: ProfileEditScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('프로필 이미지 URL'), findsNothing);
+    expect(find.text('사진 선택'), findsOneWidget);
+    expect(find.text('내 캐릭터'), findsOneWidget);
+    expect(find.text('루키'), findsOneWidget);
+    expect(find.text('모각'), findsOneWidget);
+  });
 }
 
 class _FakeQuestRepository extends QuestRepository {
@@ -95,8 +150,16 @@ class _FakeUserRepository extends UserRepository {
   _FakeUserRepository() : super(Dio());
 
   @override
-  Future<UserProfile> fetchMe() async =>
-      const UserProfile(id: 1, nickname: '테스터');
+  Future<UserProfile> fetchMe() async => const UserProfile(
+    id: 1,
+    nickname: '테스터',
+    selectedCharacter: AvatarCharacter(
+      id: 1,
+      code: 'ROOKIE',
+      name: '루키',
+      assetKey: 'rookie.png',
+    ),
+  );
 
   @override
   Future<LevelStatus> fetchLevel() async => const LevelStatus(
@@ -105,4 +168,18 @@ class _FakeUserRepository extends UserRepository {
     currentLevelExp: 60,
     nextLevelRequiredExp: 200,
   );
+
+  @override
+  Future<List<AvatarCharacter>> fetchCharacters() async => const [
+    AvatarCharacter(id: 1, code: 'ROOKIE', name: '루키', assetKey: 'rookie.png'),
+    AvatarCharacter(id: 2, code: 'MOGAK', name: '모각', assetKey: 'mogak.png'),
+  ];
+
+  @override
+  Future<BadgeCollection> fetchBadges() async =>
+      const BadgeCollection(badges: [], representativeBadgeId: null);
+
+  @override
+  Future<RewardHistory> fetchRewards() async =>
+      const RewardHistory(titles: [], profileItems: []);
 }

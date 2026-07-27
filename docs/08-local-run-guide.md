@@ -1,35 +1,54 @@
 # 08. 로컬 실행 가이드
 
-이 문서는 새 Windows PC에서 저장소를 받은 뒤 Spring Boot 백엔드와 Flutter
-Android 앱을 실행하는 전체 절차를 설명한다. 로컬 설정 원본은 저장소 루트의
-`.env` 하나이며, 이 파일은 Git에 커밋하지 않는다.
+이 문서는 Windows와 macOS에서 Spring Boot 백엔드와 Flutter Android/iOS 앱을
+실행하는 절차를 설명한다. 저장소는 어느 경로에 두어도 되며, SDK와 캐시 경로도
+PC마다 달라도 된다. PC별 설정 원본은 Git에 커밋하지 않는 루트 `.env`이다.
 
-## 1. 준비 프로그램
+## 1. 공통 준비
 
 - Git
 - Java 17
-- Flutter stable 3.38 이상
-- Android Studio와 Android SDK Platform-Tools
-- 다음 중 하나
-  - Docker Desktop
-  - 로컬 MySQL 8.x
+- Flutter 3.44.8
+- Docker Desktop/Engine + Compose 또는 로컬 MySQL 8.x
+- Android 빌드: Android Studio와 Android SDK Platform-Tools
+- iOS 빌드: macOS, Xcode, CocoaPods
 
-설치 확인:
+확인:
 
-```powershell
+```bash
 git --version
 java -version
-flutter doctor
+flutter --version
+flutter doctor -v
 ```
 
-`flutter doctor`에서 Android toolchain과 연결할 기기 관련 항목을 확인한다.
+Flutter 버전은 루트 `.fvmrc`에 3.44.8로 고정되어 있다. FVM을 사용하는 경우
+저장소 루트에서 다음과 같이 맞출 수 있다.
+
+```bash
+fvm install
+fvm use
+```
+
+FVM은 필수가 아니다. PATH에서 실행되는 `flutter`와 `dart`가 Flutter 3.44.8에
+포함된 것이면 된다. 공통 실행기는 버전이 다르면 실행 전에 안내하고 종료한다.
+
+macOS에서 iOS 앱을 실행하려면 Xcode의 최초 설정과 라이선스 동의, CocoaPods
+설치를 먼저 마친다. Apple Silicon에서 요구되는 추가 항목을 포함한 상태는
+`flutter doctor -v`로 확인한다.
 
 ## 2. 최초 설정
 
-저장소 루트에서 실행한다.
+저장소 루트에서 `.env`를 만든다.
 
 ```powershell
+# Windows PowerShell
 Copy-Item .env.example .env
+```
+
+```bash
+# macOS
+cp .env.example .env
 ```
 
 `.env`에서 최소한 다음 값을 현재 PC 환경에 맞게 설정한다.
@@ -38,51 +57,50 @@ Copy-Item .env.example .env
 DB_URL=jdbc:mysql://localhost:3306/lifequest?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
 DB_USERNAME=lifequest
 DB_PASSWORD=로컬_MYSQL_비밀번호
-
 JWT_SECRET=최소_32자_이상의_임의_문자열
-
-# Google Cloud Console의 "웹 애플리케이션" 클라이언트 ID
 GOOGLE_CLIENT_ID=숫자-문자열.apps.googleusercontent.com
 ```
 
-`GOOGLE_CLIENT_ID`에는 Android 클라이언트 ID가 아니라 `LifeQuest Server`
-웹 애플리케이션 클라이언트 ID를 넣는다. OAuth `client_secret`은 백엔드와
-Flutter 실행에 사용하지 않는다.
+`GOOGLE_CLIENT_ID`에는 Android/iOS 클라이언트 ID가 아니라 서버에서 ID Token의
+audience를 검증할 때 사용하는 Google 웹 애플리케이션 클라이언트 ID를 넣는다.
+OAuth `client_secret`은 백엔드나 Flutter 앱에 넣지 않는다.
 
-Flutter 패키지는 최초 한 번 내려받는다.
+패키지를 내려받는다.
 
-```powershell
+```bash
 cd app
 flutter pub get
 cd ..
 ```
 
+`flutter pub get`이 각 PC의 Flutter SDK, Pub 캐시 및 프로젝트 절대 경로를
+로컬 생성 파일에 기록한다. 이 파일들은 `.gitignore`로 제외되어 있으므로 서로
+복사하거나 커밋하지 않는다.
+
 ## 3. MySQL 실행
 
-### 방법 A: Docker MySQL
+### Docker MySQL
 
 저장소 루트에서 실행한다.
 
-```powershell
+```bash
 docker compose up -d
 docker compose ps
 ```
 
-`lifequest-mysql` 상태가 healthy가 되면 사용할 수 있다. 컨테이너의 DB 이름,
-사용자와 비밀번호는 루트 `.env`의 `MYSQL_*` 값으로 생성된다.
+`lifequest-mysql` 상태가 healthy이면 사용할 수 있다. 컨테이너의 DB 이름,
+사용자와 비밀번호는 `.env`의 `MYSQL_*` 값으로 생성된다.
 
-주의: MySQL 볼륨이 이미 생성된 뒤 `.env`의 `MYSQL_PASSWORD`를 변경해도 기존
-DB 사용자의 비밀번호는 자동 변경되지 않는다.
+MySQL 볼륨을 만든 뒤 `.env`의 비밀번호만 변경해도 기존 DB 사용자 비밀번호는
+자동으로 변경되지 않는다. 중지는 다음 명령을 사용한다.
 
-중지:
-
-```powershell
+```bash
 docker compose stop
 ```
 
-### 방법 B: PC에 설치된 로컬 MySQL
+### PC에 설치된 MySQL
 
-MySQL 관리자 계정으로 접속하여 `.env`와 같은 사용자 및 비밀번호를 준비한다.
+MySQL 관리자 계정으로 다음 데이터베이스와 사용자를 준비한다.
 
 ```sql
 CREATE DATABASE IF NOT EXISTS lifequest
@@ -99,191 +117,300 @@ GRANT ALL PRIVILEGES ON lifequest.* TO 'lifequest'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-SQL의 비밀번호와 `.env`의 `DB_PASSWORD`가 반드시 같아야 한다.
+SQL의 비밀번호와 `.env`의 `DB_PASSWORD`가 같아야 한다.
 
 ## 4. Spring Boot 실행
 
-첫 번째 PowerShell에서 실행한다.
+VS Code에서는 저장소 루트를 연 뒤 Java 프로젝트 가져오기가 끝날 때까지 기다린다.
+이후 `Run and Debug` 목록에서 `LifeQuest Backend`를 선택하고 F5 또는 ▶ 버튼을
+누르면 된다. 공유 설정 `.vscode/launch.json`에 메인 클래스와 작업 디렉터리가
+지정되어 있으므로 `LifeQuestApiApplication.java`를 직접 열거나 한 번 먼저
+실행할 필요가 없다.
+
+Windows:
 
 ```powershell
 cd backend
 .\gradlew.bat bootRun
 ```
 
-Spring Boot는 다음 위치의 `.env`를 자동 탐색한다.
+macOS:
 
-- `backend`에서 실행: `../.env`
-- 저장소 루트 또는 IDE에서 실행: `./.env`
-
-Flyway가 시작 시 DB 스키마를 자동 적용한다. 정상 실행 확인:
-
-```powershell
-Invoke-RestMethod http://localhost:8080/actuator/health
-Invoke-RestMethod http://localhost:8080/api/system/ping
+```bash
+cd backend
+./gradlew bootRun
 ```
 
-## 5. Flutter Android 실행
+Spring Boot는 `backend`에서 실행하면 `../.env`, 저장소 루트 또는 IDE에서
+실행하면 `./.env`를 읽는다. OS 환경 변수와 명령행 인자가 `.env`보다 우선한다.
+Flyway는 시작 시 DB 스키마를 자동 적용한다.
+업로드한 프로필 사진은 기본적으로 백엔드 실행 디렉터리의 `uploads/profile`에
+저장된다. 포트폴리오 로컬 실행을 위한 저장 방식이며 이 디렉터리는 Git에서 제외된다.
 
-Flutter 실행은 저장소 루트의 `run-app.ps1`을 사용한다. 이 스크립트는 루트
-`.env`에서 공개 가능한 Google 웹 클라이언트 ID만 읽어 `--dart-define`으로
-전달한다. DB 비밀번호와 JWT 키는 앱에 전달하지 않는다.
+확인:
 
-### Android Studio 에뮬레이터
-
-에뮬레이터를 먼저 켠 뒤 저장소 루트에서 실행한다.
-
-```powershell
-.\run-app.ps1
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/api/system/ping
 ```
 
-표준 Android 에뮬레이터는 모든 PC에서 호스트 PC를 `10.0.2.2`로 접근하므로
-PC별 IP 설정이 필요 없다.
+PowerShell에서는 `Invoke-RestMethod`를 사용해도 된다.
 
-### USB 연결 Android 실기기
+## 5. Flutter 공통 실행
 
-휴대전화의 개발자 옵션과 USB 디버깅을 켜고 PC 연결을 허용한다.
+### IDE에서 ▶ 한 번으로 실행
 
-```powershell
-flutter devices
-.\run-app.ps1 -Target usb
+IntelliJ IDEA 또는 Android Studio에서 저장소 루트 `LifeQuest`를 연다. 상단의
+Run Configuration 목록에서 `LifeQuest Flutter`를 한 번 선택한 뒤 ▶ 버튼을
+누르면 된다. 저장소의 `.run/LifeQuest Flutter.run.xml`을 공유하므로 개발자가
+별도의 Flutter 실행 설정이나 `--dart-define`을 만들 필요가 없다.
+
+목록에 설정이 보이지 않으면 다음을 확인한다.
+
+- IDE에 Flutter와 Dart 플러그인이 활성화되어 있는지
+- Flutter SDK가 3.44.8로 설정되어 있는지
+- `app/pubspec.yaml`이 IDE에서 Flutter 모듈로 인식되는지
+- 저장소 루트를 다시 열거나 Gradle/Flutter 프로젝트를 다시 로드했는지
+
+모바일 기기가 하나면 자동 선택된다. 여러 기기를 항상 연결해 두는 PC는 먼저
+기기 ID를 확인한다.
+
+```bash
+dart run tool/run_app.dart --list-devices
 ```
 
-스크립트가 다음 연결을 자동 설정한다.
+그 PC의 `.env`에 기본 기기를 한 번 저장하면 이후에는 ▶ 버튼만 누르면 된다.
 
-```text
-휴대전화 127.0.0.1:8080 → USB → 개발 PC 127.0.0.1:8080
+```dotenv
+FLUTTER_DEVICE_ID=기기_ID
 ```
 
-따라서 PC의 LAN IP를 입력할 필요가 없다. 여러 기기가 연결되어 있다면:
+이 값은 Git에 올라가지 않으므로 Windows PC, Mac, 개발자마다 다르게 지정해도
+된다.
 
-```powershell
-.\run-app.ps1 -Target usb -DeviceId 기기_ID
+### VS Code에서 F5로 실행
+
+저장소 루트 `LifeQuest`를 VS Code로 연다. 처음 열 때 추천되는 Dart와 Flutter
+확장을 설치한 뒤 다음과 같이 실행한다.
+
+1. 왼쪽 `Run and Debug` 패널을 연다.
+2. 실행 목록에서 `LifeQuest Flutter`를 선택한다.
+3. F5 또는 ▶ 버튼을 누른다.
+
+공유 설정 `.vscode/launch.json`이 IntelliJ/Android Studio와 동일한
+`tool/run_app.dart`를 실행한다. VS Code 하단 상태 표시줄에서 선택한 Flutter
+기기 ID를 공통 실행기에 전달하므로, 다음 실행부터 선택한 기기를 사용한다.
+CLI와 IntelliJ/Android Studio에서 여러 기기를 사용하는 경우에는 앞에서 설명한
+`.env`의 `FLUTTER_DEVICE_ID`를 사용한다.
+
+### 터미널에서 실행
+
+Windows와 macOS 모두 저장소 루트에서 같은 명령을 사용한다.
+
+```bash
+dart run tool/run_app.dart
 ```
 
-`기기_ID`는 `flutter devices`에서 확인한다.
+공통 실행기는 다음을 자동 처리한다.
 
-### Wi-Fi/LAN 연결 실기기
+- Flutter 3.44.8 확인
+- `.env`의 Google 웹 클라이언트 ID 전달
+- 연결된 Android/iOS 모바일 기기가 하나이면 자동 선택
+- Android 에뮬레이터는 `http://10.0.2.2:8080/api` 사용
+- iOS 시뮬레이터는 `http://127.0.0.1:8080/api` 사용
+- USB Android 실기기는 `adb reverse` 설정
+- PC별 SDK 절대 경로를 저장소에 기록하지 않음
 
-이 방식에서만 PC별 LAN IP가 필요하다. 루트 `.env`에 입력한다.
+실행 가능한 기기 확인:
+
+```bash
+dart run tool/run_app.dart --list-devices
+```
+
+모바일 기기가 여러 개면 ID를 지정한다.
+
+```bash
+dart run tool/run_app.dart --device 기기_ID
+```
+
+종류로 제한할 수도 있다.
+
+```bash
+# Android 에뮬레이터
+dart run tool/run_app.dart --target emulator
+
+# USB Android 실기기
+dart run tool/run_app.dart --target usb
+
+# iOS 기기 또는 시뮬레이터
+dart run tool/run_app.dart --target ios
+```
+
+추가 Flutter 인자는 `--` 뒤에 전달한다.
+
+```bash
+dart run tool/run_app.dart -- --profile
+```
+
+기존 Windows `run-app.ps1`은 호환용 얇은 래퍼로 유지한다. 새 문서와 자동화는
+공통 Dart 명령을 기준으로 한다.
+
+### Wi-Fi/LAN과 iOS 실기기
+
+Wi-Fi로 연결한 Android 기기와 iOS 실기기는 개발 PC의 LAN 주소로 백엔드에
+접속해야 한다. `.env`에 현재 PC의 주소를 입력한다.
 
 ```dotenv
 FLUTTER_API_BASE_URL=http://192.168.x.x:8080/api
 ```
 
-실행:
-
-```powershell
-.\run-app.ps1 -Target lan
+```bash
+dart run tool/run_app.dart --lan
 ```
 
-`.env`를 바꾸지 않고 한 번만 지정할 수도 있다.
+한 번만 다른 주소를 사용할 수도 있다.
 
-```powershell
-.\run-app.ps1 -Target lan `
-  -ApiBaseUrl http://192.168.x.x:8080/api
+```bash
+dart run tool/run_app.dart \
+  --api-base-url http://192.168.x.x:8080/api
 ```
 
-휴대전화와 PC가 같은 네트워크에 있어야 하며 Windows 방화벽에서 TCP 8080
-접속을 허용해야 할 수 있다.
+PowerShell에서는 한 줄로 입력하거나 줄 끝에 백틱을 사용한다. 기기와 PC가 같은
+네트워크에 있어야 하고, OS 방화벽에서 TCP 8080 접속 허용이 필요할 수 있다.
 
-## 6. Google 로그인 확인
+## 6. Google 로그인
 
 Google Cloud 프로젝트에는 다음 클라이언트가 필요하다.
 
 - 웹 애플리케이션: 루트 `.env`의 `GOOGLE_CLIENT_ID`
-- Android:
-  - 패키지 이름 `com.lifequest.life_quest`
-  - 현재 PC의 debug keystore SHA-1
-- iOS: iOS 네이티브 설정용이며 Windows Android 실행에는 사용하지 않음
+- Android: 패키지 `com.lifequest.life_quest`와 공동 debug keystore SHA-1
+- iOS: Runner Bundle ID, `GIDClientID`, reversed client ID URL scheme
 
-현재 PC의 Android SHA-1 확인:
+공동 개발용 키 `app/android/app/debug.keystore`는 모든 PC에서 동일한 Android
+OAuth SHA-1을 사용하기 위해 Git에 포함되어 있다. 릴리스에는 사용하지 않는다.
+
+서명 보고서:
 
 ```powershell
+# Windows
 cd app\android
 .\gradlew.bat signingReport
 ```
 
-`Variant: debug`의 SHA1을 Google Cloud Console의 Android 클라이언트에
-등록한다. 새 PC는 일반적으로 다른 debug keystore를 만들기 때문에 새 PC의
-SHA-1도 별도로 등록해야 한다.
+```bash
+# macOS
+cd app/android
+./gradlew signingReport
+```
 
-Google OAuth 설정 변경은 반영까지 시간이 걸릴 수 있다. `.env`의
-`GOOGLE_CLIENT_ID`를 변경했다면 다음을 모두 수행한다.
-
-1. Spring Boot 완전 종료 후 재실행
-2. Flutter 실행 완전 종료
-3. `run-app.ps1`로 Flutter 재실행
-
-Hot reload와 hot restart는 `--dart-define` 값을 다시 주입하지 않는다.
-
-Google 인증 이메일이 기존 일반회원 이메일과 같으면 새 회원을 만들지 않고
-기존 회원에 Google 로그인 수단을 연결한다. 기존 닉네임과 진행도가 유지되는
-것이 정상 동작이다.
+iOS 설정과 릴리스 업로드 키 절차는 `07-auth-setup.md`를 참고한다.
 
 ## 7. 테스트와 빌드
 
-백엔드 테스트:
+백엔드:
 
 ```powershell
+# Windows
 cd backend
 .\gradlew.bat test
 ```
 
-Flutter 검사:
+```bash
+# macOS
+cd backend
+./gradlew test
+```
 
-```powershell
+Flutter:
+
+```bash
 cd app
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
-```
-
-Android debug APK:
-
-```powershell
-cd app
 flutter build apk --debug
 ```
 
-생성 위치:
+Android release App Bundle에는 별도의 업로드 키가 필요하다.
+`app/android/key.properties.example`을 `key.properties`로 복사하고 저장소 밖에
+보관한 키 경로와 비밀번호를 입력한다. 파일이 없으면 release 빌드는 의도적으로
+실패한다.
 
-```text
-app/build/app/outputs/flutter-apk/app-debug.apk
+## 8. 로컬 경로와 캐시 정책
+
+다음 파일과 디렉터리는 PC별 절대 경로나 캐시를 포함하므로 Git에 커밋하지 않는다.
+
+- `app/android/local.properties`
+- `app/.dart_tool`
+- `app/.flutter-plugins-dependencies`
+- `app/build`
+- `app/android/.gradle`, `app/android/.kotlin`
+- `app/ios/Flutter/Generated.xcconfig`
+- `app/ios/Flutter/flutter_export_environment.sh`
+- `app/ios/Pods`
+
+저장소를 다른 경로로 옮기거나 Flutter SDK를 바꾼 뒤에는 아래 기본 초기화만 먼저
+실행한다.
+
+```bash
+cd app
+flutter clean
+flutter pub get
 ```
 
-## 8. 자주 발생하는 오류
+Windows에서 프로젝트와 Pub 캐시가 서로 다른 드라이브에 있으면, 클린 직후 첫
+Android 빌드에서 Kotlin 증분 캐시가 상대 경로를 계산하지 못해 스택트레이스를
+출력하고 전체 컴파일로 전환할 수 있다. 캐시가 만들어진 다음 빌드부터 정상적인
+증분 빌드가 된다면 추가 조치 없이 사용한다. 증분 컴파일을 전역으로 끄면 모든
+빌드가 느려지므로 이 프로젝트에서는 `kotlin.incremental=false`를 사용하지 않는다.
+
+두 번째 이후 빌드에서도 같은 오류와 전체 컴파일이 반복되는 경우에만 다음 순서로
+처리한다.
+
+1. 실행 중인 Flutter, Android Studio 및 Gradle 작업을 종료한다.
+2. `flutter clean`과 `flutter pub get`을 실행한다.
+3. 계속 반복되면 프로젝트 내부 `app/android/.gradle`과
+   `app/android/.kotlin`을 삭제하고 다시 빌드한다.
+4. 마지막 대안으로 해당 Windows PC의 `PUB_CACHE`를 프로젝트와 같은 드라이브로
+   옮긴다.
+
+전역 Pub 캐시는 다른 프로젝트도 함께 사용하므로 기본 복구 과정에서 삭제하지
+않는다.
+
+## 9. 자주 발생하는 오류
+
+### Flutter 버전 불일치
+
+`flutter --version`이 3.44.8인지 확인한다. FVM을 사용한다면 `fvm install`,
+`fvm use` 후 FVM의 Flutter가 PATH에서 선택되도록 설정한다.
 
 ### MySQL `Access denied`
 
-다음을 확인한다.
-
-- 로컬 MySQL이 실행 중인지
-- `.env`의 `DB_USERNAME`, `DB_PASSWORD`가 실제 MySQL 계정과 같은지
-- Docker MySQL과 PC 설치형 MySQL이 동시에 3306 포트를 사용하지 않는지
-- Docker 볼륨 생성 후 비밀번호만 변경한 것은 아닌지
-
-### Google `Developer console is not set up correctly`
-
-다음을 확인한다.
-
-- `.env`에는 웹 애플리케이션 클라이언트 ID가 들어 있는지
-- Android 클라이언트 패키지가 `com.lifequest.life_quest`인지
-- 현재 PC의 debug SHA-1이 Android 클라이언트에 등록되어 있는지
-- 콘솔 변경 후 충분히 기다리고 앱을 완전히 다시 실행했는지
+- 로컬 MySQL이 실행 중인지 확인
+- `.env`와 실제 MySQL 계정의 사용자·비밀번호가 같은지 확인
+- Docker MySQL과 설치형 MySQL이 동시에 3306 포트를 쓰지 않는지 확인
+- Docker 볼륨 생성 뒤 비밀번호만 바꾼 것은 아닌지 확인
 
 ### 앱에서 백엔드 연결 실패
 
-- PC 브라우저나 PowerShell에서 `/actuator/health`가 응답하는지 확인
-- 에뮬레이터는 `run-app.ps1` 기본 모드 사용
-- USB 기기는 `-Target usb` 사용
-- Wi-Fi 기기는 PC LAN IP와 방화벽 확인
+- PC에서 `/actuator/health`가 응답하는지 확인
+- Android 에뮬레이터와 iOS 시뮬레이터는 기본 실행 사용
+- USB Android 기기는 `--target usb` 사용
+- Wi-Fi 기기와 iOS 실기기는 `--lan`, LAN IP 및 방화벽 확인
 
-### PowerShell 스크립트 실행 차단
+### 기기가 여러 개라는 안내
 
-현재 터미널에서만 우회 실행할 수 있다.
+`dart run tool/run_app.dart --list-devices`로 ID를 확인하고
+`--device 기기_ID`를 지정한다.
+
+### PowerShell 호환 래퍼 실행 차단
+
+공통 명령 `dart run tool/run_app.dart`는 PowerShell 스크립트 실행 정책의 영향을
+받지 않는다. 호환용 `run-app.ps1`을 꼭 사용해야 하면 현재 터미널에서만 다음과
+같이 실행할 수 있다.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run-app.ps1
 ```
 
-조직에서 관리하는 PC라면 해당 조직의 PowerShell 정책을 우선한다.
+조직에서 관리하는 PC라면 해당 조직의 정책을 우선한다.

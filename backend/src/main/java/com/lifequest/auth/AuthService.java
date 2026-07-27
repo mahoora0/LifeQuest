@@ -12,6 +12,8 @@ import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.social.SocialAccount;
 import com.lifequest.social.SocialAccountRepository;
 import com.lifequest.social.SocialProvider;
+import com.lifequest.growth.RewardService;
+import com.lifequest.profile.AvatarCharacterRepository;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import java.time.Instant;
@@ -29,6 +31,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final AvatarCharacterRepository characterRepository;
+    private final RewardService rewardService;
 
     public AuthService(
             UserRepository userRepository,
@@ -36,13 +40,17 @@ public class AuthService {
             RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenService jwtTokenService,
-            GoogleTokenVerifier googleTokenVerifier) {
+            GoogleTokenVerifier googleTokenVerifier,
+            AvatarCharacterRepository characterRepository,
+            RewardService rewardService) {
         this.userRepository = userRepository;
         this.socialAccountRepository = socialAccountRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.characterRepository = characterRepository;
+        this.rewardService = rewardService;
     }
 
     @Transactional
@@ -59,6 +67,7 @@ public class AuthService {
                 email,
                 passwordEncoder.encode(request.password()),
                 request.nickname()));
+        initializeProfile(user);
         return SignupResponse.from(user);
     }
 
@@ -110,10 +119,14 @@ public class AuthService {
     private User createOrLinkGoogleUser(GoogleIdentity identity) {
         String email = normalizeEmail(identity.email());
         User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseGet(() -> userRepository.save(User.google(
-                        email,
-                        uniqueNickname(identity.name(), email),
-                        identity.pictureUrl())));
+                .orElseGet(() -> {
+                    User created = userRepository.save(User.google(
+                            email,
+                            uniqueNickname(identity.name(), email),
+                            identity.pictureUrl()));
+                    initializeProfile(created);
+                    return created;
+                });
 
         if (!socialAccountRepository.existsByUserIdAndProvider(user.getId(), SocialProvider.GOOGLE)) {
             socialAccountRepository.save(new SocialAccount(
@@ -122,6 +135,13 @@ public class AuthService {
                     identity.subject()));
         }
         return user;
+    }
+
+    private void initializeProfile(User user) {
+        characterRepository.findAllByActiveTrueOrderById().stream()
+                .findFirst()
+                .ifPresent(user::selectCharacter);
+        rewardService.grantLevelRewards(user, 1, 1);
     }
 
     private String uniqueNickname(String name, String email) {

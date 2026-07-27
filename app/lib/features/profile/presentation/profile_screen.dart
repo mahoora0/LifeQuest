@@ -9,10 +9,11 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
+import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_dashed.dart';
-import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
+import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 /// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
 /// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
@@ -21,12 +22,14 @@ Future<void> _refresh(WidgetRef ref) async {
     ..invalidate(myProfileProvider)
     ..invalidate(levelStatusProvider)
     ..invalidate(rewardHistoryProvider)
+    ..invalidate(badgeCollectionProvider)
     ..invalidate(questHistoryProvider);
 
   await Future.wait([
     _settle(ref.read(myProfileProvider.future)),
     _settle(ref.read(levelStatusProvider.future)),
     _settle(ref.read(rewardHistoryProvider.future)),
+    _settle(ref.read(badgeCollectionProvider.future)),
     _settle(ref.read(questHistoryProvider.future)),
   ]);
 }
@@ -70,12 +73,16 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _ProfileHeader(profile: value),
                 const SizedBox(height: LqSpacing.gap),
+                _CharacterCard(character: value.selectedCharacter),
+                const SizedBox(height: LqSpacing.gap),
                 const _ExpCard(),
                 // ① 재화 2칸은 서버에 재화가 없어 v1에서 노출하지 않는다.
                 const SizedBox(height: LqSpacing.gap),
                 const _GrowthRecordCard(),
                 const SizedBox(height: LqSpacing.gap),
                 const _BadgeCard(),
+                const SizedBox(height: LqSpacing.gap),
+                const _RewardHistoryCard(),
                 const SizedBox(height: LqSpacing.gap),
                 _MenuCard(representativeTitle: value.representativeTitle),
                 const SizedBox(height: LqSpacing.gap),
@@ -89,6 +96,56 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+class _RewardHistoryCard extends ConsumerWidget {
+  const _RewardHistoryCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rewards = ref.watch(rewardHistoryProvider);
+    final entries = <String>[
+      if (rewards.hasValue)
+        ...rewards.requireValue.titles.map((item) => '칭호 · ${item.name}'),
+      if (rewards.hasValue)
+        ...rewards.requireValue.profileItems.map(
+          (item) => '${item.itemType == 'BADGE' ? '배지' : '아이템'} · ${item.name}',
+        ),
+    ];
+
+    return LqCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('획득 보상', style: LqText.cardTitle),
+          const SizedBox(height: 8),
+          if (rewards.isLoading)
+            const LinearProgressIndicator(minHeight: 3)
+          else if (rewards.hasError)
+            Text('보상 이력을 불러오지 못했어요.', style: LqText.caption)
+          else if (entries.isEmpty)
+            Text('아직 획득한 보상이 없어요.', style: LqText.caption)
+          else
+            for (final entry in entries.take(4))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.card_giftcard_rounded,
+                      size: 17,
+                      color: LqColors.primary,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(child: Text(entry, style: LqText.bodySm)),
+                  ],
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader({required this.profile});
 
@@ -97,7 +154,7 @@ class _ProfileHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final level = ref.watch(levelStatusProvider);
-    final imageUrl = profile.profileImageUrl;
+    final imageUrl = AppConfig.resolveMediaUrl(profile.profileImageUrl);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -111,19 +168,19 @@ class _ProfileHeader extends ConsumerWidget {
             shape: BoxShape.circle,
             border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
           ),
-          child: imageUrl == null || imageUrl.isEmpty
-              ? const LqImage(
-                  LqAssets.charFront,
-                  width: 74,
-                  fallbackShape: LqImageFallbackShape.circle,
+          child: imageUrl.isEmpty
+              ? const Icon(
+                  Icons.person_outline_rounded,
+                  size: 42,
+                  color: LqColors.textMuted,
                 )
               : Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const LqImage(
-                    LqAssets.charFront,
-                    width: 74,
-                    fallbackShape: LqImageFallbackShape.circle,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.person_outline_rounded,
+                    size: 42,
+                    color: LqColors.textMuted,
                   ),
                 ),
         ),
@@ -181,13 +238,61 @@ class _ProfileHeader extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                level.value == null ? 'Lv. —' : 'Lv. ${level.requireValue.level}',
+                level.value == null
+                    ? 'Lv. —'
+                    : 'Lv. ${level.requireValue.level}',
                 style: LqText.levelNumber,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CharacterCard extends StatelessWidget {
+  const _CharacterCard({required this.character});
+
+  final AvatarCharacter? character;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = character;
+    return LqCard(
+      background: LqColors.panel,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 74,
+            height: 92,
+            child: selected == null
+                ? const Icon(
+                    Icons.smart_toy_outlined,
+                    size: 46,
+                    color: LqColors.textMuted,
+                  )
+                : Image.asset(
+                    LqAssets.character(selected.code),
+                    fit: BoxFit.contain,
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('내 캐릭터', style: LqText.caption),
+                const SizedBox(height: 2),
+                Text(selected?.name ?? '선택 안 함', style: LqText.sectionTitle),
+                const SizedBox(height: 4),
+                Text('프로필 수정에서 캐릭터를 바꿀 수 있어요.', style: LqText.caption),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -297,8 +402,9 @@ class _BadgeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rewards = ref.watch(rewardHistoryProvider);
-    final items = rewards.value?.profileItems ?? const <ProfileItem>[];
+    final collection = ref.watch(badgeCollectionProvider);
+    final items = collection.value?.badges ?? const <ProfileItem>[];
+    final selectedId = collection.value?.representativeBadgeId;
 
     return LqCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -309,7 +415,7 @@ class _BadgeCard extends ConsumerWidget {
             children: [
               Text('내 배지', style: LqText.cardTitle),
               const Spacer(),
-              Text('더보기', style: LqText.caption),
+              Text('탭해서 대표 설정', style: LqText.caption),
             ],
           ),
           const SizedBox(height: 10),
@@ -320,6 +426,10 @@ class _BadgeCard extends ConsumerWidget {
                 Expanded(
                   child: _BadgeSlot(
                     item: i < items.length ? items[i] : null,
+                    selected: i < items.length && items[i].id == selectedId,
+                    onTap: i < items.length && items[i].id != null
+                        ? () => _selectBadge(context, ref, items[i].id!)
+                        : null,
                   ),
                 ),
               ],
@@ -329,12 +439,30 @@ class _BadgeCard extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _selectBadge(
+    BuildContext context,
+    WidgetRef ref,
+    int badgeId,
+  ) async {
+    try {
+      await ref.read(badgeCollectionProvider.notifier).select(badgeId);
+    } catch (error) {
+      if (context.mounted) showLqError(context, error);
+    }
+  }
 }
 
 class _BadgeSlot extends StatelessWidget {
-  const _BadgeSlot({required this.item});
+  const _BadgeSlot({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
 
   final ProfileItem? item;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -344,20 +472,35 @@ class _BadgeSlot extends StatelessWidget {
       radius: LqShape.tileRadius,
       locked: empty,
       background: LqColors.panel,
+      onTap: onTap,
       shadow: false,
       height: 58,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        empty ? '?' : item!.name,
-        maxLines: 2,
-        textAlign: TextAlign.center,
-        overflow: TextOverflow.ellipsis,
-        style: LqText.caption.copyWith(
-          fontSize: 12,
-          fontWeight: empty ? FontWeight.w400 : FontWeight.w700,
-          color: empty ? LqColors.textMuted : LqColors.textPrimary,
-        ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(
+            empty ? '?' : item!.name,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: LqText.caption.copyWith(
+              fontSize: 12,
+              fontWeight: empty ? FontWeight.w400 : FontWeight.w700,
+              color: empty ? LqColors.textMuted : LqColors.textPrimary,
+            ),
+          ),
+          if (selected)
+            const Align(
+              alignment: Alignment.topRight,
+              child: Icon(
+                Icons.check_circle,
+                size: 16,
+                color: LqColors.primary,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -374,10 +517,7 @@ class _MenuCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
-          _MenuRow(
-            label: '프로필 수정',
-            onTap: () => context.push('/profile/edit'),
-          ),
+          _MenuRow(label: '프로필 수정', onTap: () => context.push('/profile/edit')),
           const LqDashedDivider(),
           _MenuRow(
             label: '칭호 선택',
@@ -413,8 +553,7 @@ class _MenuRow extends StatelessWidget {
           children: [
             Text(label, style: LqText.bodySm),
             const Spacer(),
-            if (trailing != null)
-              Text(trailing!, style: LqText.caption),
+            if (trailing != null) Text(trailing!, style: LqText.caption),
             const SizedBox(width: 4),
             const Icon(
               Icons.chevron_right,
@@ -428,30 +567,155 @@ class _MenuRow extends StatelessWidget {
   }
 }
 
-class _LogoutRow extends ConsumerWidget {
+class _LogoutRow extends ConsumerStatefulWidget {
   const _LogoutRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LogoutRow> createState() => _LogoutRowState();
+}
+
+class _LogoutRowState extends ConsumerState<_LogoutRow> {
+  bool _busy = false;
+
+  Future<void> _logout() async {
+    if (_busy) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: LqColors.ink.withValues(alpha: 0.45),
+      builder: (dialogContext) => _LogoutDialog(
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(authControllerProvider.notifier).logout();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showLqError(context, error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () async {
-            await ref.read(authControllerProvider.notifier).logout();
-          },
+          onTap: _busy ? null : _logout,
           child: SizedBox(
             height: LqSpacing.minTouchTarget,
             child: Center(
-              child: Text(
-                '로그아웃',
-                style: LqText.bodySm.copyWith(color: LqColors.textMuted),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _busy
+                    ? Row(
+                        key: const ValueKey('logout-busy'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: LqColors.textMuted,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '로그아웃 중…',
+                            style: LqText.bodySm.copyWith(
+                              color: LqColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        '로그아웃',
+                        key: const ValueKey('logout-idle'),
+                        style: LqText.bodySm.copyWith(
+                          color: LqColors.textMuted,
+                        ),
+                      ),
               ),
             ),
           ),
         ),
         Text('v${AppConfig.appVersion}', style: LqText.caption),
       ],
+    );
+  }
+}
+
+class _LogoutDialog extends StatelessWidget {
+  const _LogoutDialog({required this.onCancel, required this.onConfirm});
+
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: LqCard(
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: LqColors.warnBg,
+                borderRadius: LqShape.tileRadius,
+                border: LqShape.inkBorder,
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: LqColors.accent,
+                size: 27,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text('로그아웃할까요?', style: LqText.sectionTitle),
+            const SizedBox(height: 8),
+            Text(
+              '현재 기기에서만 로그아웃돼요.\n퀘스트와 성장 기록은 그대로 보관됩니다.',
+              textAlign: TextAlign.center,
+              style: LqText.bodySm,
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: LqButton(
+                    label: '취소',
+                    height: 46,
+                    background: LqColors.card,
+                    foreground: LqColors.textPrimary,
+                    onPressed: onCancel,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: LqButton(
+                    label: '로그아웃',
+                    height: 46,
+                    background: LqColors.accent,
+                    onPressed: onConfirm,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

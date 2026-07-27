@@ -71,10 +71,16 @@
 | POST | /api/auth/reissue | 액세스 토큰 재발급 | 리프레시 토큰 |
 | POST | /api/auth/logout | 리프레시 토큰 폐기 | 불필요 |
 | GET | /api/users/me | 내 정보 조회 | 필요 |
-| PATCH | /api/users/me | 내 정보 수정 | 필요 |
+| PATCH | /api/users/me | 닉네임 수정 | 필요 |
+| POST | /api/users/me/profile-image | 프로필 사진 업로드(JPG/PNG/WebP, 최대 5MB) | 필요 |
+| DELETE | /api/users/me/profile-image | 프로필 사진 삭제 | 필요 |
+| GET | /api/users/me/characters | 선택 가능한 캐릭터 목록 | 필요 |
+| PATCH | /api/users/me/character | 게임 캐릭터 선택 | 필요 |
 | GET | /api/users/me/level | 레벨·EXP 진행 상태 조회 | 필요 |
 | GET | /api/users/me/titles | 보유 칭호 목록 | 필요 |
 | PATCH | /api/users/me/title | 대표 칭호 설정(해제 시 null 전송) | 필요 |
+| GET | /api/users/me/badges | 보유 배지 목록 | 필요 |
+| PATCH | /api/users/me/badge | 대표 배지 설정(해제 시 null 전송) | 필요 |
 | GET | /api/users/me/rewards | 레벨업 보상 이력 조회 | 필요 |
 
 ### 3-2. 퀘스트·GPS 인증 (담당: 팀원 2)
@@ -128,10 +134,16 @@
 | `POST /auth/reissue` | `refreshToken` | 회전된 `accessToken`, `refreshToken`, `expiresIn`, `user` | `TOKEN_EXPIRED` |
 | `POST /auth/logout` | `refreshToken` | `loggedOut` | 없음(멱등 처리) |
 | `GET /users/me` | 없음 | `id`, `email`, `nickname`, `profileImageUrl`, `role`, `representativeTitle` | `UNAUTHORIZED` |
-| `PATCH /users/me` | 변경할 `nickname`, `profileImageUrl` | 변경된 사용자 정보 | `DUPLICATE_NICKNAME`, `VALIDATION_FAILED` |
+| `PATCH /users/me` | 변경할 `nickname` | 변경된 사용자 정보 | `DUPLICATE_NICKNAME`, `VALIDATION_FAILED` |
+| `POST /users/me/profile-image` | multipart `file` | 변경된 사용자 정보 | `INVALID_PROFILE_IMAGE` |
+| `DELETE /users/me/profile-image` | 없음 | 변경된 사용자 정보 | `UNAUTHORIZED` |
+| `GET /users/me/characters` | 없음 | `characters[]` | `UNAUTHORIZED` |
+| `PATCH /users/me/character` | `characterId` | 변경된 사용자 정보 | `RESOURCE_NOT_FOUND` |
 | `GET /users/me/level` | 없음 | `level`, `totalExp`, `currentLevelExp`, `nextLevelRequiredExp` | `UNAUTHORIZED` |
 | `GET /users/me/titles` | 없음 | `titles[]`, `representativeTitleId` | `UNAUTHORIZED` |
 | `PATCH /users/me/title` | `titleId`(해제는 `null`) | `representativeTitle` | `RESOURCE_NOT_FOUND`, `FORBIDDEN`(미보유 칭호) |
+| `GET /users/me/badges` | 없음 | `badges[]`, `representativeBadgeId` | `UNAUTHORIZED` |
+| `PATCH /users/me/badge` | `badgeId`(해제는 `null`) | `representativeBadge` | `FORBIDDEN`(미보유 배지) |
 | `GET /users/me/rewards` | `page`, `size` | 획득한 `titles[]`, `profileItems[]`와 획득 근거·일시 | `UNAUTHORIZED` |
 
 **퀘스트·수집**
