@@ -7,6 +7,7 @@ import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
 import 'package:life_quest/features/auth/presentation/login_screen.dart';
 import 'package:life_quest/features/auth/presentation/signup_screen.dart';
 import 'package:life_quest/features/achievement/presentation/achievement_screen.dart';
+import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
@@ -91,10 +92,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/friends',
-                builder: (context, state) => const FeaturePlaceholderScreen(
-                  title: '친구',
-                  message: '친구 화면은 다음 단계에서 열려요',
-                ),
+                builder: (context, state) => const FriendsScreen(),
               ),
             ],
           ),
