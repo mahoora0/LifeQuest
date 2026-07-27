@@ -5,10 +5,29 @@ import 'package:flutter/material.dart';
 /// 시안의 px 값은 320pt 폭 프레임 기준이며 Flutter 논리 px(dp)에 1:1로 대응한다.
 /// 화면·위젯 코드에서 색·치수를 하드코딩하지 말고 이 파일의 상수를 사용한다.
 abstract final class LqColors {
-  // 표면
-  static const surface = Color(0xFFFEF8EE);
-  static const card = Color(0xFFFFFDF6);
-  static const panel = Color(0xFFFBF4E4);
+  // 표면 — 원료(raw). 웹 디자인 시스템의 `--lq-surface*`와 이름·값이 1:1로 대응한다.
+  // 이름이 어긋나 있던 옛 `card`(=raised)·`panel`(=tint)을 웹 쪽에 맞춰 정리한 것이다.
+  static const surface = Color(0xFFFEF8EE); // --lq-surface
+  static const surfaceRaised = Color(0xFFFFFDF6); // --lq-surface-raised
+  static const surfaceTint = Color(0xFFFBF4E4); // --lq-surface-tint
+
+  // 표면 — 역할(semantic). 레이어링 규칙은 이 네 줄에서만 정의한다.
+  // 화면·위젯은 원료색이 아니라 역할 토큰을 참조하므로, 규칙이 바뀌면 여기만 고치면 된다.
+  //
+  // 깊이 순서(밝음 → 어두움): 프레임·리스트 항목 `#FFFDF6` › 주 카드 `#FBF4E4`.
+  // 하단 탭 바 `#FEF8EE`는 프레임과 구분되는 별도 톤이다.
+
+  /// 화면 바탕(Scaffold)·패널. 가장 밝다.
+  static const surfacePanel = surfaceRaised;
+
+  /// 주 콘텐츠 카드. 프레임보다 한 단계 눌러 담아 깊이를 만든다.
+  static const surfaceCard = surfaceTint;
+
+  /// 하단 탭 바.
+  static const surfaceNav = surface;
+
+  /// 리스트 행·아이콘 타일. 주 카드 위에서 다시 밝게 도드라진다.
+  static const surfaceTile = surfaceRaised;
 
   // 잉크 · 텍스트
   static const ink = Color(0xFF4A4132);

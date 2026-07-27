@@ -22,7 +22,7 @@ class QuestResultScreen extends StatelessWidget {
     final growth = result.growth;
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: Stack(
         children: [
           const Positioned.fill(child: _FloatingConfetti()),
@@ -42,7 +42,7 @@ class QuestResultScreen extends StatelessWidget {
                         child: Transform.rotate(
                           angle: -2 * 3.1415926535 / 180,
                           child: LqCard(
-                            background: LqColors.panel,
+                            background: LqColors.surfaceCard,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 22,
                               vertical: 10,
@@ -67,7 +67,7 @@ class QuestResultScreen extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: LqColors.card,
+                              color: LqColors.surfaceRaised,
                               borderRadius: LqShape.pillRadius,
                               border: Border.all(
                                 color: LqColors.ink,
@@ -183,7 +183,7 @@ class _LevelUpPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Column(
         children: [

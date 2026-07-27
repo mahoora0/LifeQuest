@@ -47,7 +47,7 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
     final today = ref.watch(todayQuestsProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -115,7 +115,7 @@ class _QuestList extends StatelessWidget {
 
     return RefreshIndicator(
       color: LqColors.primary,
-      backgroundColor: LqColors.card,
+      backgroundColor: LqColors.surfaceRaised,
       onRefresh: onRefresh,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(

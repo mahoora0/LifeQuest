@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(myProfileProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: LqAsyncView<UserProfile>(
@@ -61,7 +61,7 @@ class ProfileScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(myProfileProvider),
           data: (value) => RefreshIndicator(
             color: LqColors.primary,
-            backgroundColor: LqColors.card,
+            backgroundColor: LqColors.surfaceRaised,
             onRefresh: () => _refresh(ref),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
@@ -164,7 +164,7 @@ class _ProfileHeader extends ConsumerWidget {
           height: 74,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: LqColors.card,
+            color: LqColors.surfaceRaised,
             shape: BoxShape.circle,
             border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
           ),
@@ -208,7 +208,7 @@ class _ProfileHeader extends ConsumerWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: LqColors.card,
+                        color: LqColors.surfaceRaised,
                         borderRadius: LqShape.pillRadius,
                         border: Border.all(
                           color: LqColors.borderMuted,
@@ -260,7 +260,7 @@ class _CharacterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = character;
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Row(
         children: [
@@ -306,7 +306,7 @@ class _ExpCard extends ConsumerWidget {
     final status = level.value;
 
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,6 +346,7 @@ class _GrowthRecordCard extends ConsumerWidget {
     final level = ref.watch(levelStatusProvider);
 
     return LqCard(
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +472,8 @@ class _BadgeSlot extends StatelessWidget {
     return LqCard(
       radius: LqShape.tileRadius,
       locked: empty,
-      background: LqColors.panel,
+      // 배지 슬롯은 카드가 아니라 타일이라 레이어링 규칙의 주 카드 토큰을 쓰지 않는다.
+      background: LqColors.surfaceTint,
       onTap: onTap,
       shadow: false,
       height: 58,
@@ -697,7 +699,7 @@ class _LogoutDialog extends StatelessWidget {
                   child: LqButton(
                     label: '취소',
                     height: 46,
-                    background: LqColors.card,
+                    background: LqColors.surfaceRaised,
                     foreground: LqColors.textPrimary,
                     onPressed: onCancel,
                   ),

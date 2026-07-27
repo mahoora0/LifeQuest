@@ -20,7 +20,7 @@ class FeaturePlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [

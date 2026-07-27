@@ -45,7 +45,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
         );
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [
@@ -204,6 +204,7 @@ class _InfoCard extends StatelessWidget {
     final isLocation = quest.completionType.isLocation;
 
     return LqCard(
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Column(
         children: [

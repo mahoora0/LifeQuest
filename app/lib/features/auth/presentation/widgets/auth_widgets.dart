@@ -18,7 +18,7 @@ class AuthPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -154,7 +154,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             hintText: widget.hint,
             hintStyle: LqText.body.copyWith(color: LqColors.textMuted),
             filled: true,
-            fillColor: LqColors.card,
+            fillColor: LqColors.surfaceRaised,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 14,

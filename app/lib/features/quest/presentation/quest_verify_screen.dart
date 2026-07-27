@@ -393,7 +393,7 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
     final quest = widget.quest;
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [
@@ -547,7 +547,7 @@ class _RadarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       height: 238,
       padding: EdgeInsets.zero,
       child: Stack(
@@ -582,7 +582,7 @@ class _RadarCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
               decoration: BoxDecoration(
-                color: LqColors.card,
+                color: LqColors.surfaceRaised,
                 borderRadius: LqShape.pillRadius,
                 border: Border.all(
                   color: LqColors.ink,
@@ -636,7 +636,7 @@ class _DebugSimulator extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: value == scenario
                           ? LqColors.primary
-                          : LqColors.card,
+                          : LqColors.surfaceRaised,
                       borderRadius: LqShape.pillRadius,
                       border: Border.all(
                         color: value == scenario

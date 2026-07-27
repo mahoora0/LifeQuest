@@ -3,7 +3,9 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 
 /// 하단 탭바 — Material `NavigationBar`는 스타일이 맞지 않아 사용하지 않는다.
 ///
-/// `panel` 배경 · 상단 ink 2px 테두리 · 상하 패딩 8/10 · 아이콘 20 + 라벨 11.5.
+/// `surfaceNav` 배경 · 상단 ink 2px 테두리 · 상하 패딩 8/10 · 아이콘 20 + 라벨 11.5.
+///
+/// 탭 바는 프레임(`surfacePanel`)보다 한 톤 어둡게 두어 화면 바탕과 구분한다.
 class LqBottomNav extends StatelessWidget {
   const LqBottomNav({
     super.key,
@@ -26,7 +28,7 @@ class LqBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: LqColors.panel,
+        color: LqColors.surfaceNav,
         border: Border(
           top: BorderSide(color: LqColors.ink, width: LqShape.borderWidth),
         ),

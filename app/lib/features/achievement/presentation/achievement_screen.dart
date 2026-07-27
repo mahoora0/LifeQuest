@@ -31,7 +31,7 @@ class _AchievementScreenState extends ConsumerState<AchievementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [
@@ -166,7 +166,7 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Row(
         children: [
@@ -234,7 +234,7 @@ class _AchievementRow extends StatelessWidget {
                   ? LqColors.lockedTile
                   : achievement.achieved
                   ? LqColors.goldBg
-                  : LqColors.panel,
+                  : LqColors.surfaceTint,
               border: Border.all(
                 color: hidden ? LqColors.borderMuted : LqColors.ink,
                 width: LqShape.borderWidth,
@@ -379,7 +379,7 @@ class _TitleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       radius: LqShape.rowRadius,
-      background: selected ? LqColors.panel : LqColors.card,
+      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(

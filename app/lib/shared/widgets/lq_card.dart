@@ -9,7 +9,7 @@ class LqCard extends StatelessWidget {
   const LqCard({
     super.key,
     required this.child,
-    this.background = LqColors.card,
+    this.background = LqColors.surfaceTile,
     this.padding = const EdgeInsets.all(12),
     this.radius = LqShape.cardRadius,
     this.borderColor = LqColors.ink,

@@ -41,7 +41,7 @@ class _LifedexScreenState extends ConsumerState<LifedexScreen> {
     final overview = ref.watch(lifedexOverviewProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: LqAsyncView<LifedexOverview>(
@@ -93,7 +93,7 @@ class _Body extends ConsumerWidget {
               height: 34,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: LqColors.panel,
+                color: LqColors.surfaceTint,
                 borderRadius: LqShape.tileRadius,
                 border: Border.all(
                   color: LqColors.ink,
@@ -132,7 +132,7 @@ class _Body extends ConsumerWidget {
           _ItemGrid(categoryId: selectedCategoryId!),
         const SizedBox(height: LqSpacing.gap),
         LqCard(
-          background: LqColors.panel,
+          background: LqColors.surfaceCard,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [

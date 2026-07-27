@@ -37,12 +37,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final today = ref.watch(todayQuestsProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
           color: LqColors.primary,
-          backgroundColor: LqColors.card,
+          backgroundColor: LqColors.surfaceRaised,
           onRefresh: () async {
             ref.invalidate(myProfileProvider);
             ref.invalidate(levelStatusProvider);
@@ -184,7 +184,7 @@ class _LevelCard extends ConsumerWidget {
     }
 
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: body,
     );
@@ -292,6 +292,7 @@ class _TodayQuestCard extends ConsumerWidget {
     final loaded = today.value;
 
     return LqCard(
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

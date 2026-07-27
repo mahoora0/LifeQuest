@@ -123,7 +123,7 @@ class QuestCheckButton extends StatelessWidget {
               height: 27,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: checked ? LqColors.expBadge : LqColors.card,
+                color: checked ? LqColors.expBadge : LqColors.surfaceRaised,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: LqColors.ink,
@@ -246,7 +246,7 @@ class _IconTile extends StatelessWidget {
       height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LqColors.panel,
+        color: LqColors.surfaceTint,
         borderRadius: LqShape.tileRadius,
         border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
       ),
