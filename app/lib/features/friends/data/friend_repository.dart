@@ -26,12 +26,7 @@ class FriendRepository {
       level: 9,
       statusLine: '오늘 5 / 5 · 올클리어!',
     ),
-    Friend(
-      userId: 3,
-      nickname: '밤톨',
-      level: 15,
-      statusLine: '어제 활동 · 연속 21일',
-    ),
+    Friend(userId: 3, nickname: '밤톨', level: 15, statusLine: '어제 활동 · 연속 21일'),
   ];
 
   Future<FriendList> fetchFriends() async {

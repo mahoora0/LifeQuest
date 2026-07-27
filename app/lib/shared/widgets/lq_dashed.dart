@@ -88,7 +88,10 @@ class LqDashedDivider extends StatelessWidget {
     );
 
     if (axis == Axis.vertical) {
-      return SizedBox(width: thickness, child: CustomPaint(painter: painter));
+      return SizedBox(
+        width: thickness,
+        child: CustomPaint(painter: painter),
+      );
     }
     return SizedBox(
       height: thickness,

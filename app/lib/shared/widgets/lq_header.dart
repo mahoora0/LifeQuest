@@ -126,7 +126,10 @@ class LqIconButton extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: LqColors.accent,
                         shape: BoxShape.circle,
-                        border: Border.all(color: LqColors.surfaceRaised, width: 1.5),
+                        border: Border.all(
+                          color: LqColors.surfaceRaised,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),

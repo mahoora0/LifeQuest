@@ -247,10 +247,7 @@ class _Avatar extends StatelessWidget {
       ),
       child: Text(
         nickname.isEmpty ? '?' : nickname.characters.first,
-        style: LqText.badge.copyWith(
-          fontSize: 16,
-          color: LqColors.goldText,
-        ),
+        style: LqText.badge.copyWith(fontSize: 16, color: LqColors.goldText),
       ),
     );
   }
@@ -354,11 +351,7 @@ class _FriendCodeCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: LqColors.textMuted,
-          ),
+          const Icon(Icons.chevron_right, size: 20, color: LqColors.textMuted),
         ],
       ),
     );
@@ -479,10 +472,7 @@ class _DeltaPill extends StatelessWidget {
       ),
       child: Text(
         '${up ? '↑' : '↓'} ${delta.abs()}',
-        style: LqText.badge.copyWith(
-          fontSize: 13,
-          color: LqColors.goldText,
-        ),
+        style: LqText.badge.copyWith(fontSize: 13, color: LqColors.goldText),
       ),
     );
   }
