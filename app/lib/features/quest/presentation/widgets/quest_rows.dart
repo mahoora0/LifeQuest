@@ -205,7 +205,11 @@ class QuestListRow extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     LqRewardBadge.exp(quest.expReward),
-                    LqRewardBadge.tag(quest.completionType.palette),
+                    // 주기 뱃지와 위치 뱃지는 별개의 축이라 함께 붙을 수 있다
+                    // (예: "새로운 카페 방문하기" = 주간 + 위치).
+                    LqRewardBadge.tag(quest.cadence.palette),
+                    if (quest.completionType.isLocation)
+                      LqRewardBadge.tag(LqTagPalette.location),
                     if (status.isExpired) const _ExpiredBadge(),
                   ],
                 ),

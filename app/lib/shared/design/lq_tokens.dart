@@ -90,6 +90,11 @@ class LqTagPalette {
     Color(0xFFE4E9EC),
     Color(0xFF8FA3AE),
   );
+  static const monthly = LqTagPalette(
+    '월간',
+    Color(0xFFDFEAD1),
+    Color(0xFF8FA86A),
+  );
   static const location = LqTagPalette(
     '위치',
     LqColors.locBg,

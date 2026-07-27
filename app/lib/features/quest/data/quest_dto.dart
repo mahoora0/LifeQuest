@@ -19,6 +19,39 @@ enum QuestCompletionType {
       isLocation ? LqTagPalette.location : LqTagPalette.selfReport;
 }
 
+/// 반복 주기 (`QUESTS.cadence`). 퀘스트 목록의 조회 필터 기준이다.
+///
+/// 완료 방식([QuestCompletionType])과는 별개의 축이다 — "새로운 카페 방문하기"처럼
+/// 주간이면서 위치 인증인 퀘스트가 있어 한쪽으로 다른 쪽을 유추할 수 없다.
+enum QuestCadence {
+  daily('일간'),
+  weekly('주간'),
+  monthly('월간');
+
+  const QuestCadence(this.label);
+
+  final String label;
+
+  /// 모르는 값과 누락은 [daily]로 본다.
+  ///
+  /// 서버 컬럼의 기본값이 DAILY라 값이 비면 실제로 일간일 가능성이 가장 높고,
+  /// 무엇보다 목록에 "전체" 칩이 없어 어느 주기에도 속하지 않는 퀘스트는
+  /// 어떤 탭에서도 보이지 않는다. 분류가 애매한 편이 사라지는 것보다 낫다.
+  static QuestCadence parse(Object? raw) {
+    return switch (asString(raw)?.toUpperCase()) {
+      'WEEKLY' => QuestCadence.weekly,
+      'MONTHLY' => QuestCadence.monthly,
+      _ => QuestCadence.daily,
+    };
+  }
+
+  LqTagPalette get palette => switch (this) {
+    QuestCadence.daily => LqTagPalette.daily,
+    QuestCadence.weekly => LqTagPalette.weekly,
+    QuestCadence.monthly => LqTagPalette.monthly,
+  };
+}
+
 /// 배정 상태 (`USER_DAILY_QUESTS.status`).
 enum DailyQuestStatus {
   assigned,
@@ -70,6 +103,7 @@ class Quest {
     required this.title,
     required this.completionType,
     required this.expReward,
+    this.cadence = QuestCadence.daily,
     this.description,
     this.grade,
     this.placeName,
@@ -82,6 +116,7 @@ class Quest {
   final String title;
   final String? description;
   final String? grade;
+  final QuestCadence cadence;
   final QuestCompletionType completionType;
   final int expReward;
   final String? placeName;
@@ -104,6 +139,7 @@ class Quest {
       title: asString(pick(json, ['title', 'questTitle', 'name'])) ?? '퀘스트',
       description: asString(pick(json, ['description', 'questDescription'])),
       grade: asString(json['grade']),
+      cadence: QuestCadence.parse(pick(json, ['cadence', 'questCadence'])),
       completionType: QuestCompletionType.parse(
         pick(json, ['completionType', 'completion_type', 'type']),
       ),
