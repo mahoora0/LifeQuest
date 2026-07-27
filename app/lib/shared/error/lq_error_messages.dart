@@ -32,3 +32,16 @@ String lqErrorMessage(Object error) {
           : '문제가 생겼어요. 잠시 후 다시 시도해 주세요.',
   };
 }
+
+/// 서버에 아직 열리지 않은 엔드포인트인지 판별한다.
+///
+/// 컨트롤러가 없는 경로는 404로 떨어지는데, 이건 "리소스를 못 찾았다"가 아니라
+/// "그 기능이 아직 없다"는 뜻이다. 사용자에게는 재시도해도 소용없는 상태이므로
+/// 오류 화면 대신 준비 중 안내를 보여줘야 한다.
+///
+/// 서버가 코드를 실어 보낸 `RESOURCE_NOT_FOUND`는 제외한다 — 그쪽은 엔드포인트가
+/// 살아 있고 특정 리소스만 없는 경우라 "다시 시도"가 의미를 가질 수 있다.
+bool isFeatureNotReady(Object error) {
+  final failure = ApiException.from(error);
+  return failure.statusCode == 404 && failure.code != 'RESOURCE_NOT_FOUND';
+}

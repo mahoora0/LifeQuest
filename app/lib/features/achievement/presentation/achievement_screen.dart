@@ -120,6 +120,10 @@ class _AchievementTab extends ConsumerWidget {
       value: overview,
       isEmpty: (value) => value.isEmpty,
       emptyMessage: '아직 등록된 업적이 없어요',
+      // 업적 목록만 서버가 없고 칭호·배지는 조회된다. 첫 탭이 오류로 막히면
+      // 동작하는 두 탭까지 함께 죽은 것처럼 보이므로 그쪽으로 안내한다.
+      notReadyMessage: '업적 목록은 아직 준비 중이에요',
+      notReadyHint: '칭호·배지 탭은 지금도 확인할 수 있어요.',
       onRetry: () => ref.invalidate(achievementOverviewProvider),
       data: (value) {
         final visible = value.achievements.where(filter.matches).toList();
@@ -371,7 +375,8 @@ class _TitleTab extends ConsumerWidget {
 /// 배지 목록 + 대표 배지 지정.
 ///
 /// 대표 지정이 가능한 보상 컬렉션이라는 점에서 칭호와 같은 성격이라 같은 화면에 둔다.
-/// 마이페이지의 "내 배지" 카드가 "나의 기록"으로 대체되면서 이 탭이 유일한 진입점이 됐다.
+/// 마이페이지 "내 배지" 카드는 미리보기와 "더보기" 진입만 맡고, 지정은 이 탭에서만 한다.
+/// 지정 결과는 마이페이지 헤더의 대표 배지 표식과 미리보기 첫 칸에 반영된다.
 class _BadgeTab extends ConsumerWidget {
   const _BadgeTab();
 
@@ -400,8 +405,7 @@ class _BadgeTab extends ConsumerWidget {
               child: _BadgeRow(
                 badge: badge,
                 selected:
-                    badge.id != null &&
-                    value.representativeBadgeId == badge.id,
+                    badge.id != null && value.representativeBadgeId == badge.id,
                 // id가 없으면 어느 배지를 지정할지 서버에 전달할 수 없다.
                 onTap: badge.id == null
                     ? null

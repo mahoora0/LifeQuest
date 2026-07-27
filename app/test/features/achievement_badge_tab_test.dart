@@ -11,8 +11,8 @@ import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
 
-/// 마이페이지의 "내 배지" 카드가 "나의 기록"으로 대체되면서 업적 화면의 배지 탭이
-/// 대표 배지를 지정할 수 있는 유일한 경로가 됐다.
+/// 대표 배지를 지정할 수 있는 곳은 이 배지 탭뿐이다.
+/// 마이페이지 "내 배지" 카드는 미리보기와 "더보기" 진입만 맡는다.
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
