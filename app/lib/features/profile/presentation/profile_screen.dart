@@ -18,6 +18,9 @@ import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
+/// 배지·아이콘 타일의 채움색. 카드 배경(tint)보다 한 단계 진해 타일이 도드라진다.
+const _tileFill = Color(0xFFF3E9D0);
+
 /// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
 /// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
 Future<void> _refresh(WidgetRef ref) async {
@@ -89,6 +92,8 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: LqSpacing.gap),
                 const _GrowthRecordCard(),
                 const SizedBox(height: LqSpacing.gap),
+                const _BadgeCard(),
+                const SizedBox(height: LqSpacing.gap),
                 const _MyRecordCard(),
                 const SizedBox(height: LqSpacing.gap),
                 const _RewardHistoryCard(),
@@ -121,12 +126,12 @@ class _RewardHistoryCard extends ConsumerWidget {
     ];
 
     return LqCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      background: LqColors.surfaceCard,
+      header: '획득 보상',
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('획득 보상', style: LqText.cardTitle),
-          const SizedBox(height: 8),
           if (rewards.isLoading)
             const LinearProgressIndicator(minHeight: 3)
           else if (rewards.hasError)
@@ -172,25 +177,20 @@ class _ProfileHeader extends ConsumerWidget {
           width: 74,
           height: 74,
           clipBehavior: Clip.antiAlias,
+          alignment: Alignment.bottomCenter,
           decoration: BoxDecoration(
-            color: LqColors.surfaceRaised,
+            color: LqColors.surfaceTint,
             shape: BoxShape.circle,
             border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
           ),
+          // 사진을 올리기 전 기본 아바타는 시안대로 정면 캐릭터를 쓴다.
           child: imageUrl.isEmpty
-              ? const Icon(
-                  Icons.person_outline_rounded,
-                  size: 42,
-                  color: LqColors.textMuted,
-                )
+              ? const LqImage(LqAssets.charFront, width: 52)
               : Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.person_outline_rounded,
-                    size: 42,
-                    color: LqColors.textMuted,
-                  ),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const LqImage(LqAssets.charFront, width: 52),
                 ),
         ),
         const SizedBox(width: 14),
@@ -354,34 +354,35 @@ class _GrowthRecordCard extends ConsumerWidget {
     final history = ref.watch(questHistoryProvider);
     final level = ref.watch(levelStatusProvider);
 
+    final cells = <Widget>[
+      _RecordCell(
+        label: '퀘스트 완료',
+        value: history.value == null
+            ? '—'
+            : '${history.requireValue.totalElements}',
+      ),
+      // ② 연속 달성은 서버 판정이 필요해 v1에서 노출하지 않는다.
+      if (LqFeatures.streakEnabled) const _RecordCell(label: '연속 달성', value: '—'),
+      _RecordCell(
+        label: '총 EXP',
+        value: level.value == null ? '—' : '${level.requireValue.totalExp}',
+      ),
+    ];
+
     return LqCard(
       background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('성장 기록', style: LqText.cardTitle),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _RecordCell(
-                label: '퀘스트 완료',
-                value: history.value == null
-                    ? '—'
-                    : '${history.requireValue.totalElements}',
-              ),
-              // ② 연속 달성은 서버 판정이 필요해 v1에서 노출하지 않는다.
-              if (LqFeatures.streakEnabled)
-                const _RecordCell(label: '연속 달성', value: '—'),
-              _RecordCell(
-                label: '총 EXP',
-                value: level.value == null
-                    ? '—'
-                    : '${level.requireValue.totalExp}',
-              ),
+      header: '성장 기록',
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < cells.length; i++) ...[
+              if (i > 0) const LqDashedDivider(axis: Axis.vertical),
+              cells[i],
             ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -395,13 +396,88 @@ class _RecordCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 시안은 라벨이 위, 숫자가 아래다 — 먼저 무엇의 수치인지 읽고 값을 본다.
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value, style: LqText.levelNumber.copyWith(fontSize: 21)),
-          const SizedBox(height: 2),
           Text(label, style: LqText.caption),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LqText.levelNumber.copyWith(fontSize: 23),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// "내 배지" — 보유 배지 4칸 미리보기. 시안 9번 화면에 "나의 기록"과 나란히 있다.
+///
+/// 여기서는 대표 지정을 하지 않고 "더보기"로 업적 화면의 배지 탭에 넘긴다.
+/// 지정 로직이 두 곳에 생기면 낙관적 갱신과 롤백을 양쪽에서 관리해야 한다.
+class _BadgeCard extends ConsumerWidget {
+  const _BadgeCard();
+
+  static const _slotCount = 4;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final collection = ref.watch(badgeCollectionProvider);
+    final items = collection.value?.badges ?? const <ProfileItem>[];
+
+    return LqCard(
+      background: LqColors.surfaceCard,
+      header: '내 배지',
+      headerTrailing: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.push('/achievements?tab=badges'),
+        child: Text('더보기 ›', style: LqText.caption),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      child: Row(
+        children: [
+          for (var i = 0; i < _slotCount; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            _BadgeSlot(item: i < items.length ? items[i] : null),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgeSlot extends StatelessWidget {
+  const _BadgeSlot({required this.item});
+
+  final ProfileItem? item;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = item == null;
+
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(
+        color: empty ? LqColors.lockedBg : _tileFill,
+        borderRadius: LqShape.tileRadius,
+        border: empty
+            ? Border.all(color: LqColors.borderMuted, width: LqShape.borderWidth)
+            : Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+      ),
+      child: Text(
+        empty ? '?' : item!.name.characters.first,
+        maxLines: 1,
+        style: LqText.badge.copyWith(
+          fontSize: 17,
+          color: empty ? LqColors.textMuted : LqColors.textPrimary,
+        ),
       ),
     );
   }
@@ -419,32 +495,17 @@ class _MyRecordCard extends ConsumerWidget {
     final lifedex = ref.watch(lifedexOverviewProvider);
     final achievements = ref.watch(achievementOverviewProvider);
     final titles = ref.watch(titleCollectionProvider);
-    final badges = ref.watch(badgeCollectionProvider);
     final achieved = achievements.value?.achievedCount;
 
     return LqCard(
       background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      header: '나의 기록',
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('나의 기록', style: LqText.cardTitle),
-          const SizedBox(height: 4),
           _RecordRow(
-            leading: Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: LqColors.surfaceTile,
-                borderRadius: LqShape.tileRadius,
-                border: Border.all(
-                  color: LqColors.ink,
-                  width: LqShape.borderWidth,
-                ),
-              ),
-              child: const LqImage(LqAssets.iconBackpack, width: 20),
-            ),
+            leading: const _RecordTile(asset: LqAssets.iconMap, width: 26),
             label: 'LifeDex 도감',
             caption: _caption(
               lifedex,
@@ -470,20 +531,17 @@ class _MyRecordCard extends ConsumerWidget {
               child: Text(
                 achieved == null ? '—' : '$achieved',
                 style: LqText.badge.copyWith(
-                  fontSize: 13,
-                  color: LqColors.textPrimary,
+                  fontSize: 15,
+                  color: LqColors.goldText,
                 ),
               ),
             ),
-            // 라벨이 화면 안에 무엇이 있는지 그대로 말해야 한다. 배지 탭이 이 행 뒤에만
-            // 있어서, 이름에서 빠지면 대표 배지를 바꾸러 갈 길을 찾을 수 없다.
-            label: '업적 / 칭호 / 배지',
+            label: '업적 / 칭호',
             caption: _caption(
               achievements,
               (value) =>
                   '달성 ${value.achievedCount} / ${value.total}'
-                  '${titles.hasValue ? ' · 칭호 ${titles.requireValue.titles.length}개' : ''}'
-                  '${badges.hasValue ? ' · 배지 ${badges.requireValue.badges.length}개' : ''}',
+                  '${titles.hasValue ? ' · 칭호 ${titles.requireValue.titles.length}개 보유' : ''}',
             ),
             onTap: () => context.push('/achievements'),
           ),
@@ -497,6 +555,29 @@ class _MyRecordCard extends ConsumerWidget {
     if (value.hasError && !value.isLoading) return '현황을 불러오지 못했어요';
     if (!value.hasValue) return '불러오는 중이에요…';
     return format(value.requireValue);
+  }
+}
+
+/// "나의 기록" 행 앞의 아이콘 타일. 시안은 카드 배경보다 진한 채움을 쓴다.
+class _RecordTile extends StatelessWidget {
+  const _RecordTile({required this.asset, required this.width});
+
+  final String asset;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: _tileFill,
+        borderRadius: LqShape.tileRadius,
+        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+      ),
+      child: LqImage(asset, width: width),
+    );
   }
 }
 
@@ -559,6 +640,7 @@ class _MenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [

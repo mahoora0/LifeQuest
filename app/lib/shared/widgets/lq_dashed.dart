@@ -57,7 +57,10 @@ class LqDashedBorderPainter extends CustomPainter {
       old.gapLength != gapLength;
 }
 
-/// 가로 점선 구분선(시안의 대부분 구분선은 dashed).
+/// 점선 구분선(시안의 대부분 구분선은 dashed).
+///
+/// [axis]를 [Axis.vertical]로 두면 세로 구분선이 된다 — 시안의 성장 기록 3칸처럼
+/// 나란한 칸을 나눌 때 쓴다. 세로일 때는 부모가 높이를 정해 줘야 한다.
 class LqDashedDivider extends StatelessWidget {
   const LqDashedDivider({
     super.key,
@@ -65,26 +68,32 @@ class LqDashedDivider extends StatelessWidget {
     this.thickness = 1.6,
     this.dashLength = 5,
     this.gapLength = 4,
+    this.axis = Axis.horizontal,
   });
 
   final Color color;
   final double thickness;
   final double dashLength;
   final double gapLength;
+  final Axis axis;
 
   @override
   Widget build(BuildContext context) {
+    final painter = _LqDashedLinePainter(
+      color: color,
+      thickness: thickness,
+      dashLength: dashLength,
+      gapLength: gapLength,
+      axis: axis,
+    );
+
+    if (axis == Axis.vertical) {
+      return SizedBox(width: thickness, child: CustomPaint(painter: painter));
+    }
     return SizedBox(
       height: thickness,
       width: double.infinity,
-      child: CustomPaint(
-        painter: _LqDashedLinePainter(
-          color: color,
-          thickness: thickness,
-          dashLength: dashLength,
-          gapLength: gapLength,
-        ),
-      ),
+      child: CustomPaint(painter: painter),
     );
   }
 }
@@ -95,12 +104,14 @@ class _LqDashedLinePainter extends CustomPainter {
     required this.thickness,
     required this.dashLength,
     required this.gapLength,
+    required this.axis,
   });
 
   final Color color;
   final double thickness;
   final double dashLength;
   final double gapLength;
+  final Axis axis;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -108,6 +119,18 @@ class _LqDashedLinePainter extends CustomPainter {
       ..color = color
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round;
+
+    if (axis == Axis.vertical) {
+      final x = size.width / 2;
+      var y = 0.0;
+      while (y < size.height) {
+        final next = math.min(y + dashLength, size.height);
+        canvas.drawLine(Offset(x, y), Offset(x, next), paint);
+        y = next + gapLength;
+      }
+      return;
+    }
+
     final y = size.height / 2;
     var x = 0.0;
     while (x < size.width) {
@@ -122,7 +145,8 @@ class _LqDashedLinePainter extends CustomPainter {
       old.color != color ||
       old.thickness != thickness ||
       old.dashLength != dashLength ||
-      old.gapLength != gapLength;
+      old.gapLength != gapLength ||
+      old.axis != axis;
 }
 
 /// 점선 원(GPS 레이더의 동심원).

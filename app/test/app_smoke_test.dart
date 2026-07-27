@@ -125,7 +125,7 @@ void main() {
     expect(find.text('로그아웃할까요?'), findsNothing);
   });
 
-  testWidgets('마이페이지는 "나의 기록"으로 LifeDex·업적 진입점을 제공한다', (tester) async {
+  testWidgets('마이페이지는 시안대로 내 배지 요약과 나의 기록을 함께 보여준다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -144,11 +144,17 @@ void main() {
     expect(find.text('나의 기록'), findsOneWidget);
     expect(find.text('LifeDex 도감'), findsOneWidget);
     expect(find.text('수집률 42% · 42 / 100'), findsOneWidget);
-    expect(find.text('업적 / 칭호 / 배지'), findsOneWidget);
-    expect(find.text('달성 1 / 3 · 칭호 2개 · 배지 3개'), findsOneWidget);
+    expect(find.text('업적 / 칭호'), findsOneWidget);
+    expect(find.text('달성 1 / 3 · 칭호 2개 보유'), findsOneWidget);
 
-    // "내 배지" 카드를 대체했고, 칭호·배지 변경은 업적 화면의 각 탭에서 한다.
-    expect(find.text('내 배지'), findsNothing);
+    // 시안 9번 화면은 "내 배지"와 "나의 기록"을 나란히 둔다.
+    expect(find.text('내 배지'), findsOneWidget);
+    expect(find.text('더보기 ›'), findsOneWidget);
+    // 보유 3개 + 빈 슬롯 1개.
+    expect(find.text('새'), findsOneWidget);
+    expect(find.text('?'), findsOneWidget);
+
+    // 칭호 변경은 업적 화면의 칭호 탭에서 한다.
     expect(find.text('칭호 선택'), findsNothing);
   });
 
