@@ -1,9 +1,10 @@
 -- Quest domain tables (담당: 팀원 2 — 퀘스트 배정·완료·GPS 인증).
 -- 스키마 근거: docs/03-database-design.md §2-2.
 --
--- 크로스도메인 FK 보류: user_id → USERS(팀원1), lifedex_item_id → LIFEDEX_ITEMS(팀원3)는
--- 해당 테이블이 아직 없어 FK 제약을 걸지 않고 BIGINT 컬럼으로만 둔다. 두 테이블이 생기면
--- 후속 마이그레이션에서 FK를 추가한다. 도메인 내부 FK와 UNIQUE 제약은 지금 확정한다.
+-- 크로스도메인 FK 보류: lifedex_item_id → LIFEDEX_ITEMS(팀원3)는 해당 테이블이 아직 없어
+-- FK 제약 없이 BIGINT 컬럼으로만 둔다. user_id의 참조 대상 users는 V2__auth_and_users에
+-- 이미 있으므로 FK 추가가 가능하다 — 후속 마이그레이션에서 결정한다.
+-- 도메인 내부 FK와 UNIQUE 제약은 지금 확정한다.
 -- ENUM은 H2(MySQL 모드)/MySQL 양쪽 호환을 위해 VARCHAR로 저장한다(JPA @Enumerated STRING).
 
 CREATE TABLE quests (

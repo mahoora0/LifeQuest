@@ -21,7 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 퀘스트 도메인 엔티티가 Flyway로 생성된 스키마(V2)와 정확히 매핑되는지 확인하는 라운드트립 스모크 테스트.
+ * 퀘스트 도메인 엔티티가 Flyway 마이그레이션으로 생성된 퀘스트 스키마와 정확히 매핑되는지 확인하는
+ * 라운드트립 스모크 테스트.
  *
  * <p>매핑·파생 쿼리 동작만 검증한다. 완료 멱등성(UNIQUE 위반)·GPS 판정·배정 같은 비즈니스 로직 검증은
  * 서비스 계층 PR에서 다룬다.
