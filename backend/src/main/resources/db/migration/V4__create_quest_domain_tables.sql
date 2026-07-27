@@ -21,7 +21,7 @@ CREATE TABLE quests (
     lifedex_item_id BIGINT,
     created_by      VARCHAR(20)  NOT NULL,
     is_active       BOOLEAN      NOT NULL DEFAULT TRUE,
-    created_at      DATETIME     NOT NULL,
+    created_at      DATETIME(6)  NOT NULL,
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_quests_location ON quests (latitude, longitude);
@@ -32,7 +32,7 @@ CREATE TABLE user_daily_quests (
     quest_id      BIGINT      NOT NULL,
     assigned_date DATE        NOT NULL,
     status        VARCHAR(20) NOT NULL,
-    expires_at    DATETIME    NOT NULL,
+    expires_at    DATETIME(6) NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_user_daily_quests UNIQUE (user_id, quest_id, assigned_date),
     CONSTRAINT fk_udq_quest FOREIGN KEY (quest_id) REFERENCES quests (id)
@@ -40,15 +40,15 @@ CREATE TABLE user_daily_quests (
 CREATE INDEX idx_udq_user_date ON user_daily_quests (user_id, assigned_date);
 
 CREATE TABLE quest_completions (
-    id                  BIGINT   NOT NULL AUTO_INCREMENT,
-    user_daily_quest_id BIGINT   NOT NULL,
-    user_id             BIGINT   NOT NULL,
-    quest_id            BIGINT   NOT NULL,
+    id                  BIGINT      NOT NULL AUTO_INCREMENT,
+    user_daily_quest_id BIGINT      NOT NULL,
+    user_id             BIGINT      NOT NULL,
+    quest_id            BIGINT      NOT NULL,
     verified_latitude   DECIMAL(10,7),
     verified_longitude  DECIMAL(10,7),
     distance_m          DECIMAL(8,2),
     accuracy_m          DECIMAL(8,2),
-    completed_at        DATETIME NOT NULL,
+    completed_at        DATETIME(6) NOT NULL,
     PRIMARY KEY (id),
     -- 완료 멱등성의 근거: 하나의 배정 건은 완료 기록을 하나만 가진다.
     CONSTRAINT uk_quest_completions_udq UNIQUE (user_daily_quest_id),

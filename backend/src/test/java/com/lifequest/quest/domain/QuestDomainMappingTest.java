@@ -130,6 +130,27 @@ class QuestDomainMappingTest {
     }
 
     @Test
+    void questCompletion_완료시각이_마이크로초까지_보존된다() {
+        Quest quest = persistLocationQuest();
+        LocalDate today = LocalDate.now();
+        UserDailyQuest assignment = userDailyQuestRepository.save(
+                new UserDailyQuest(3L, quest.getId(), today, today.atTime(23, 59, 59)));
+        em.flush();
+
+        // 초 미만이 잘리면 완료 이력의 순서가 무너지고, expires_at은 반올림으로 만료 경계가 밀린다.
+        LocalDateTime completedAt = LocalDateTime.of(2026, 7, 27, 12, 0, 0, 700_000_000);
+        questCompletionRepository.save(new QuestCompletion(
+                assignment.getId(), 3L, quest.getId(), null, null, null, null, completedAt));
+        em.flush();
+        em.clear();
+
+        QuestCompletion found =
+                questCompletionRepository.findByUserDailyQuestId(assignment.getId()).orElseThrow();
+        assertEquals(completedAt, found.getCompletedAt(),
+                "completed_at은 DATETIME(6)이어야 하고 초 미만이 보존되어야 한다");
+    }
+
+    @Test
     void questCompletion_SELF_REPORT는_위치항목이_null로_저장된다() {
         Quest quest = new Quest(
                 "책 한 권 읽기", null, QuestGrade.NORMAL, CompletionType.SELF_REPORT,
