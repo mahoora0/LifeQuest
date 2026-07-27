@@ -88,6 +88,12 @@ class _Body extends ConsumerWidget {
       children: [
         Row(
           children: [
+            // 탭이 아니라 마이페이지에서 push로 열리는 화면이라 돌아갈 길이 필요하다.
+            LqIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: '뒤로 가기',
+              onTap: () => context.canPop() ? context.pop() : context.go('/'),
+            ),
             Container(
               width: 34,
               height: 34,

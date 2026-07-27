@@ -22,8 +22,10 @@ import 'package:life_quest/shared/presentation/feature_placeholder_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · LifeDex · 마이.
-/// 친구·랭킹(S-18~22)은 Phase 2로 미루고 라우트를 등록하지 않는다.
+/// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · 친구 · 마이.
+///
+/// LifeDex 도감(S-13)과 업적·칭호(S-15)는 탭에서 빠지고 마이페이지 "나의 기록" 카드에서
+/// push로 연다. 탭 밖 라우트라 하단 탭바가 가려지고 좌상단 ←로 돌아온다.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
 
@@ -88,8 +90,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/lifedex',
-                builder: (context, state) => const LifedexScreen(),
+                path: '/friends',
+                builder: (context, state) => const FeaturePlaceholderScreen(
+                  title: '친구',
+                  message: '친구 화면은 다음 단계에서 열려요',
+                ),
               ),
             ],
           ),
@@ -146,6 +151,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             quest: args.quest,
           );
         },
+      ),
+      GoRoute(
+        path: '/lifedex',
+        builder: (context, state) => const LifedexScreen(),
       ),
       GoRoute(
         path: '/achievements',

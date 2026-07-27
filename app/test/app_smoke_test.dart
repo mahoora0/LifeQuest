@@ -4,7 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/app/life_quest_app.dart';
+import 'package:life_quest/features/achievement/application/achievement_providers.dart';
+import 'package:life_quest/features/achievement/data/achievement_dto.dart';
+import 'package:life_quest/features/achievement/data/achievement_repository.dart';
 import 'package:life_quest/features/auth/application/auth_controller.dart';
+import 'package:life_quest/features/lifedex/application/lifedex_providers.dart';
+import 'package:life_quest/features/lifedex/data/lifedex_dto.dart';
+import 'package:life_quest/features/lifedex/data/lifedex_repository.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
@@ -38,11 +44,11 @@ void main() {
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('퀘스트'), findsOneWidget);
     expect(find.text('지도'), findsOneWidget);
-    expect(find.text('LifeDex'), findsOneWidget);
+    expect(find.text('친구'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
 
-    // 친구 탭은 Phase 2로 미뤄 라우트를 등록하지 않는다.
-    expect(find.text('친구'), findsNothing);
+    // LifeDex는 탭에서 빠지고 마이페이지 "나의 기록"에서 push로 연다.
+    expect(find.text('LifeDex'), findsNothing);
   });
 
   testWidgets('로그아웃 상태에서는 로그인 화면을 표시한다', (tester) async {
@@ -119,6 +125,33 @@ void main() {
     expect(find.text('로그아웃할까요?'), findsNothing);
   });
 
+  testWidgets('마이페이지는 "나의 기록"으로 LifeDex·업적 진입점을 제공한다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          lifedexRepositoryProvider.overrideWithValue(_FakeLifedexRepository()),
+          achievementRepositoryProvider.overrideWithValue(
+            _FakeAchievementRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: ProfileScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('나의 기록'), findsOneWidget);
+    expect(find.text('LifeDex 도감'), findsOneWidget);
+    expect(find.text('수집률 42% · 42 / 100'), findsOneWidget);
+    expect(find.text('업적 / 칭호'), findsOneWidget);
+    expect(find.text('달성 1 / 3 · 칭호 2개 보유'), findsOneWidget);
+
+    // "내 배지" 카드를 대체했고, 칭호 변경은 업적 화면의 칭호 탭에서 한다.
+    expect(find.text('내 배지'), findsNothing);
+    expect(find.text('칭호 선택'), findsNothing);
+  });
+
   testWidgets('프로필 수정은 URL 입력 대신 사진 선택과 캐릭터 목록을 보여준다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -182,4 +215,39 @@ class _FakeUserRepository extends UserRepository {
   @override
   Future<RewardHistory> fetchRewards() async =>
       const RewardHistory(titles: [], profileItems: []);
+
+  @override
+  Future<TitleCollection> fetchTitles() async => const TitleCollection(
+    titles: [
+      UserTitle(id: 1, name: '새내기 모험가'),
+      UserTitle(id: 2, name: '동네 탐험가'),
+    ],
+    representativeTitleId: 1,
+  );
+}
+
+class _FakeLifedexRepository extends LifedexRepository {
+  _FakeLifedexRepository() : super(Dio());
+
+  @override
+  Future<LifedexOverview> fetchOverview() async => const LifedexOverview(
+    categories: [
+      LifedexCategory(id: 1, name: '카페', totalCount: 50, ownedCount: 20),
+      LifedexCategory(id: 2, name: '공원', totalCount: 50, ownedCount: 22),
+    ],
+  );
+}
+
+class _FakeAchievementRepository extends AchievementRepository {
+  _FakeAchievementRepository() : super(Dio());
+
+  @override
+  Future<AchievementOverview> fetchOverview() async =>
+      const AchievementOverview(
+        achievements: [
+          Achievement(id: 1, name: '첫걸음', achieved: true, secret: false),
+          Achievement(id: 2, name: '카페 탐험가 I', achieved: false, secret: false),
+          Achievement(id: 3, name: '???', achieved: false, secret: true),
+        ],
+      );
 }

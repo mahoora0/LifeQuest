@@ -20,7 +20,8 @@ class LqBottomNav extends StatelessWidget {
     LqNavDestination(icon: Icons.home_outlined, label: '홈'),
     LqNavDestination(icon: Icons.flag_outlined, label: '퀘스트'),
     LqNavDestination(icon: Icons.map_outlined, label: '지도'),
-    LqNavDestination(icon: Icons.auto_stories_outlined, label: 'LifeDex'),
+    // LifeDex 도감은 탭에서 빠지고 마이페이지 "나의 기록"에서 push로 연다.
+    LqNavDestination(icon: Icons.group_outlined, label: '친구'),
     LqNavDestination(icon: Icons.person_outline, label: '마이'),
   ];
 
