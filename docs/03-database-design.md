@@ -86,6 +86,7 @@ erDiagram
         bigint id PK
         varchar title
         varchar grade "NORMAL/RARE/EPIC/LEGENDARY"
+        varchar cadence "DAILY/WEEKLY/MONTHLY"
         varchar completion_type "LOCATION/SELF_REPORT"
         int exp_reward
         decimal latitude
@@ -285,6 +286,7 @@ erDiagram
 | title | VARCHAR(100) | NOT NULL | 퀘스트명 |
 | description | VARCHAR(500) | NULL | 설명 |
 | grade | ENUM | NOT NULL | NORMAL / RARE / EPIC / LEGENDARY |
+| cadence | ENUM | NOT NULL, DEFAULT DAILY | DAILY / WEEKLY / MONTHLY — 퀘스트 목록의 조회 필터 기준 |
 | completion_type | ENUM | NOT NULL | LOCATION(위치 인증) / SELF_REPORT(직접 완료) |
 | exp_reward | INT | NOT NULL | 완료 시 지급 EXP(등급별 기준값) |
 | place_name | VARCHAR(100) | NULL | 장소명(LOCATION 타입에만 사용) |
