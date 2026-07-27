@@ -16,23 +16,22 @@ import 'package:life_quest/features/friends/data/friend_dto.dart';
 class FriendRepository {
   const FriendRepository();
 
-  /// 서버 연동 전까지 화면이 그리는 표본 친구 목록.
+  /// 서버 연동 전까지 화면이 그리는 표본 친구 목록. 이름·레벨·문구 모두 시안 값 그대로다.
   static const _sampleFriends = [
+    Friend(userId: 0, nickname: '하늘', level: 14, statusLine: '오늘 4 / 5 완료'),
+    Friend(userId: 1, nickname: '도토리', level: 11, statusLine: '오늘 2 / 5 완료'),
     Friend(
-      userId: 11,
-      nickname: '민서',
-      level: 7,
-      statusLine: '오늘 퀘스트 2 / 3 진행 중',
+      userId: 2,
+      nickname: '초록곰',
+      level: 9,
+      statusLine: '오늘 5 / 5 · 올클리어!',
     ),
     Friend(
-      userId: 12,
-      nickname: '준호',
-      level: 5,
-      statusLine: '어제 남산 전망대를 다녀왔어요',
-      cheered: true,
+      userId: 3,
+      nickname: '밤톨',
+      level: 15,
+      statusLine: '어제 활동 · 연속 21일',
     ),
-    Friend(userId: 13, nickname: '하윤', level: 9, statusLine: '오늘 퀘스트 3 / 3 완료'),
-    Friend(userId: 14, nickname: '지우', level: 4, statusLine: '이번 주 첫 퀘스트를 기다리는 중'),
   ];
 
   Future<FriendList> fetchFriends() async {
@@ -42,11 +41,17 @@ class FriendRepository {
   Future<WeeklyRanking> fetchWeeklyRanking() async {
     return const WeeklyRanking(
       entries: [
-        RankEntry(rank: 1, userId: 13, nickname: '하윤', weeklyExp: 420),
-        RankEntry(rank: 2, userId: 11, nickname: '민서', weeklyExp: 380),
-        RankEntry(rank: 3, userId: 1, nickname: '나', weeklyExp: 305, isMe: true),
-        RankEntry(rank: 4, userId: 12, nickname: '준호', weeklyExp: 260),
-        RankEntry(rank: 5, userId: 14, nickname: '지우', weeklyExp: 95),
+        RankEntry(rank: 1, userId: 0, nickname: '하늘', weeklyExp: 1240),
+        RankEntry(rank: 2, userId: 2, nickname: '초록곰', weeklyExp: 1080),
+        RankEntry(
+          rank: 3,
+          userId: 100,
+          nickname: '모험가 (나)',
+          weeklyExp: 980,
+          isMe: true,
+        ),
+        RankEntry(rank: 4, userId: 3, nickname: '밤톨', weeklyExp: 860),
+        RankEntry(rank: 5, userId: 1, nickname: '도토리', weeklyExp: 720),
       ],
       rankDelta: 1,
     );

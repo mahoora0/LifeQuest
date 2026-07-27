@@ -8,6 +8,13 @@ import 'package:life_quest/features/friends/data/friend_repository.dart';
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 
 /// 친구 화면(S-18~22)은 세그먼트 두 개로 목록과 주간 랭킹을 오간다.
+/// 순위 요약은 숫자와 모수의 크기가 달라 `Text.rich`로 그린다.
+/// `find.text`는 `Text.data`만 보므로 합성된 평문으로 찾는다.
+Finder findComposedText(String text) => find.byWidgetPredicate(
+  (widget) =>
+      widget is Text && (widget.data ?? widget.textSpan?.toPlainText()) == text,
+);
+
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -66,8 +73,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('이번 주 내 순위'), findsOneWidget);
-    expect(find.text('2위 (친구 2명 중)'), findsOneWidget);
-    expect(find.text('▲ 1'), findsOneWidget);
+    expect(findComposedText('2위 / 친구 2명 중'), findsOneWidget);
+    expect(find.text('↑ 1'), findsOneWidget);
     expect(find.text('EXP 305'), findsOneWidget);
     expect(find.text('랭킹은 매주 월요일 0시에 초기화돼요'), findsOneWidget);
   });
@@ -87,9 +94,9 @@ void main() {
     await tester.tap(find.text('이번 주 랭킹'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1위 (친구 1명 중)'), findsOneWidget);
-    expect(find.textContaining('▲'), findsNothing);
-    expect(find.textContaining('▼'), findsNothing);
+    expect(findComposedText('1위 / 친구 1명 중'), findsOneWidget);
+    expect(find.textContaining('↑'), findsNothing);
+    expect(find.textContaining('↓'), findsNothing);
   });
 }
 

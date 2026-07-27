@@ -11,13 +11,13 @@ import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
-/// 아바타 원형 배경 — 태그 팔레트의 배경색을 순환해서 쓴다(LifeDex 블롭과 같은 방식).
+/// 아바타 원형 배경 — 시안(`Life Quest 초안.dc.html` 10번 화면)이 친구별로 지정한 4색.
+/// 서버가 색을 주지 않으므로 사용자 id로 순환시켜 같은 친구는 항상 같은 색을 갖게 한다.
 const _avatarColors = <Color>[
-  Color(0xFFF3E4C8),
-  Color(0xFFE4E9EC),
-  Color(0xFFDFEAD1),
+  Color(0xFFDCE8C6),
+  Color(0xFFF0E1C4),
+  Color(0xFFCFE3EC),
   Color(0xFFEADFF3),
-  Color(0xFFE9E9D4),
 ];
 
 Color _avatarColorFor(int id) => _avatarColors[id.abs() % _avatarColors.length];
@@ -28,6 +28,12 @@ const _bronze = Color(0xFFE0B48C);
 
 /// 본인 랭킹 행 강조 배경.
 const _selfRowBackground = Color(0xFFF3E4C8);
+
+/// 주간 EXP는 네 자리를 넘기므로 시안대로 천 단위를 끊어 읽기 쉽게 한다.
+String _thousands(int value) => value.toString().replaceAllMapped(
+  RegExp(r'(\d)(?=(\d{3})+$)'),
+  (match) => '${match[1]},',
+);
 
 /// S-18~22 친구. 한 화면에서 세그먼트 두 개로 목록과 랭킹을 오간다.
 class FriendsScreen extends ConsumerStatefulWidget {
@@ -188,10 +194,7 @@ class _FriendRow extends StatelessWidget {
                         friend.nickname,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LqText.bodySm.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: LqColors.textPrimary,
-                        ),
+                        style: LqText.cardTitle,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -244,7 +247,10 @@ class _Avatar extends StatelessWidget {
       ),
       child: Text(
         nickname.isEmpty ? '?' : nickname.characters.first,
-        style: LqText.cardTitle.copyWith(fontSize: 17),
+        style: LqText.badge.copyWith(
+          fontSize: 16,
+          color: LqColors.goldText,
+        ),
       ),
     );
   }
@@ -273,9 +279,8 @@ class _CheerButton extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Container(
-            height: 30,
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 2),
             decoration: BoxDecoration(
               color: cheered ? LqColors.gold : LqColors.surfaceTile,
               borderRadius: LqShape.pillRadius,
@@ -287,8 +292,8 @@ class _CheerButton extends StatelessWidget {
             child: Text(
               cheered ? '응원함 ✓' : '응원',
               style: LqText.badge.copyWith(
-                fontSize: 12.5,
-                color: cheered ? LqColors.textPrimary : LqColors.primary,
+                fontSize: 13,
+                color: cheered ? LqColors.goldText : LqColors.primary,
               ),
             ),
           ),
@@ -308,17 +313,52 @@ class _FriendCodeCard extends StatelessWidget {
     return LqCard(
       locked: true,
       radius: LqShape.rowRadius,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
         children: [
-          Text(
-            '친구 코드로 추가',
-            style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: LqColors.borderMuted,
+                width: LqShape.borderWidth,
+              ),
+            ),
+            child: Text(
+              '+',
+              style: LqText.badge.copyWith(
+                fontSize: 17,
+                color: LqColors.textSecondary,
+              ),
+            ),
           ),
-          if (myCode != null) ...[
-            const SizedBox(height: 4),
-            Text('내 코드 · $myCode', style: LqText.caption),
-          ],
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '친구 코드로 추가',
+                  style: LqText.bodySm.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: LqColors.textBody,
+                  ),
+                ),
+                if (myCode != null) ...[
+                  const SizedBox(height: 2),
+                  Text('내 코드 · $myCode', style: LqText.caption),
+                ],
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right,
+            size: 20,
+            color: LqColors.textMuted,
+          ),
         ],
       ),
     );
@@ -384,14 +424,32 @@ class _RankSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('이번 주 내 순위', style: LqText.caption),
-                const SizedBox(height: 2),
                 Text(
-                  me == null
-                      ? '아직 순위에 없어요'
-                      : '${me.rank}위 (친구 ${ranking.friendCount}명 중)',
-                  style: LqText.cardTitle,
+                  '이번 주 내 순위',
+                  style: LqText.bodySm.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: LqColors.textSecondary,
+                  ),
                 ),
+                const SizedBox(height: 2),
+                if (me == null)
+                  Text('아직 순위에 없어요', style: LqText.cardTitle)
+                else
+                  // 순위 숫자를 키우고 모수는 작게 — 먼저 읽어야 할 값이 순위다.
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${me.rank}위 ',
+                          style: LqText.levelNumber.copyWith(fontSize: 23),
+                        ),
+                        TextSpan(
+                          text: '/ 친구 ${ranking.friendCount}명 중',
+                          style: LqText.caption.copyWith(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -413,17 +471,17 @@ class _DeltaPill extends StatelessWidget {
     final up = delta > 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       decoration: BoxDecoration(
         color: LqColors.gold,
         borderRadius: LqShape.pillRadius,
-        border: Border.all(color: LqColors.ink, width: 1.6),
+        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
       ),
       child: Text(
-        '${up ? '▲' : '▼'} ${delta.abs()}',
+        '${up ? '↑' : '↓'} ${delta.abs()}',
         style: LqText.badge.copyWith(
-          fontSize: 12,
-          color: LqColors.textPrimary,
+          fontSize: 13,
+          color: LqColors.goldText,
         ),
       ),
     );
@@ -445,10 +503,11 @@ class _RankRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      radius: LqShape.rowRadius,
+      // 랭킹 행은 카드가 아니라 타일 크기의 행이라 시안의 12/15 라운드를 쓴다.
+      radius: LqShape.tileRadius,
       background: entry.isMe ? _selfRowBackground : LqColors.surfaceTile,
       borderColor: entry.isMe ? LqColors.ink : LqColors.divider,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       child: Row(
         children: [
           Container(
@@ -458,13 +517,16 @@ class _RankRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: _medalColor,
               shape: BoxShape.circle,
-              border: Border.all(color: LqColors.ink, width: 1.6),
+              border: Border.all(
+                color: LqColors.ink,
+                width: LqShape.borderWidth,
+              ),
             ),
             child: Text(
               '${entry.rank}',
               style: LqText.badge.copyWith(
-                fontSize: 13,
-                color: LqColors.textPrimary,
+                fontSize: 14,
+                color: LqColors.goldText,
               ),
             ),
           ),
@@ -474,21 +536,22 @@ class _RankRow extends StatelessWidget {
               entry.nickname,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LqText.bodySm.copyWith(
-                fontWeight: entry.isMe ? FontWeight.w700 : FontWeight.w400,
-                color: LqColors.textPrimary,
-              ),
+              style: LqText.cardTitle,
             ),
           ),
+          const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
             decoration: const BoxDecoration(
               color: LqColors.expBadge,
               borderRadius: LqShape.pillRadius,
             ),
             child: Text(
-              'EXP ${entry.weeklyExp}',
-              style: LqText.badge.copyWith(color: LqColors.onDark),
+              'EXP ${_thousands(entry.weeklyExp)}',
+              style: LqText.badge.copyWith(
+                fontSize: 12.5,
+                color: LqColors.onDark,
+              ),
             ),
           ),
         ],
