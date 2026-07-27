@@ -144,10 +144,10 @@ void main() {
     expect(find.text('나의 기록'), findsOneWidget);
     expect(find.text('LifeDex 도감'), findsOneWidget);
     expect(find.text('수집률 42% · 42 / 100'), findsOneWidget);
-    expect(find.text('업적 / 칭호'), findsOneWidget);
-    expect(find.text('달성 1 / 3 · 칭호 2개 보유'), findsOneWidget);
+    expect(find.text('업적 / 칭호 / 배지'), findsOneWidget);
+    expect(find.text('달성 1 / 3 · 칭호 2개 · 배지 3개'), findsOneWidget);
 
-    // "내 배지" 카드를 대체했고, 칭호 변경은 업적 화면의 칭호 탭에서 한다.
+    // "내 배지" 카드를 대체했고, 칭호·배지 변경은 업적 화면의 각 탭에서 한다.
     expect(find.text('내 배지'), findsNothing);
     expect(find.text('칭호 선택'), findsNothing);
   });
@@ -209,8 +209,14 @@ class _FakeUserRepository extends UserRepository {
   ];
 
   @override
-  Future<BadgeCollection> fetchBadges() async =>
-      const BadgeCollection(badges: [], representativeBadgeId: null);
+  Future<BadgeCollection> fetchBadges() async => const BadgeCollection(
+    badges: [
+      ProfileItem(id: 1, name: '새싹 배지', sourceType: 'LEVEL'),
+      ProfileItem(id: 2, name: '나침반 배지', sourceType: 'LEVEL'),
+      ProfileItem(id: 3, name: '황금 모험가 배지', sourceType: 'ACHIEVEMENT'),
+    ],
+    representativeBadgeId: 1,
+  );
 
   @override
   Future<RewardHistory> fetchRewards() async =>

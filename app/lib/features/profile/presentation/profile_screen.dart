@@ -28,7 +28,8 @@ Future<void> _refresh(WidgetRef ref) async {
     ..invalidate(questHistoryProvider)
     ..invalidate(lifedexOverviewProvider)
     ..invalidate(achievementOverviewProvider)
-    ..invalidate(titleCollectionProvider);
+    ..invalidate(titleCollectionProvider)
+    ..invalidate(badgeCollectionProvider);
 
   await Future.wait([
     _settle(ref.read(myProfileProvider.future)),
@@ -38,6 +39,7 @@ Future<void> _refresh(WidgetRef ref) async {
     _settle(ref.read(lifedexOverviewProvider.future)),
     _settle(ref.read(achievementOverviewProvider.future)),
     _settle(ref.read(titleCollectionProvider.future)),
+    _settle(ref.read(badgeCollectionProvider.future)),
   ]);
 }
 
@@ -417,6 +419,7 @@ class _MyRecordCard extends ConsumerWidget {
     final lifedex = ref.watch(lifedexOverviewProvider);
     final achievements = ref.watch(achievementOverviewProvider);
     final titles = ref.watch(titleCollectionProvider);
+    final badges = ref.watch(badgeCollectionProvider);
     final achieved = achievements.value?.achievedCount;
 
     return LqCard(
@@ -472,12 +475,15 @@ class _MyRecordCard extends ConsumerWidget {
                 ),
               ),
             ),
-            label: '업적 / 칭호',
+            // 라벨이 화면 안에 무엇이 있는지 그대로 말해야 한다. 배지 탭이 이 행 뒤에만
+            // 있어서, 이름에서 빠지면 대표 배지를 바꾸러 갈 길을 찾을 수 없다.
+            label: '업적 / 칭호 / 배지',
             caption: _caption(
               achievements,
               (value) =>
                   '달성 ${value.achievedCount} / ${value.total}'
-                  '${titles.hasValue ? ' · 칭호 ${titles.requireValue.titles.length}개 보유' : ''}',
+                  '${titles.hasValue ? ' · 칭호 ${titles.requireValue.titles.length}개' : ''}'
+                  '${badges.hasValue ? ' · 배지 ${badges.requireValue.badges.length}개' : ''}',
             ),
             onTap: () => context.push('/achievements'),
           ),
