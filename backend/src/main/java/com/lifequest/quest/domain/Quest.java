@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
  *
  * <p>LOCATION 타입만 {@code placeName}·{@code latitude}·{@code longitude}·{@code radiusM}를 사용한다.
  * 배정/완료/GPS 판정 로직은 서비스 계층(팀원 2 직접 구현)에서 다루며, 이 엔티티는 데이터 정의에 한정한다.
+ *
+ * <p><b>불변식:</b> LOCATION 퀘스트는 좌표와 양수 반경을 반드시 갖는다. 생성자가 이를 강제하고
+ * 마이그레이션의 {@code ck_quests_location_verifiable} CHECK 제약이 애플리케이션을 우회한 삽입까지 막는다.
+ * 근거는 {@link #isLocationBased()} 참조.
  */
 @Entity
 @Table(name = "quests")
@@ -75,6 +79,7 @@ public class Quest {
     public Quest(String title, String description, QuestGrade grade, CompletionType completionType,
                  int expReward, String placeName, BigDecimal latitude, BigDecimal longitude,
                  Integer radiusM, Long lifedexItemId, QuestCreator createdBy, boolean active) {
+        requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
         this.title = title;
         this.description = description;
         this.grade = grade;
@@ -87,6 +92,26 @@ public class Quest {
         this.lifedexItemId = lifedexItemId;
         this.createdBy = createdBy;
         this.active = active;
+    }
+
+    /**
+     * LOCATION 퀘스트에 좌표·반경이 비어 있으면 배정된 사용자가 완료도 해제도 못 하는 상태에 빠진다
+     * (GPS 판정이 {@code radiusM} 언박싱에서 NPE를 던지거나 null 좌표로 거리 계산을 시도한다).
+     * 그런 행이 {@code findByActiveTrue()} 배정 풀에 들어가는 것을 생성 시점에 차단한다.
+     * 반경 0은 어떤 위치도 통과하지 못하므로 같은 막다른 길이라 함께 거부한다.
+     */
+    private static void requireVerifiableIfLocation(CompletionType completionType,
+                                                    BigDecimal latitude, BigDecimal longitude,
+                                                    Integer radiusM) {
+        if (completionType != CompletionType.LOCATION) {
+            return;
+        }
+        if (latitude == null || longitude == null) {
+            throw new IllegalArgumentException("LOCATION 퀘스트는 latitude·longitude가 필요하다");
+        }
+        if (radiusM == null || radiusM <= 0) {
+            throw new IllegalArgumentException("LOCATION 퀘스트는 양수 radius_m이 필요하다: " + radiusM);
+        }
     }
 
     @PrePersist

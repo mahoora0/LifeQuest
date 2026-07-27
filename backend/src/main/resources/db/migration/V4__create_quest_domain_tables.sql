@@ -22,7 +22,14 @@ CREATE TABLE quests (
     created_by      VARCHAR(20)  NOT NULL,
     is_active       BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at      DATETIME(6)  NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    -- GPS 판정 가능성의 DB 레벨 근거: LOCATION 완료 유형은 좌표와 양수 반경이 반드시 있어야 한다.
+    -- 비어 있으면 배정된 사용자가 완료도 해제도 못 하는 행이 배정 풀에 들어간다.
+    CONSTRAINT ck_quests_location_verifiable CHECK (
+        completion_type <> 'LOCATION'
+        OR (latitude IS NOT NULL AND longitude IS NOT NULL
+            AND radius_m IS NOT NULL AND radius_m > 0)
+    )
 );
 CREATE INDEX idx_quests_location ON quests (latitude, longitude);
 

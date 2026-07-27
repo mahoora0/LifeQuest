@@ -3,6 +3,7 @@ package com.lifequest.quest.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lifequest.quest.repository.QuestCompletionRepository;
@@ -10,6 +11,7 @@ import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -84,6 +86,38 @@ class QuestDomainMappingTest {
 
         assertTrue(questRepository.findByActiveTrue().stream().allMatch(Quest::isActive));
         assertTrue(questRepository.findByActiveTrue().stream().noneMatch(q -> "종료된 퀘스트".equals(q.getTitle())));
+    }
+
+    @Test
+    void quest_LOCATION인데_좌표나_반경이_없으면_생성이_거부된다() {
+        assertThrows(IllegalArgumentException.class, () -> new Quest(
+                "좌표 없는 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
+                10, "어딘가", null, null, 100, null, QuestCreator.ADMIN, true),
+                "좌표 없는 LOCATION 퀘스트는 GPS 판정이 불가능하다");
+
+        assertThrows(IllegalArgumentException.class, () -> new Quest(
+                "반경 없는 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
+                10, "어딘가", new BigDecimal("37.5"), new BigDecimal("127.0"), null,
+                null, QuestCreator.ADMIN, true),
+                "radius_m이 null이면 판정에서 언박싱 NPE가 난다");
+
+        assertThrows(IllegalArgumentException.class, () -> new Quest(
+                "반경 0인 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
+                10, "어딘가", new BigDecimal("37.5"), new BigDecimal("127.0"), 0,
+                null, QuestCreator.ADMIN, true),
+                "반경 0은 어떤 위치도 통과하지 못해 완료 불가 상태가 된다");
+    }
+
+    @Test
+    void quests_CHECK제약이_애플리케이션을_우회한_LOCATION_행도_막는다() {
+        assertThrows(PersistenceException.class, () -> {
+            em.createNativeQuery("""
+                    INSERT INTO quests
+                        (title, grade, completion_type, exp_reward, created_by, is_active, created_at)
+                    VALUES ('우회 삽입', 'NORMAL', 'LOCATION', 10, 'ADMIN', TRUE, CURRENT_TIMESTAMP(6))
+                    """).executeUpdate();
+            em.flush();
+        }, "ck_quests_location_verifiable가 좌표 없는 LOCATION 행을 거부해야 한다");
     }
 
     @Test
