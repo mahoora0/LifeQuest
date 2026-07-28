@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +84,7 @@ class QuestCatalogSeedTest {
     }
 
     @Test
-    void 등급과_주기가_한쪽으로_쏠리지_않는다() {
+    void 모든_등급과_주기에_배정_후보가_존재한다() {
         List<Quest> seeded = seededQuests();
 
         for (QuestGrade grade : QuestGrade.values()) {
@@ -94,6 +95,29 @@ class QuestCatalogSeedTest {
             assertTrue(seeded.stream().anyMatch(q -> q.getCadence() == cadence),
                     cadence + " 주기 후보가 없으면 목록 화면의 해당 필터가 항상 비어 보인다");
         }
+    }
+
+    /**
+     * V6 머리말은 등급·주기 분포를 수치로 적어 둔다. 이 수치는 등급별 배정 확률을 보정할지 판단하는
+     * 근거이자 목록 화면의 주기 필터가 얼마나 채워지는지를 가늠하는 기준이다.
+     *
+     * <p>후보 존재 여부만 검사하면 분포가 통째로 달라져도 통과하므로 실제 건수를 고정한다.
+     * 시드를 늘리거나 등급을 바꾸면 이 테스트가 먼저 실패해 머리말 수치를 함께 갱신하게 만든다.
+     */
+    @Test
+    void 시드_분포가_V6_머리말의_수치와_일치한다() {
+        assertEquals(
+                Map.of(QuestGrade.NORMAL, 19L, QuestGrade.RARE, 14L,
+                        QuestGrade.EPIC, 7L, QuestGrade.LEGENDARY, 2L),
+                seededQuests().stream()
+                        .collect(Collectors.groupingBy(Quest::getGrade, Collectors.counting())),
+                "등급 분포가 V6 머리말과 다르다 — 시드를 고쳤다면 머리말 수치도 함께 갱신해야 한다");
+
+        assertEquals(
+                Map.of(QuestCadence.DAILY, 24L, QuestCadence.WEEKLY, 12L, QuestCadence.MONTHLY, 6L),
+                seededQuests().stream()
+                        .collect(Collectors.groupingBy(Quest::getCadence, Collectors.counting())),
+                "주기 분포가 V6 머리말과 다르다");
     }
 
     @Test
