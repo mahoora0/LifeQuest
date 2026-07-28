@@ -1,29 +1,33 @@
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
+import 'package:life_quest/features/achievement/data/achievement_dto.dart';
 import 'package:life_quest/features/achievement/data/achievement_repository.dart';
 import 'package:life_quest/features/achievement/presentation/achievement_screen.dart';
 import 'package:life_quest/features/lifedex/application/lifedex_providers.dart';
+import 'package:life_quest/features/lifedex/data/lifedex_dto.dart';
 import 'package:life_quest/features/lifedex/data/lifedex_repository.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 
-/// 백엔드에 컨트롤러가 없는 도감·업적은 404를 받아 표본으로 떨어진다.
+/// 백엔드에 컨트롤러가 없는 도감·업적의 두 갈래를 고정한다.
 ///
-/// 화면을 검토·시연할 수 있게 하는 것이 목적이므로, "준비 중"이 아니라 실제 내용이
-/// 그려지는지를 본다. 서버가 열리면 표본은 저절로 물러난다(`sample_data_test.dart`).
+/// 1. 표본이 꺼진 기본 상태(= 빌드 산출물)에서는 **가짜가 아니라 준비 중 안내**가 뜬다.
+/// 2. 데이터가 주어지면 화면은 준비 중이 아니라 내용을 그린다.
+///
+/// 표본 상수 자체는 검토용이라 값을 단언하지 않는다 — 값을 박아 두면 시안이 바뀔 때마다
+/// 테스트가 따라다니면서도 사용자가 보는 것은 아무것도 보장하지 못한다.
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  /// 어디에도 닿지 않는 Dio — 붙지 않은 서버를 흉내 낸다.
+  /// 어디에도 닿지 않는 Dio — 컨트롤러가 없는 서버를 흉내 낸다.
+  /// 미매핑 경로는 공통 envelope 없이 404가 나가므로 본문을 비운다.
   Dio unreachableDio() {
-    final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1/api'));
-    dio.httpClientAdapter = IOHttpClientAdapter();
+    final dio = Dio();
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) => handler.reject(
@@ -41,66 +45,128 @@ void main() {
     return dio;
   }
 
-  testWidgets('도감은 컨트롤러가 없어도 카테고리와 수집률을 보여준다', (tester) async {
+  Future<void> pumpLifedex(WidgetTester tester, LifedexRepository repo) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          lifedexRepositoryProvider.overrideWithValue(
-            LifedexRepository(unreachableDio()),
-          ),
-        ],
+        overrides: [lifedexRepositoryProvider.overrideWithValue(repo)],
         child: const MaterialApp(home: LifedexScreen()),
       ),
     );
     await tester.pumpAndSettle();
+  }
 
-    expect(find.text('도감은 아직 준비 중이에요'), findsNothing);
-    // 카테고리는 필터 칩과 격자 타일 양쪽에 나온다.
-    expect(find.text('카페'), findsWidgets);
-    expect(find.text('공원 · 산책로'), findsWidgets);
-    // 12+11+7+8+4 = 42, 24+20+18+22+16 = 100 → 시안의 42%를 재현한다.
-    expect(find.textContaining('42'), findsWidgets);
-  });
-
-  testWidgets('업적은 컨트롤러가 없어도 달성·진행 중을 함께 보여준다', (tester) async {
+  Future<void> pumpAchievement(
+    WidgetTester tester,
+    AchievementRepository repo,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          achievementRepositoryProvider.overrideWithValue(
-            AchievementRepository(unreachableDio()),
-          ),
-        ],
+        overrides: [achievementRepositoryProvider.overrideWithValue(repo)],
         child: const MaterialApp(home: AchievementScreen()),
       ),
     );
     await tester.pumpAndSettle();
+  }
 
-    expect(find.text('업적 목록은 아직 준비 중이에요'), findsNothing);
-    expect(find.text('첫 걸음'), findsOneWidget);
-    expect(find.text('꾸준한 모험가'), findsOneWidget);
+  group('표본이 꺼진 기본 상태', () {
+    testWidgets('도감은 가짜 수집률 대신 준비 중을 보여준다', (tester) async {
+      await pumpLifedex(tester, LifedexRepository(unreachableDio()));
+
+      expect(find.text('도감은 아직 준비 중이에요'), findsOneWidget);
+      expect(find.textContaining('수집률'), findsNothing);
+      // 탭 밖 push 화면이라 돌아갈 길은 남아야 한다.
+      expect(find.bySemanticsLabel('뒤로 가기'), findsOneWidget);
+    });
+
+    testWidgets('업적도 마찬가지로 준비 중을 보여준다', (tester) async {
+      await pumpAchievement(tester, AchievementRepository(unreachableDio()));
+
+      expect(find.text('업적 목록은 아직 준비 중이에요'), findsOneWidget);
+    });
   });
 
-  testWidgets('미달성 비밀 업적은 표본에서도 마스킹된 채로 온다', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          achievementRepositoryProvider.overrideWithValue(
-            AchievementRepository(unreachableDio()),
+  group('데이터가 있을 때', () {
+    testWidgets('도감은 카테고리와 수집률을 그린다', (tester) async {
+      await pumpLifedex(tester, _FakeLifedexRepository());
+
+      expect(find.text('도감은 아직 준비 중이에요'), findsNothing);
+      // 카테고리는 필터 칩과 격자 타일 양쪽에 나온다.
+      expect(find.text('카페'), findsWidgets);
+      expect(find.text('공원 · 산책로'), findsWidgets);
+      // 12+8 = 20, 24+16 = 40 → 50%
+      expect(find.textContaining('50'), findsWidgets);
+    });
+
+    testWidgets('업적은 달성과 진행 중을 함께 그린다', (tester) async {
+      await pumpAchievement(tester, _FakeAchievementRepository());
+
+      expect(find.text('업적 목록은 아직 준비 중이에요'), findsNothing);
+      expect(find.text('첫 걸음'), findsOneWidget);
+      expect(find.text('꾸준한 모험가'), findsOneWidget);
+    });
+
+    testWidgets('미달성 비밀 업적의 빈 이름을 대체 문구로 그린다', (tester) async {
+      await pumpAchievement(tester, _FakeAchievementRepository());
+
+      // 마스킹은 서버가 이름을 비워 보내는 것으로 표현된다. 화면이 그걸 대체하지
+      // 않으면 빈 줄이 뜨고, `characters.first` 계열 코드는 아예 던진다.
+      await tester.tap(find.text('비밀'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('비밀 업적'), findsOneWidget);
+      expect(find.text('야행성 탐험가'), findsOneWidget);
+    });
+  });
+}
+
+class _FakeLifedexRepository extends LifedexRepository {
+  _FakeLifedexRepository() : super(Dio());
+
+  @override
+  Future<LifedexOverview> fetchOverview() async => const LifedexOverview(
+    categories: [
+      LifedexCategory(id: 1, name: '카페', totalCount: 24, ownedCount: 12),
+      LifedexCategory(id: 2, name: '공원 · 산책로', totalCount: 16, ownedCount: 8),
+    ],
+  );
+
+  @override
+  Future<List<LifedexItem>> fetchItems(int categoryId) async => const [
+    LifedexItem(id: 101, name: '골목 끝 로스터리', categoryId: 1, owned: true),
+  ];
+}
+
+class _FakeAchievementRepository extends AchievementRepository {
+  _FakeAchievementRepository() : super(Dio());
+
+  @override
+  Future<AchievementOverview> fetchOverview() async =>
+      const AchievementOverview(
+        achievements: [
+          Achievement(
+            id: 1,
+            name: '첫 걸음',
+            achieved: true,
+            secret: false,
+            condition: '퀘스트를 처음 완료해요',
+          ),
+          Achievement(
+            id: 3,
+            name: '꾸준한 모험가',
+            achieved: false,
+            secret: false,
+            currentValue: 32,
+            requiredValue: 50,
+          ),
+          // 마스킹된 비밀 업적 — 이름이 비어 있다.
+          Achievement(id: 5, name: '', achieved: false, secret: true),
+          Achievement(
+            id: 6,
+            name: '야행성 탐험가',
+            achieved: true,
+            secret: true,
+            condition: '자정 넘어 퀘스트를 5번 완료했어요',
           ),
         ],
-        child: const MaterialApp(home: AchievementScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // 비밀 업적은 목록 아래쪽이라 필터로 좁혀야 화면에 올라온다.
-    await tester.tap(find.text('비밀'));
-    await tester.pumpAndSettle();
-
-    // 표본에 실제 이름을 적어 두면 마스킹 처리 경로가 화면에서 검증되지 않는다.
-    // 화면은 빈 이름을 "비밀 업적"으로 대체한다.
-    expect(find.text('비밀 업적'), findsOneWidget);
-    // 해금된 비밀 업적은 이름이 드러나야 한다.
-    expect(find.text('야행성 탐험가'), findsOneWidget);
-  });
+      );
 }

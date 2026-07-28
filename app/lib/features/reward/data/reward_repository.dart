@@ -9,7 +9,7 @@ import 'package:life_quest/shared/data/sample_data.dart';
 /// 채우면 어느 수치가 진짜인지 화면에서 구분되지 않으므로 통째로 표본을 쓴다.
 ///
 /// 표본은 시안(`LifeQuest 화면맵` 2c)의 예시이고 실제 사용자 데이터가 아니다.
-/// [LqSampleData.guard] 때문에 **릴리스 빌드에서는 나오지 않는다**(준비 중 안내로 떨어진다).
+/// [LqSampleData.guard] 때문에 **`LQ_SAMPLES`를 켰을 때만 나온다**(꺼져 있으면 준비 중 안내).
 ///
 /// 호출 경로가 이미 있으므로 응답이 확장되면 [LqSampleData.orSample]로 바꿔 표본이
 /// 저절로 물러나게 하는 편이 낫다. 지금은 200이 오지만 필드가 없어 그 방식이 안 통한다.

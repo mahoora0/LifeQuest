@@ -8,8 +8,8 @@ import 'package:life_quest/shared/data/sample_data.dart';
 ///
 /// ⚠ 백엔드에 achievement 컨트롤러가 아직 없어 두 경로 모두 404다(대표 칭호·배지
 /// 지정은 `/users/me/titles`·`/badges`로 이미 동작한다). 화면을 검토할 수 있도록
-/// [LqSampleData.orSample]이 **404일 때만** 표본으로 떨어지고, 서버가 열리면
-/// 저절로 물러난다.
+/// [LqSampleData.orSample]이 **`LQ_SAMPLES`를 켰고 컨트롤러가 없을 때만** 표본으로
+/// 떨어지고, 서버가 열리면 저절로 물러난다.
 ///
 // TODO(server): GET /achievements · GET /users/me/achievements 개설 시 표본
 //  상수(_sampleAchievements)를 지운다. 호출 코드는 실경로를 가리키므로 그대로 둔다.

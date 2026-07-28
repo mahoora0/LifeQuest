@@ -15,8 +15,8 @@ import 'package:life_quest/shared/design/lq_assets.dart';
 ///
 /// 표본을 쓰는 대신 없는 엔드포인트를 호출하지 않는 이유는, 그 경우 화면이 늘 오류 상태로만
 /// 보여 레이아웃·상호작용을 전혀 검토할 수 없기 때문이다. 대신 [LqSampleData.guard]가
-/// **릴리스 빌드에서는 표본을 막아** 준비 중 안내로 떨어뜨린다 — 회수를 잊어도 가짜 수치가
-/// 배포되지 않는다.
+/// **`LQ_SAMPLES`를 켠 실행에서만 표본을 통과시킨다** — 기본값이 꺼짐이라 회수를 잊어도
+/// 빌드 산출물에는 가짜 수치가 아니라 준비 중 안내가 나간다.
 ///
 // TODO(server): GET /api/friends 개설 시 fetchFriends 본문을 Dio 호출로 바꾸고
 //  LqSampleData.guard 호출과 _sampleFriends 상수를 지운다.
@@ -92,6 +92,9 @@ class FriendRepository {
   }
 
   /// 동료 신청 보내기.
+  ///
+  // TODO(server): POST /api/friends/requests. 지금은 아무 일도 하지 않고 성공으로
+  //  보고한다 — 화면은 "동료 신청을 보냈어요"를 띄운다.
   Future<void> sendRequest(int userId) async {}
 
   /// 받은 요청 · 보낸 요청.
@@ -127,6 +130,8 @@ class FriendRepository {
   ///
   /// 거절은 조용히 처리한다 — 상대에게 알리지 않고, 같은 사람이 다시 요청할 수
   /// 있게 둔다. 거절 사실을 알리면 거절이 관계를 끊는 사건이 된다.
+  // TODO(server): PATCH /api/friends/requests/{userId}. 지금은 아무 일도 하지 않고
+  //  성공으로 보고한다 — 수락은 "이제 함께 모험해요!"까지 띄운다.
   Future<void> respondToRequest(int userId, {required bool accept}) async {}
 
   /// 동료 여정 비교.
@@ -166,6 +171,9 @@ class FriendRepository {
   }
 
   /// 동료 해제.
+  ///
+  // TODO(server): DELETE /api/friends/{userId}. 되돌릴 수 없는 동작인데 지금은 아무
+  //  일도 하지 않고 성공으로 보고해, 확인 다이얼로그를 지나면 화면만 닫힌다.
   Future<void> unfriend(int userId) async {}
 
   /// 동료 찾기 표본 풀. 시안 2f의 예시 3명이다.
@@ -198,5 +206,6 @@ class FriendRepository {
   /// 응원에 EXP 보상이 걸려 있어 중복 요청 차단이 필요한데, 그 규칙(1일 1회 여부·보상 크기)이
   /// 아직 정해지지 않았다. 화면은 되돌리기 없는 단방향 동작으로 다룬다 — 취소를 허용하면
   /// 서버 규칙이 정해지기 전에 재지급 경로를 만들어 두는 셈이 된다.
+  // TODO(server): 응원 엔드포인트 신설. 지금은 아무 일도 하지 않고 성공으로 보고한다.
   Future<void> cheer(int userId) async {}
 }

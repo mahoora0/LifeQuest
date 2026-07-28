@@ -1,24 +1,37 @@
-import 'package:flutter/foundation.dart';
 import 'package:life_quest/core/network/api_exception.dart';
-import 'package:life_quest/shared/error/lq_error_messages.dart';
 
 /// 서버가 아직 열리지 않은 구간에서 화면 검토용 표본을 내주는 관문.
 ///
 /// 표본 없이 없는 엔드포인트를 호출하면 화면이 늘 오류 상태로만 보여 레이아웃과
 /// 상호작용을 전혀 검토할 수 없다. 그렇다고 표본을 그대로 두면 회수를 잊었을 때
-/// 사용자에게 거짓 데이터가 나간다.
+/// 사용자에게 거짓 데이터가 나간다. 이 레포에는 이미 그 선례가 있다 — 마이페이지의
+/// 퀘스트 완료 수가 영구 0인 것은 회수 장치 없는 하드코딩 스텁이 살아남았기 때문이다.
 ///
-/// 그래서 표본은 **디버그 빌드에서만** 나온다. 릴리스 빌드에서는 [guard]가
-/// 404로 떨어져 화면이 "준비 중" 안내로 바뀌므로, 회수를 잊어도 가짜 수치가
-/// 배포되지 않는다. 표본을 쓰는 저장소는 예외 없이 [guard]를 먼저 통과시킨다.
+/// 그래서 표본은 **명시적으로 켰을 때만** 나온다. 기본값이 꺼짐이라 아무 빌드에나
+/// 딸려 나가지 않는다.
 ///
-/// 회수 방법 — 저장소 메서드 본문을 Dio 호출로 바꾸고 [guard] 호출을 지운다.
+/// ```
+/// flutter run --dart-define=LQ_SAMPLES=true      # 개발 중 화면 검토
+/// dart run tool/run_app.dart                     # 런처가 위 플래그를 넣어 준다
+/// flutter build apk                              # 플래그 없음 → 표본 없음
+/// ```
+///
+/// 빌드 모드(`kDebugMode`)에 묶지 않은 이유 — CI의 Android job이
+/// `flutter build apk --debug`로 산출물을 만든다(`.github/workflows/android-build.yml`).
+/// 디버그 기준으로 두면 **팀에 실제로 배포되는 그 APK가 표본을 실데이터처럼 보여준다.**
+/// 반대로 프로파일 빌드는 디버그가 아니라서 시연용으로 뽑으면 화면이 비어 버린다.
+/// 노출 여부는 빌드 모드가 아니라 의도로 정해야 한다.
+///
+/// 회수 방법 — 저장소 메서드 본문을 Dio 호출로 바꾸고 이 클래스 호출을 지운다.
 /// 남은 호출부는 `rg 'LqSampleData'` 로 한 번에 찾을 수 있다.
 abstract final class LqSampleData {
-  /// 표본을 내줄지. 테스트는 디버그로 돌아가므로 표본을 그대로 검증할 수 있다.
-  static const enabled = kDebugMode;
+  /// 표본을 내줄지. 기본값은 꺼짐이다.
+  ///
+  /// 테스트는 이 값을 컴파일 타임에 뒤집을 수 없으므로, 표본 경로를 검사할 때는
+  /// 저장소를 직접 만들어 쓰거나 [orSample]을 직접 부른다.
+  static const enabled = bool.fromEnvironment('LQ_SAMPLES');
 
-  /// 표본을 내주기 전에 부른다. 릴리스 빌드에서는 준비 중으로 떨어진다.
+  /// 표본을 내주기 전에 부른다. 꺼져 있으면 준비 중으로 떨어진다.
   ///
   /// 부를 엔드포인트 자체가 없는 구간(친구·알림)에 쓴다. 호출할 경로가 있으면
   /// [orSample]을 쓰는 쪽이 낫다 — 그쪽은 서버가 생기면 저절로 물러난다.
@@ -34,14 +47,17 @@ abstract final class LqSampleData {
     );
   }
 
-  /// 실제 호출을 먼저 시도하고, **엔드포인트가 아직 없을 때만** 표본으로 떨어진다.
+  /// 실제 호출을 먼저 시도하고, **컨트롤러 자체가 없을 때만** 표본으로 떨어진다.
   ///
   /// [guard]와 달리 회수가 자동이다 — 서버가 그 경로를 열면 [call]이 성공하므로
   /// 표본은 두 번 다시 쓰이지 않는다. 지우는 것을 잊어도 가짜가 실데이터를 덮지 않는다.
   ///
-  /// 떨어지는 조건을 404로 좁힌 이유는, 네트워크 단절이나 500까지 표본으로 가리면
-  /// 서버가 죽은 것을 개발 중에 알아채지 못하기 때문이다. 릴리스 빌드에서는
-  /// [enabled]가 거짓이라 404가 그대로 올라가 준비 중 안내로 간다.
+  /// 떨어지는 조건을 좁게 잡았다. 이 백엔드는 미매핑 경로에 대한 핸들러가 없어
+  /// 공통 envelope 없이 404가 나가므로 [ApiException.unknownError]로 정규화된다.
+  /// 반대로 **살아 있는 엔드포인트가 내는 404는 언제나 코드를 달고 온다**
+  /// (`ErrorCode.RESOURCE_NOT_FOUND` 등). 그래서 "코드 없는 404"만 컨트롤러 부재로 본다.
+  /// 코드가 붙은 404까지 받으면 서버가 붙은 뒤에도 특정 요청에서만 가짜가 나가고,
+  /// 500이나 네트워크 단절까지 받으면 서버가 죽은 것을 개발 중에 알아채지 못한다.
   static Future<T> orSample<T>(
     Future<T> Function() call,
     T Function() sample,
@@ -49,8 +65,15 @@ abstract final class LqSampleData {
     try {
       return await call();
     } on Object catch (error) {
-      if (enabled && isFeatureNotReady(error)) return sample();
+      if (enabled && isEndpointMissing(error)) return sample();
       rethrow;
     }
+  }
+
+  /// 경로에 컨트롤러가 없어 보이는지. 코드 없는 404만 그렇게 본다.
+  static bool isEndpointMissing(Object error) {
+    final failure = ApiException.from(error);
+    return failure.statusCode == 404 &&
+        failure.code == ApiException.unknownError;
   }
 }

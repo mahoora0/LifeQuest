@@ -7,8 +7,8 @@ import 'package:life_quest/shared/data/sample_data.dart';
 /// 도감(S-13·S-14) 조회.
 ///
 /// ⚠ 백엔드에 lifedex 컨트롤러가 아직 없어 세 경로 모두 404다. 화면을 검토할 수
-/// 있도록 [LqSampleData.orSample]이 **404일 때만** 표본으로 떨어진다. 서버가 그
-/// 경로를 열면 실제 응답이 오므로 표본은 저절로 물러난다.
+/// 있도록 [LqSampleData.orSample]이 **`LQ_SAMPLES`를 켰고 컨트롤러가 없을 때만** 표본으로
+/// 떨어진다. 서버가 그 경로를 열면 실제 응답이 오므로 표본은 저절로 물러난다.
 ///
 // TODO(server): GET /lifedex/categories · GET /users/me/lifedex · GET /lifedex
 //  개설 시 아래 표본 상수(_sampleCategories·_sampleItems)를 지운다. 호출 코드는

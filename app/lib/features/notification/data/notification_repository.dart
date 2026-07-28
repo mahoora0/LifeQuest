@@ -5,7 +5,7 @@ import 'package:life_quest/shared/data/sample_data.dart';
 ///
 /// ⚠ **서버 미구현 구간이다.** `docs/04-api-spec.md`에 알림 엔드포인트가 아직 없다.
 /// 표본은 시안(`LifeQuest 화면맵` 2d)의 예시를 옮긴 것으로 실제 사용자 데이터가 아니며,
-/// [LqSampleData.guard] 때문에 **릴리스 빌드에서는 나오지 않는다**(준비 중 안내로 떨어진다).
+/// [LqSampleData.guard] 때문에 **`LQ_SAMPLES`를 켰을 때만 나온다**(꺼져 있으면 준비 중 안내).
 ///
 /// DTO에 이미 `fromJson`이 있으므로 프로바이더·화면은 손대지 않아도 된다.
 ///
@@ -66,5 +66,8 @@ class NotificationRepository {
   /// 읽음 처리. 서버가 붙기 전까지는 성공한 것으로 둔다.
   ///
   /// [ids]가 비어 있으면 전체를 읽음으로 본다("모두 읽음").
+  ///
+  // TODO(server): 지금은 아무 일도 하지 않고 성공으로 보고한다. 앱을 다시 열면
+  //  읽음 처리가 사라진다.
   Future<void> markRead(List<int> ids) async {}
 }
