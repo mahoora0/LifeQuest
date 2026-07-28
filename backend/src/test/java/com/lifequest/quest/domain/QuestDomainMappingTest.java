@@ -49,9 +49,9 @@ class QuestDomainMappingTest {
 
     private Quest persistLocationQuest() {
         Quest quest = new Quest(
-                "서울숲 방문", "서울숲을 산책하세요", QuestGrade.RARE, CompletionType.LOCATION,
-                30, "서울숲", new BigDecimal("37.5445"), new BigDecimal("127.0374"),
-                100, null, QuestCreator.SYSTEM, true);
+                "서울숲 방문", "서울숲을 산책하세요", QuestGrade.RARE, QuestCadence.WEEKLY,
+                CompletionType.LOCATION, 30, "서울숲", new BigDecimal("37.5445"),
+                new BigDecimal("127.0374"), 100, null, QuestCreator.SYSTEM, true);
         return questRepository.save(quest);
     }
 
@@ -64,6 +64,8 @@ class QuestDomainMappingTest {
         Quest found = questRepository.findById(saved.getId()).orElseThrow();
         assertEquals("서울숲 방문", found.getTitle());
         assertEquals(QuestGrade.RARE, found.getGrade());
+        assertEquals(QuestCadence.WEEKLY, found.getCadence(),
+                "cadence는 DEFAULT 'DAILY'로 덮이지 않고 지정한 값이 그대로 저장되어야 한다");
         assertEquals(CompletionType.LOCATION, found.getCompletionType());
         assertEquals(QuestCreator.SYSTEM, found.getCreatedBy());
         assertEquals(30, found.getExpReward());
@@ -79,8 +81,9 @@ class QuestDomainMappingTest {
     void quest_비활성은_배정_풀_조회에서_제외된다() {
         persistLocationQuest();
         Quest inactive = new Quest(
-                "종료된 퀘스트", null, QuestGrade.NORMAL, CompletionType.SELF_REPORT,
-                10, null, null, null, null, null, QuestCreator.ADMIN, false);
+                "종료된 퀘스트", null, QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.SELF_REPORT, 10, null, null, null, null, null,
+                QuestCreator.ADMIN, false);
         questRepository.save(inactive);
         em.flush();
         em.clear();
@@ -92,20 +95,21 @@ class QuestDomainMappingTest {
     @Test
     void quest_LOCATION인데_좌표나_반경이_없으면_생성이_거부된다() {
         assertThrows(IllegalArgumentException.class, () -> new Quest(
-                "좌표 없는 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
-                10, "어딘가", null, null, 100, null, QuestCreator.ADMIN, true),
+                "좌표 없는 위치 퀘스트", null, QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.LOCATION, 10, "어딘가", null, null, 100, null,
+                QuestCreator.ADMIN, true),
                 "좌표 없는 LOCATION 퀘스트는 GPS 판정이 불가능하다");
 
         assertThrows(IllegalArgumentException.class, () -> new Quest(
-                "반경 없는 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
-                10, "어딘가", new BigDecimal("37.5"), new BigDecimal("127.0"), null,
-                null, QuestCreator.ADMIN, true),
+                "반경 없는 위치 퀘스트", null, QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.LOCATION, 10, "어딘가", new BigDecimal("37.5"),
+                new BigDecimal("127.0"), null, null, QuestCreator.ADMIN, true),
                 "radius_m이 null이면 판정에서 언박싱 NPE가 난다");
 
         assertThrows(IllegalArgumentException.class, () -> new Quest(
-                "반경 0인 위치 퀘스트", null, QuestGrade.NORMAL, CompletionType.LOCATION,
-                10, "어딘가", new BigDecimal("37.5"), new BigDecimal("127.0"), 0,
-                null, QuestCreator.ADMIN, true),
+                "반경 0인 위치 퀘스트", null, QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.LOCATION, 10, "어딘가", new BigDecimal("37.5"),
+                new BigDecimal("127.0"), 0, null, QuestCreator.ADMIN, true),
                 "반경 0은 어떤 위치도 통과하지 못해 완료 불가 상태가 된다");
     }
 
@@ -227,8 +231,9 @@ class QuestDomainMappingTest {
     @Test
     void questCompletion_SELF_REPORT는_위치_항목이_null로_저장된다() {
         Quest quest = new Quest(
-                "책 한 권 읽기", null, QuestGrade.NORMAL, CompletionType.SELF_REPORT,
-                15, null, null, null, null, null, QuestCreator.SYSTEM, true);
+                "책 한 권 읽기", null, QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.SELF_REPORT, 15, null, null, null, null, null,
+                QuestCreator.SYSTEM, true);
         questRepository.save(quest);
         LocalDate today = LocalDate.now();
         UserDailyQuest assignment = userDailyQuestRepository.save(

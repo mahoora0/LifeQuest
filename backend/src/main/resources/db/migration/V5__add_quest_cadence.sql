@@ -1,0 +1,21 @@
+-- 퀘스트 주기(cadence) 컬럼 (담당: 팀원 2 — 퀘스트 배정·완료·GPS 인증).
+-- 스키마 근거: docs/03-database-design.md §2-2.
+--
+-- 퀘스트 목록 화면은 일간/주간/월간 세 가지 주기로 조회를 나눈다. 서버에 해당 분류가 없으면
+-- 클라이언트가 완료 방식(LOCATION/SELF_REPORT)으로 주기를 추측해야 하는데, 둘은 서로 다른 축이라
+-- ("새로운 카페 방문하기"는 주간이면서 위치 인증이다) 어떤 규칙을 세워도 실데이터와 어긋난다.
+-- 주기는 퀘스트 원본의 속성이므로 quests에 둔다.
+--
+-- ENUM은 V4와 같은 이유로 VARCHAR에 담는다(H2 MySQL 모드/MySQL 양쪽 호환, JPA @Enumerated STRING).
+-- grade·completion_type·created_by도 CHECK 없이 VARCHAR로만 두고 있어 여기서도 제약을 걸지 않는다.
+--
+-- DEFAULT 'DAILY'를 두는 이유는 두 가지다. 하나는 관리자 콘솔·수기 SQL이 주기를 빠뜨려도
+-- 가장 흔한 값으로 들어가게 하는 것이고, 다른 하나는 V4의 CHECK 제약 회귀 테스트가 의미를
+-- 유지하게 하는 것이다. 그 테스트는 cadence를 넣지 않는 native INSERT로
+-- ck_quests_location_verifiable이 걸리는지 확인하는데, 기본값이 없으면 CHECK에 닿기 전에
+-- NOT NULL 위반으로 실패해 검증 대상이 조용히 바뀐다.
+-- 애플리케이션 경로는 항상 값을 명시한다(Quest 생성자가 필수 인자로 받는다).
+--
+-- 지금 cadence는 카탈로그 분류이며 배정 로직을 바꾸지 않는다. 주기별 배정 처리
+-- (주간 퀘스트를 주 1회만 배정할지, 만료 시각을 주기에 맞출지)는 배정 서비스 구현 시점에 확정한다.
+ALTER TABLE quests ADD COLUMN cadence VARCHAR(20) NOT NULL DEFAULT 'DAILY';
