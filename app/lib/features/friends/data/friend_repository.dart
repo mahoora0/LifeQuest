@@ -1,4 +1,5 @@
 import 'package:life_quest/features/friends/data/friend_dto.dart';
+import 'package:life_quest/shared/data/sample_data.dart';
 
 /// 친구 목록·주간 랭킹·응원 조회.
 ///
@@ -12,7 +13,15 @@ import 'package:life_quest/features/friends/data/friend_dto.dart';
 /// — 각 DTO에 이미 `fromJson`이 있다.
 ///
 /// 표본을 쓰는 대신 없는 엔드포인트를 호출하지 않는 이유는, 그 경우 화면이 늘 오류 상태로만
-/// 보여 레이아웃·상호작용을 전혀 검토할 수 없기 때문이다.
+/// 보여 레이아웃·상호작용을 전혀 검토할 수 없기 때문이다. 대신 [LqSampleData.guard]가
+/// **릴리스 빌드에서는 표본을 막아** 준비 중 안내로 떨어뜨린다 — 회수를 잊어도 가짜 수치가
+/// 배포되지 않는다.
+///
+// TODO(server): GET /api/friends 개설 시 fetchFriends 본문을 Dio 호출로 바꾸고
+//  LqSampleData.guard 호출과 _sampleFriends 상수를 지운다.
+// TODO(server): GET /api/rankings/friends 개설 시 fetchWeeklyRanking을 실제 호출로 바꾼다.
+// TODO(server): 응원 엔드포인트는 스펙에도 없다. 1일 1회 제한·보상 크기가 정해지면
+//  cheer를 실제 호출로 바꾸고 중복 차단을 서버 판정에 맡긴다.
 class FriendRepository {
   const FriendRepository();
 
@@ -30,10 +39,12 @@ class FriendRepository {
   ];
 
   Future<FriendList> fetchFriends() async {
+    LqSampleData.guard('친구 목록');
     return const FriendList(friends: _sampleFriends, myCode: 'LQ-4821');
   }
 
   Future<WeeklyRanking> fetchWeeklyRanking() async {
+    LqSampleData.guard('이번 주 랭킹');
     return const WeeklyRanking(
       entries: [
         RankEntry(rank: 1, userId: 0, nickname: '하늘', weeklyExp: 1240),

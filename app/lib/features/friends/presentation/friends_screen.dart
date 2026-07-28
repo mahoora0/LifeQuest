@@ -96,6 +96,8 @@ class _FriendListTab extends ConsumerWidget {
     return LqAsyncView<FriendList>(
       value: friends,
       onRetry: () => ref.read(friendListProvider.notifier).refresh(),
+      notReadyMessage: '친구 목록은 아직 준비 중이에요',
+      notReadyHint: '동료 찾기에서 친구 코드를 미리 나눠 둘 수 있어요.',
       // 빈 상태로 갈아끼우지 않는다. 친구가 없을수록 아래 코드 카드가 필요하다.
       data: (value) => RefreshIndicator(
         color: LqColors.primary,
@@ -370,6 +372,7 @@ class _RankingTab extends ConsumerWidget {
       isEmpty: (value) => value.isEmpty,
       emptyMessage: '아직 이번 주 기록이 없어요',
       onRetry: () => ref.invalidate(weeklyRankingProvider),
+      notReadyMessage: '이번 주 랭킹은 아직 준비 중이에요',
       data: (value) => ListView(
         padding: const EdgeInsets.fromLTRB(
           LqSpacing.screen,
