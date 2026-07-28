@@ -41,20 +41,77 @@ class _LifedexScreenState extends ConsumerState<LifedexScreen> {
     final overview = ref.watch(lifedexOverviewProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
-        child: LqAsyncView<LifedexOverview>(
-          value: overview,
-          isEmpty: (value) => value.isEmpty,
-          emptyMessage: '아직 도감 카테고리가 없어요',
-          onRetry: () => ref.invalidate(lifedexOverviewProvider),
-          data: (value) => _Body(
-            overview: value,
-            selectedCategoryId: _selectedCategoryId,
-            onSelectCategory: (id) => setState(() => _selectedCategoryId = id),
-          ),
+        child: Column(
+          children: [
+            // 헤더는 조회 결과와 무관하게 항상 그린다. 본문과 함께 사라지면
+            // 오류·준비 중 화면에서 돌아갈 길이 없어진다(탭 밖 라우트라 탭바도 없다).
+            const _Header(),
+            Expanded(
+              child: LqAsyncView<LifedexOverview>(
+                value: overview,
+                isEmpty: (value) => value.isEmpty,
+                emptyMessage: '아직 도감 카테고리가 없어요',
+                notReadyMessage: '도감은 아직 준비 중이에요',
+                notReadyHint: '서버가 열리면 수집한 항목이 여기 채워져요.',
+                onRetry: () => ref.invalidate(lifedexOverviewProvider),
+                data: (value) => _Body(
+                  overview: value,
+                  selectedCategoryId: _selectedCategoryId,
+                  onSelectCategory: (id) =>
+                      setState(() => _selectedCategoryId = id),
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+/// 도감 헤더 — 뒤로 가기 · 제목 · 업적 바로가기.
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LqSpacing.screen,
+        8,
+        LqSpacing.screen,
+        0,
+      ),
+      child: Row(
+        children: [
+          // 탭이 아니라 마이페이지에서 push로 열리는 화면이라 돌아갈 길이 필요하다.
+          LqIconButton(
+            icon: Icons.arrow_back,
+            semanticLabel: '뒤로 가기',
+            onTap: () => context.canPop() ? context.pop() : context.go('/'),
+          ),
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LqColors.surfaceTint,
+              borderRadius: LqShape.tileRadius,
+              border: Border.all(
+                color: LqColors.ink,
+                width: LqShape.borderWidth,
+              ),
+            ),
+            child: const LqImage(LqAssets.iconBackpack, width: 20),
+          ),
+          const SizedBox(width: 8),
+          Text('LifeDex', style: LqText.screenTitle),
+          // 업적으로 건너가는 트로피 버튼은 뺐다. 도감과 업적은 형제 화면이 아니라
+          // 둘 다 마이페이지 "나의 기록" 아래에 있어, 서로를 여는 문이 계층을 흐린다.
+        ],
       ),
     );
   }
@@ -81,38 +138,11 @@ class _Body extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         LqSpacing.screen,
-        8,
+        LqSpacing.gap,
         LqSpacing.screen,
         24,
       ),
       children: [
-        Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: LqColors.panel,
-                borderRadius: LqShape.tileRadius,
-                border: Border.all(
-                  color: LqColors.ink,
-                  width: LqShape.borderWidth,
-                ),
-              ),
-              child: const LqImage(LqAssets.iconBackpack, width: 20),
-            ),
-            const SizedBox(width: 8),
-            Text('LifeDex', style: LqText.screenTitle),
-            const Spacer(),
-            LqIconButton(
-              icon: Icons.emoji_events_outlined,
-              semanticLabel: '업적',
-              onTap: () => context.push('/achievements'),
-            ),
-          ],
-        ),
-        const SizedBox(height: LqSpacing.gap),
         _CollectionRate(overview: overview),
         const SizedBox(height: LqSpacing.gap),
         LqChipRow(
@@ -132,7 +162,7 @@ class _Body extends ConsumerWidget {
           _ItemGrid(categoryId: selectedCategoryId!),
         const SizedBox(height: LqSpacing.gap),
         LqCard(
-          background: LqColors.panel,
+          background: LqColors.surfaceCard,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
@@ -242,6 +272,7 @@ class _ItemGrid extends ConsumerWidget {
         value: items,
         isEmpty: (value) => value.isEmpty,
         emptyMessage: '이 카테고리에는 아직 항목이 없어요',
+        notReadyMessage: '항목 목록은 아직 준비 중이에요',
         onRetry: () => ref.invalidate(lifedexItemsProvider(categoryId)),
         data: (value) => GridView.builder(
           shrinkWrap: true,

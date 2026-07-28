@@ -7,8 +7,14 @@ import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
 import 'package:life_quest/features/auth/presentation/login_screen.dart';
 import 'package:life_quest/features/auth/presentation/signup_screen.dart';
 import 'package:life_quest/features/achievement/presentation/achievement_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_journey_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_requests_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_search_screen.dart';
+import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
+import 'package:life_quest/features/location/presentation/location_consent_screen.dart';
+import 'package:life_quest/features/notification/presentation/notification_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
@@ -18,12 +24,15 @@ import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_result_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/quest_verify_screen.dart';
+import 'package:life_quest/features/reward/presentation/reward_screen.dart';
 import 'package:life_quest/shared/presentation/feature_placeholder_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · LifeDex · 마이.
-/// 친구·랭킹(S-18~22)은 Phase 2로 미루고 라우트를 등록하지 않는다.
+/// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · 친구 · 마이.
+///
+/// LifeDex 도감(S-13)과 업적·칭호(S-15)는 탭에서 빠지고 마이페이지 "나의 기록" 카드에서
+/// push로 연다. 탭 밖 라우트라 하단 탭바가 가려지고 좌상단 ←로 돌아온다.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
 
@@ -88,8 +97,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/lifedex',
-                builder: (context, state) => const LifedexScreen(),
+                path: '/friends',
+                builder: (context, state) => const FriendsScreen(),
               ),
             ],
           ),
@@ -147,22 +156,60 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      // `/friends/search`·`/friends/requests`를 `/friends/:userId`보다 먼저
+      // 선언해야 "search"가 userId로 잡히지 않는다.
+      GoRoute(
+        path: '/friends/search',
+        builder: (context, state) => const FriendSearchScreen(),
+      ),
+      GoRoute(
+        path: '/friends/requests',
+        builder: (context, state) => const FriendRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/friends/:userId',
+        builder: (context, state) => FriendJourneyScreen(
+          userId: int.tryParse(state.pathParameters['userId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/lifedex',
+        builder: (context, state) => const LifedexScreen(),
+      ),
       GoRoute(
         path: '/achievements',
         builder: (context, state) => AchievementScreen(
-          initialTab: state.uri.queryParameters['tab'] == 'titles' ? 1 : 0,
+          initialTab: switch (state.uri.queryParameters['tab']) {
+            'titles' => 1,
+            'badges' => 2,
+            _ => 0,
+          },
         ),
       ),
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
       ),
+      // 마이페이지의 EXP 바를 눌러 연다. 값이 이미 보이는 자리를 누르는 쪽이
+      // "나의 기록"에 행을 하나 더 붙이는 것보다 예측 가능하다.
+      GoRoute(
+        path: '/rewards',
+        builder: (context, state) => const RewardScreen(),
+      ),
+      // 위치 권한 전면 안내(1단계). 홈이 첫 프레임 뒤에 실행당 한 번 push한다.
+      GoRoute(
+        path: '/location-consent',
+        builder: (context, state) => const LocationConsentScreen(),
+      ),
+      // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
+      // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationScreen(),
+      ),
       GoRoute(
         path: '/settings/notifications',
-        builder: (context, state) => const FeaturePlaceholderScreen(
-          title: '알림 설정',
-          message: '알림 설정은 다음 단계에서 열려요',
-        ),
+        redirect: (context, state) => '/notifications',
       ),
     ],
   );

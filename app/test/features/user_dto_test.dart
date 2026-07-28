@@ -36,6 +36,56 @@ void main() {
     expect(collection.representativeBadgeId, 2);
   });
 
+  test('최근 획득은 칭호와 아이템을 획득 시각 내림차순으로 합친다', () {
+    final history = RewardHistory.fromJson({
+      'titles': [
+        {'id': 1, 'name': '새내기 모험가', 'acquiredAt': '2026-07-20T10:00:00Z'},
+      ],
+      'profileItems': [
+        {
+          'id': 2,
+          'name': '나침반 배지',
+          'itemType': 'BADGE',
+          'acquiredAt': '2026-07-25T09:00:00Z',
+        },
+        {
+          'id': 3,
+          'name': '이름표',
+          'itemType': 'NAMEPLATE',
+          'acquiredAt': '2026-07-22T09:00:00Z',
+        },
+      ],
+    });
+
+    // 두 목록이 각각 최신순으로 와도 종류를 섞으면 순서가 깨진다.
+    expect(history.recent.map((entry) => entry.name), [
+      '나침반 배지',
+      '이름표',
+      '새내기 모험가',
+    ]);
+    expect(history.recent.first.kind, RewardKind.badge);
+    expect(history.recent[1].kind, RewardKind.item);
+    expect(history.recent.last.kind, RewardKind.title);
+  });
+
+  test('획득 시각이 없는 보상은 최신으로 오해되지 않게 뒤로 밀린다', () {
+    final history = RewardHistory.fromJson({
+      'titles': [
+        {'id': 1, 'name': '시각 없는 칭호'},
+      ],
+      'profileItems': [
+        {
+          'id': 2,
+          'name': '나침반 배지',
+          'itemType': 'BADGE',
+          'acquiredAt': '2026-07-25T09:00:00Z',
+        },
+      ],
+    });
+
+    expect(history.recent.map((entry) => entry.name), ['나침반 배지', '시각 없는 칭호']);
+  });
+
   test('명세 공식에 맞는 레벨 진행률 응답을 파싱한다', () {
     final level = LevelStatus.fromJson({
       'level': 3,

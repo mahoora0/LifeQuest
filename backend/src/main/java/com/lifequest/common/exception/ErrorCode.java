@@ -25,6 +25,13 @@ public enum ErrorCode {
             "PROFILE_IMAGE_UPLOAD_FAILED",
             "프로필 이미지를 저장하지 못했습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "대상을 찾을 수 없습니다."),
+    /**
+     * 매핑된 컨트롤러가 없는 경로. {@link #RESOURCE_NOT_FOUND}와 구분한다 —
+     * 그쪽은 엔드포인트가 살아 있고 대상만 없는 경우라 재시도가 의미를 가질 수 있지만,
+     * 이쪽은 아직 만들지 않은 기능이라 다시 요청해도 결과가 같다.
+     * 클라이언트는 이 코드를 보고 오류 화면 대신 "준비 중" 안내를 띄운다.
+     */
+    ENDPOINT_NOT_FOUND(HttpStatus.NOT_FOUND, "ENDPOINT_NOT_FOUND", "아직 제공되지 않는 기능입니다."),
     QUEST_EXPIRED(HttpStatus.CONFLICT, "QUEST_EXPIRED", "만료된 퀘스트는 완료할 수 없습니다."),
     OUT_OF_RADIUS(HttpStatus.UNPROCESSABLE_CONTENT, "OUT_OF_RADIUS", "퀘스트 인증 반경 밖입니다."),
     LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "LOCATION_REQUIRED", "위치 좌표 또는 정확도가 필요합니다."),

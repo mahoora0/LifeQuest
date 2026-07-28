@@ -22,7 +22,7 @@ class LqStatusBanner extends StatelessWidget {
       LqBannerTone.success => (LqColors.successBg, LqColors.successText),
       LqBannerTone.warn => (LqColors.warnBg, LqColors.warnText),
       LqBannerTone.danger => (LqColors.dangerBg, LqColors.dangerText),
-      LqBannerTone.neutral => (LqColors.panel, LqColors.textSecondary),
+      LqBannerTone.neutral => (LqColors.surfaceTint, LqColors.textSecondary),
     };
 
     return Container(

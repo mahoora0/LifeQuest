@@ -1,0 +1,131 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:life_quest/features/quest/application/quest_providers.dart';
+import 'package:life_quest/features/quest/data/quest_dto.dart';
+import 'package:life_quest/features/quest/data/quest_repository.dart';
+import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
+
+/// 퀘스트 목록(S-08)의 조회 필터는 유형이 아니라 주기(일간·주간·월간) 기준이다.
+void main() {
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  Future<void> pumpList(WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+        ],
+        child: const MaterialApp(home: QuestListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('진입 시 일간이 선택되고 "전체" 칩은 없다', (tester) async {
+    await pumpList(tester);
+
+    // 일간은 칩 하나와 보이는 두 행의 주기 뱃지로 세 번 잡힌다.
+    // 주간·월간은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
+    expect(find.text('일간'), findsNWidgets(3));
+    expect(find.text('주간'), findsOneWidget);
+    expect(find.text('월간'), findsOneWidget);
+    // "전체"가 없으므로 기본 선택이 반드시 하나 있어야 한다.
+    expect(find.text('전체'), findsNothing);
+
+    expect(find.text('일간 퀘스트 · 2개'), findsOneWidget);
+    expect(find.text('물 여덟 잔 마시기'), findsOneWidget);
+    expect(find.text('청계천 물길 따라 걷기'), findsOneWidget);
+    expect(find.text('새로운 카페 방문하기'), findsNothing);
+    expect(find.text('북한산 백운대 오르기'), findsNothing);
+  });
+
+  testWidgets('다른 주기를 고르면 그 주기의 퀘스트만 남는다', (tester) async {
+    await pumpList(tester);
+
+    await tester.tap(find.text('주간'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주간 퀘스트 · 1개'), findsOneWidget);
+    expect(find.text('새로운 카페 방문하기'), findsOneWidget);
+    expect(find.text('물 여덟 잔 마시기'), findsNothing);
+  });
+
+  testWidgets('위치 인증 퀘스트는 주기 뱃지와 위치 뱃지를 함께 보여준다', (tester) async {
+    await pumpList(tester);
+
+    await tester.tap(find.text('주간'));
+    await tester.pumpAndSettle();
+
+    // 목록에 남은 유일한 행이 주간 + 위치다. 칩의 "주간"과 뱃지의 "주간"이 함께 잡힌다.
+    expect(find.text('주간'), findsNWidgets(2));
+    expect(find.text('위치'), findsOneWidget);
+  });
+
+  testWidgets('그 주기에 배정이 없으면 주기를 짚어 안내한다', (tester) async {
+    await pumpList(tester);
+
+    await tester.tap(find.text('월간'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('월간 퀘스트 · 0개'), findsOneWidget);
+    expect(find.text('오늘 배정된 월간 퀘스트가 없어요'), findsOneWidget);
+  });
+}
+
+class _FakeQuestRepository extends QuestRepository {
+  _FakeQuestRepository() : super(Dio());
+
+  /// 월간은 일부러 비워 둔다 — 빈 주기 탭의 안내 문구를 확인하기 위해서다.
+  @override
+  Future<TodayQuests> fetchToday() async => const TodayQuests(
+    assignedDate: '2026-07-27',
+    quests: [
+      DailyQuest(
+        dailyQuestId: 1,
+        status: DailyQuestStatus.assigned,
+        quest: Quest(
+          id: 1,
+          title: '물 여덟 잔 마시기',
+          cadence: QuestCadence.daily,
+          completionType: QuestCompletionType.selfReport,
+          expReward: 10,
+        ),
+      ),
+      DailyQuest(
+        dailyQuestId: 2,
+        status: DailyQuestStatus.assigned,
+        quest: Quest(
+          id: 21,
+          title: '청계천 물길 따라 걷기',
+          cadence: QuestCadence.daily,
+          completionType: QuestCompletionType.location,
+          expReward: 35,
+          placeName: '청계광장',
+          latitude: 37.5696,
+          longitude: 126.9784,
+          radiusM: 100,
+        ),
+      ),
+      DailyQuest(
+        dailyQuestId: 3,
+        status: DailyQuestStatus.assigned,
+        quest: Quest(
+          id: 25,
+          title: '새로운 카페 방문하기',
+          cadence: QuestCadence.weekly,
+          completionType: QuestCompletionType.location,
+          expReward: 40,
+          placeName: '성수동 카페거리',
+          latitude: 37.5445,
+          longitude: 127.0557,
+          radiusM: 100,
+        ),
+      ),
+    ],
+  );
+}

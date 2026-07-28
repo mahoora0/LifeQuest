@@ -9,7 +9,7 @@ class LqProgressBar extends StatelessWidget {
     required this.max,
     this.height = LqSpacing.progressHeight,
     this.fillColor = LqColors.expFill,
-    this.trackColor = LqColors.card,
+    this.trackColor = LqColors.surfaceRaised,
     this.borderWidth = LqShape.borderWidth,
   });
 

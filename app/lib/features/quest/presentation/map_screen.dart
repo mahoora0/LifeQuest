@@ -30,7 +30,7 @@ class MapScreen extends ConsumerWidget {
     final nearby = ref.watch(nearbyQuestsProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -68,7 +68,7 @@ class _ExplorationCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       height: 300,
       padding: EdgeInsets.zero,
       child: ClipRRect(
@@ -117,7 +117,7 @@ class _ExplorationCanvas extends StatelessWidget {
                   vertical: 3,
                 ),
                 decoration: BoxDecoration(
-                  color: LqColors.card,
+                  color: LqColors.surfaceRaised,
                   borderRadius: LqShape.pillRadius,
                   border: Border.all(color: LqColors.ink, width: 1.6),
                 ),

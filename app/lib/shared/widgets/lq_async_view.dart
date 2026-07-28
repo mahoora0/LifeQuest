@@ -16,6 +16,8 @@ class LqAsyncView<T> extends StatelessWidget {
     this.emptyMessage = '아직 보여드릴 내용이 없어요',
     this.emptyAsset = LqAssets.charSit,
     this.onRetry,
+    this.notReadyMessage,
+    this.notReadyHint,
   });
 
   final AsyncValue<T> value;
@@ -27,11 +29,26 @@ class LqAsyncView<T> extends StatelessWidget {
   final String emptyAsset;
   final VoidCallback? onRetry;
 
+  /// 서버 엔드포인트가 아직 열리지 않았을 때(404) 대신 보여줄 안내.
+  ///
+  /// 주지 않으면 일반 오류 화면으로 떨어진다. "다시 시도" 버튼은 붙이지 않는다 —
+  /// 눌러도 결과가 같아서 사용자를 헛돌게 만든다.
+  final String? notReadyMessage;
+  final String? notReadyHint;
+
   @override
   Widget build(BuildContext context) {
     // 새로고침 중에는 직전 데이터를 그대로 유지해 화면 깜빡임을 막는다.
     if (value.hasError && !value.isLoading) {
-      return LqErrorView(error: value.error!, onRetry: onRetry);
+      final error = value.error!;
+      if (notReadyMessage != null && isFeatureNotReady(error)) {
+        return LqEmptyView(
+          message: notReadyMessage!,
+          hint: notReadyHint,
+          asset: emptyAsset,
+        );
+      }
+      return LqErrorView(error: error, onRetry: onRetry);
     }
     if (value.hasValue) {
       final current = value.requireValue;

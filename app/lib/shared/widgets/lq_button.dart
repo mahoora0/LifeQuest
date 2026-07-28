@@ -5,6 +5,10 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 ///
 /// enabled: `primary` 배경 + `#FEF8EE` 글자 + 오프셋 섀도.
 /// disabled: `#E3DCC8` 배경 + `textMuted` 글자, 섀도 없음.
+///
+/// 나란히 놓인 보조·되돌릴 수 없는 액션(거절 · 동료 해제)은 [borderColor]를
+/// `borderMuted`로, [shadow]를 꺼서 한 단계 뒤로 물린다. 같은 크기·같은 라운드로
+/// 두 버튼을 나란히 두면 어느 쪽이 주 액션인지 읽히지 않는다.
 class LqButton extends StatelessWidget {
   const LqButton({
     super.key,
@@ -16,6 +20,8 @@ class LqButton extends StatelessWidget {
     this.height = 50,
     this.fontSize = 17,
     this.icon,
+    this.borderColor = LqColors.ink,
+    this.shadow = true,
   });
 
   final String label;
@@ -28,6 +34,12 @@ class LqButton extends StatelessWidget {
   final double height;
   final double fontSize;
   final Widget? icon;
+
+  /// 테두리 색. 보조 액션은 `borderMuted`로 물린다.
+  final Color borderColor;
+
+  /// 오프셋 섀도. 보조 액션은 끈다.
+  final bool shadow;
 
   bool get _enabled => onPressed != null && !busy;
 
@@ -43,8 +55,8 @@ class LqButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: _enabled ? background : LqColors.disabledBg,
           borderRadius: LqShape.buttonRadius,
-          border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
-          boxShadow: _enabled ? LqShape.buttonShadow : null,
+          border: Border.all(color: borderColor, width: LqShape.borderWidth),
+          boxShadow: (_enabled && shadow) ? LqShape.buttonShadow : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
