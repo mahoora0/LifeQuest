@@ -29,7 +29,7 @@ class LocationConsentBanner extends ConsumerWidget {
         borderColor: LqColors.warnText,
         shadow: false,
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-        onTap: () => showLocationPermissionSheet(context, ref),
+        onTap: () => showLocationPermissionSheet(context),
         child: Row(
           children: [
             Container(
@@ -96,28 +96,30 @@ Future<void> ensureLocationConsent(
 }) async {
   if (!isLocationQuest) return;
 
-  final stage = ref.read(locationConsentProvider).value;
-  if (stage == null || !stage.needsSheet) return;
+  // `.value`로 읽으면 판정이 끝나기 전에는 null이라 시트를 건너뛴다. 그 창은
+  // 앱을 켠 직후가 가장 길다(권한 조회가 플랫폼 채널 왕복이라 첫 호출이 느리다).
+  // 하필 그때가 사용자가 첫 퀘스트를 누르는 시점이라, 설명 없이 인증 화면까지
+  // 들어가 버린다. 판정이 끝날 때까지 기다린다.
+  final stage = await ref.read(locationConsentProvider.future);
+  if (!stage.needsSheet || !context.mounted) return;
 
-  await showLocationPermissionSheet(context, ref);
+  await showLocationPermissionSheet(context);
 }
 
 /// 2단계 · 바텀 시트.
 ///
-/// 권한을 허용했으면 `true`. 호출부는 이 값과 무관하게 원래 가려던 곳으로
-/// 이어 가도 된다 — 시트는 막는 문이 아니라 한 번의 설명이다.
-Future<bool> showLocationPermissionSheet(
-  BuildContext context,
-  WidgetRef ref,
-) async {
-  final granted = await showModalBottomSheet<bool>(
+/// 시트는 막는 문이 아니라 한 번의 설명이라, 호출부는 결과를 기다렸다가 원래 가려던
+/// 곳으로 그대로 이어 간다. 그래서 허용 여부를 돌려주지 않는다 — 시트 안의
+/// [_PermissionSheet]가 `ConsumerWidget`으로 상태를 직접 갱신하므로 호출부가
+/// `WidgetRef`를 넘길 이유도 없다.
+Future<void> showLocationPermissionSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0x59443B2A),
-    builder: (sheetContext) => const _PermissionSheet(),
+    builder: (_) => const _PermissionSheet(),
   );
-  return granted ?? false;
 }
 
 class _PermissionSheet extends ConsumerWidget {
@@ -194,17 +196,17 @@ class _PermissionSheet extends ConsumerWidget {
     final controller = ref.read(locationConsentProvider.notifier);
     if (blocked) {
       await controller.openSettings();
-      if (context.mounted) Navigator.of(context).pop(false);
+      if (context.mounted) Navigator.of(context).pop();
       return;
     }
 
-    final granted = await controller.request();
-    if (context.mounted) Navigator.of(context).pop(granted);
+    await controller.request();
+    if (context.mounted) Navigator.of(context).pop();
   }
 
   Future<void> _skip(BuildContext context, WidgetRef ref) async {
     await ref.read(locationConsentProvider.notifier).defer();
-    if (context.mounted) Navigator.of(context).pop(false);
+    if (context.mounted) Navigator.of(context).pop();
   }
 }
 

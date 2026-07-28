@@ -54,7 +54,9 @@ abstract final class LqIcons {
   static const friends = '${_dir}friends.svg';
   static const my = '${_dir}my.svg';
 
-  /// 도감 — 탭에는 없고 마이페이지 "나의 기록" 진입 행에서 쓴다.
+  /// 도감. 디자인 프로젝트가 탭 아이콘과 함께 내려준 것이나 아직 쓰는 곳이 없다 —
+  /// 마이페이지 "나의 기록"의 도감 행은 아이콘 없이 제목·진척만 보여준다.
+  /// 그 행에 아이콘을 넣기로 하면 여기서 가져다 쓴다.
   static const lifedex = '${_dir}lifedex.svg';
 
   /// 검색 — 시안이 인라인 SVG로 그려 둔 것을 같은 규격으로 파일화했다.

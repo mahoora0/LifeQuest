@@ -19,9 +19,6 @@ import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
-/// 배지·아이콘 타일의 채움색. 카드 배경(tint)보다 한 단계 진해 타일이 도드라진다.
-const _tileFill = Color(0xFFF3E9D0);
-
 /// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
 /// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
 Future<void> _refresh(WidgetRef ref) async {
@@ -166,7 +163,7 @@ class _RewardRow extends StatelessWidget {
             height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _tileFill,
+              color: LqColors.tileFill,
               borderRadius: LqShape.tileRadius,
               border: Border.all(
                 color: LqColors.ink,
@@ -585,7 +582,7 @@ class _BadgeSlot extends StatelessWidget {
               ? LqColors.lockedBg
               : representative
               ? LqColors.gold
-              : _tileFill,
+              : LqColors.tileFill,
           borderRadius: LqShape.tileRadius,
           border: Border.all(
             color: badge == null ? LqColors.borderMuted : LqColors.ink,
@@ -703,7 +700,7 @@ class _RecordTile extends StatelessWidget {
       height: 34,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: _tileFill,
+        color: LqColors.tileFill,
         borderRadius: LqShape.tileRadius,
         border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
       ),

@@ -79,10 +79,19 @@ class LocationConsentNotifier extends AsyncNotifier<LocationConsentStage> {
   }
 
   /// "나중에 할게요" · "지금은 넘어가기".
+  ///
+  /// 이미 영구 거부로 굳은 상태는 낮추지 않는다. `deferred`로 내리면 다음 시트가
+  /// "위치 권한 허용하기"를 보여주는데, 그 버튼은 OS 팝업을 띄우지 못해 눌러도
+  /// 아무 일이 없다 — 상태를 되돌릴 유일한 경로("설정에서 켜기")를 잃는 셈이다.
   Future<void> defer() async {
+    await _rememberDeferredToday();
+    if (state.value == LocationConsentStage.blocked) return;
+    state = const AsyncData(LocationConsentStage.deferred);
+  }
+
+  Future<void> _rememberDeferredToday() async {
     final prefs = await ref.read(sharedPreferencesProvider.future);
     await prefs.setString(_deferKey, todayKey());
-    state = const AsyncData(LocationConsentStage.deferred);
   }
 
   /// OS 권한 팝업을 띄운다. 설명을 보여준 뒤에만 부른다 —
@@ -100,6 +109,11 @@ class LocationConsentNotifier extends AsyncNotifier<LocationConsentStage> {
       state = const AsyncData(LocationConsentStage.granted);
       return true;
     }
+
+    // 거절도 미룬 것으로 기록한다. 남기지 않으면 다음 실행에서 `intro`로 판정돼
+    // 전면 안내가 매번 다시 뜬다 — "나중에 할게요"로 부드럽게 넘긴 사람은 하루
+    // 쉬는데 OS 팝업까지 눌러 거절한 사람이 더 자주 시달리는 뒤집힌 결과가 된다.
+    await _rememberDeferredToday();
 
     state = AsyncData(
       permission == LocationPermission.deniedForever

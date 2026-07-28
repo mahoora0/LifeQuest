@@ -37,22 +37,30 @@ class FriendListNotifier extends AsyncNotifier<FriendList> {
     );
     if (alreadyCheered) return;
 
-    state = AsyncData(
-      FriendList(
-        myCode: current.myCode,
-        friends: [
-          for (final friend in current.friends)
-            friend.userId == userId ? friend.copyWith(cheered: true) : friend,
-        ],
-      ),
-    );
+    state = AsyncData(_withCheered(current, userId, true));
 
     try {
       await ref.read(friendRepositoryProvider).cheer(userId);
     } catch (error, stackTrace) {
-      state = AsyncData(current);
+      // 되돌릴 때는 **그 친구만** 되돌린다. 요청 전 스냅샷을 통째로 복원하면
+      // 기다리는 동안 성공한 다른 응원까지 지워져, 이미 지급된 EXP에 대해
+      // 버튼이 다시 눌리는 상태가 된다.
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(_withCheered(latest, userId, false));
+      }
       Error.throwWithStackTrace(error, stackTrace);
     }
+  }
+
+  FriendList _withCheered(FriendList list, int userId, bool cheered) {
+    return FriendList(
+      myCode: list.myCode,
+      friends: [
+        for (final friend in list.friends)
+          friend.userId == userId ? friend.copyWith(cheered: cheered) : friend,
+      ],
+    );
   }
 }
 
@@ -79,10 +87,14 @@ class AdventurerSearchState {
 }
 
 /// S-18 동료 찾기.
+///
+/// 화면을 떠나면 버린다. 남겨 두면 다시 들어왔을 때 입력창은 비어 있는데 지난
+/// 질의어의 결과가 그대로 깔려 있다.
 final adventurerSearchProvider =
-    AsyncNotifierProvider<AdventurerSearchNotifier, AdventurerSearchState>(
-      AdventurerSearchNotifier.new,
-    );
+    AsyncNotifierProvider.autoDispose<
+      AdventurerSearchNotifier,
+      AdventurerSearchState
+    >(AdventurerSearchNotifier.new);
 
 class AdventurerSearchNotifier extends AsyncNotifier<AdventurerSearchState> {
   @override
@@ -118,26 +130,38 @@ class AdventurerSearchNotifier extends AsyncNotifier<AdventurerSearchState> {
     if (target == null || !target.relation.isActionable) return;
 
     state = AsyncData(
-      AdventurerSearchState(
-        query: current.query,
-        results: [
-          for (final result in current.results)
-            result.userId == userId
-                ? result.copyWith(
-                    relation: FriendRelation.requestSent,
-                    statusLine: '요청을 보냈어요 · 대기 중',
-                  )
-                : result,
-        ],
+      _replacing(
+        current,
+        target.copyWith(
+          relation: FriendRelation.requestSent,
+          statusLine: '요청을 보냈어요 · 대기 중',
+        ),
       ),
     );
 
     try {
       await ref.read(friendRepositoryProvider).sendRequest(userId);
     } catch (error, stackTrace) {
-      state = AsyncData(current);
+      // 그 행만 되돌린다. 스냅샷을 통째로 복원하면 기다리는 동안 끝난 새 검색
+      // 결과가 사라지고, 입력창과 목록이 어긋난다. 원본 객체를 그대로 되돌려
+      // `statusLine`이 없던 행이 빈 줄로 바뀌지 않게 한다.
+      final latest = state.value;
+      if (latest != null) state = AsyncData(_replacing(latest, target));
       Error.throwWithStackTrace(error, stackTrace);
     }
+  }
+
+  AdventurerSearchState _replacing(
+    AdventurerSearchState state,
+    AdventurerSearchResult replacement,
+  ) {
+    return AdventurerSearchState(
+      query: state.query,
+      results: [
+        for (final result in state.results)
+          result.userId == replacement.userId ? replacement : result,
+      ],
+    );
   }
 }
 
@@ -165,6 +189,11 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
     final current = state.value;
     if (current == null) return;
 
+    final target = current.received
+        .where((request) => request.userId == userId)
+        .firstOrNull;
+    if (target == null) return;
+
     state = AsyncData(current.removeReceived(userId));
 
     try {
@@ -175,15 +204,29 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
       // 목록을 무효화해 다음 조회에서 새로 받게 한다.
       if (accept) ref.invalidate(friendListProvider);
     } catch (error, stackTrace) {
-      state = AsyncData(current);
+      // 그 요청만 되돌린다. 스냅샷을 통째로 복원하면 기다리는 동안 처리한 다른
+      // 요청이 목록에 되살아나 같은 사람을 두 번 수락하게 된다.
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(
+          FriendRequestBox(
+            received: [target, ...latest.received],
+            sent: latest.sent,
+          ),
+        );
+      }
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
 }
 
 /// S-21 동료 여정 비교. 친구마다 별도 상태를 갖도록 family로 둔다.
-final friendJourneyProvider =
-    AsyncNotifierProvider.family<FriendJourneyNotifier, FriendJourney, int>(
+///
+/// 화면을 닫으면 버린다. family는 기본이 비-autoDispose라, 그냥 두면 열어 본 친구
+/// 수만큼 상태가 프로세스 내내 남고 다시 열어도 새로 받아오지 않는다 — 상대가
+/// 그동안 레벨이 올라도 옛 수치를 보게 된다.
+final friendJourneyProvider = AsyncNotifierProvider.autoDispose
+    .family<FriendJourneyNotifier, FriendJourney, int>(
       FriendJourneyNotifier.new,
     );
 
