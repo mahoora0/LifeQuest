@@ -147,17 +147,23 @@ class _MarkAllReadButton extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: enabled ? onTap : null,
-        child: Container(
-          constraints: const BoxConstraints(
-            minHeight: LqSpacing.minTouchTarget,
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            '모두 읽음',
-            style: LqText.label.copyWith(
-              fontWeight: FontWeight.w700,
-              color: enabled ? LqColors.primary : LqColors.textMuted,
+        // `Container`에 `alignment`를 주면 **부모가 허용하는 최대 폭까지 커진다**.
+        // 헤더는 Stack이라 그 최대치가 화면 폭이어서, 이 버튼이 제목 위를 덮고
+        // 좌상단 뒤로 가기 자리까지 탭 영역으로 먹었다 — 뒤로 가려다 전체 읽음이
+        // 실행됐다. `SizedBox` + `widthFactor: 1`로 글자 폭에만 맞춘다.
+        child: SizedBox(
+          height: LqSpacing.minTouchTarget,
+          child: Center(
+            widthFactor: 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                '모두 읽음',
+                style: LqText.label.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: enabled ? LqColors.primary : LqColors.textMuted,
+                ),
+              ),
             ),
           ),
         ),

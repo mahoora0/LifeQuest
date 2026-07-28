@@ -13,6 +13,7 @@ import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
 import 'package:life_quest/features/notification/presentation/notification_screen.dart';
 import 'package:life_quest/core/network/api_exception.dart';
+import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 코드 리뷰가 프로브로 재현한 결함들을 고정한다.
@@ -171,6 +172,40 @@ void main() {
     });
   });
 
+  group('헤더 보조 버튼이 제목과 뒤로 가기를 덮지 않는다', () {
+    testWidgets('뒤로 가기 자리를 눌러도 전체 읽음이 실행되지 않는다', (tester) async {
+      // 실기기에서 잡힌 결함. `Container`에 `alignment`를 주면 부모가 허용하는
+      // 최대 폭까지 커지는데, 헤더가 Stack이라 그 최대치가 화면 폭이었다.
+      // "모두 읽음"이 제목 위를 덮고 좌상단까지 탭 영역으로 먹어, 뒤로 가려던
+      // 탭이 전체 읽음을 실행했다. 오버플로 예외가 아니라 위젯 테스트로도
+      // 화면 캡처로도 드러나지 않고 눌러 봐야만 나타난다.
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            notificationRepositoryProvider.overrideWithValue(
+              const _UnreadNotificationRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: NotificationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final header = tester.getRect(find.byType(LqHeader));
+      final markAllRead = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('모두 읽음'),
+              matching: find.byType(GestureDetector),
+            )
+            .first,
+      );
+
+      // 탭 영역이 헤더 오른쪽 절반 안에 있어야 뒤로 가기·제목과 겹치지 않는다.
+      expect(markAllRead.left, greaterThan(header.center.dx));
+    });
+  });
+
   group('받은 요청 배너는 목록이 실패해도 남는다', () {
     testWidgets('친구 목록이 준비 중이어도 요청 배너로 갈 수 있다', (tester) async {
       await tester.pumpWidget(
@@ -298,6 +333,22 @@ class _ListBrokenFriendRepository extends FriendRepository {
     received: [
       FriendRequest(userId: 20, nickname: '솔방울', level: 13),
       FriendRequest(userId: 21, nickname: '단풍', level: 4),
+    ],
+  );
+}
+
+class _UnreadNotificationRepository extends NotificationRepository {
+  const _UnreadNotificationRepository();
+
+  @override
+  Future<LqNotificationFeed> fetchFeed() async => const LqNotificationFeed(
+    items: [
+      LqNotification(
+        id: 1,
+        kind: LqNotificationKind.achievement,
+        title: '비밀 업적 해금!',
+        timeLabel: '방금',
+      ),
     ],
   );
 }
