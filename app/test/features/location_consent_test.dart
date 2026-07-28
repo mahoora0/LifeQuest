@@ -17,6 +17,41 @@ void main() {
     return container;
   }
 
+  // 하루의 경계는 자정이 아니라 04:00이다(`docs/05-business-rules.md` §1-1).
+  // 아래 검증들은 `todayKey()`를 호출해 자기 자신과 비교하지 않는다 — 그렇게 하면
+  // 구현이 무엇을 돌려주든 통과해서 경계 규칙을 아무것도 보장하지 못한다.
+  group('논리적 일자 경계 04:00', () {
+    test('밤 11시와 다음날 새벽 1시는 같은 날이다', () {
+      // 이 케이스가 규칙의 존재 이유다 — 자정 경계에서는 밤에 미룬 사람이
+      // 자정을 넘기자마자 안내를 한 번 더 봤다.
+      expect(
+        LocationConsentNotifier.todayKey(DateTime(2026, 3, 31, 23, 0)),
+        LocationConsentNotifier.todayKey(DateTime(2026, 4, 1, 1, 0)),
+      );
+    });
+
+    test('04:00 이전은 전날로 센다', () {
+      expect(
+        LocationConsentNotifier.todayKey(DateTime(2026, 4, 1, 3, 59)),
+        '2026-03-31',
+      );
+    });
+
+    test('04:00부터 당일로 넘어간다', () {
+      expect(
+        LocationConsentNotifier.todayKey(DateTime(2026, 4, 1, 4, 0)),
+        '2026-04-01',
+      );
+    });
+
+    test('월·일을 두 자리로 채운다', () {
+      expect(
+        LocationConsentNotifier.todayKey(DateTime(2026, 1, 5, 12, 0)),
+        '2026-01-05',
+      );
+    });
+  });
+
   test('아직 묻지 않았으면 전면 안내부터 띄운다', () async {
     SharedPreferences.setMockInitialValues({});
     final container = containerWith(const _FakeLocationService());
