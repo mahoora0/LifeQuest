@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/app/life_quest_app.dart';
+import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
@@ -85,6 +86,30 @@ void main() {
     expect(find.text('Lv. 3'), findsOneWidget);
   });
 
+  testWidgets('오늘의 퀘스트 조회가 실패해도 오류 상태가 카드 밖으로 넘치지 않는다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storedAuthSessionProvider.overrideWith(
+            (ref) async => AuthSession.authenticated,
+          ),
+          questRepositoryProvider.overrideWithValue(_FailingQuestRepository()),
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const LifeQuestApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('서버 오류가 발생했습니다.'), findsOneWidget);
+    expect(find.text('다시 시도'), findsOneWidget);
+
+    // 카드가 오류 상태를 고정 높이로 가두면 RenderFlex가 paint 단계에서
+    // 오버플로를 보고한다(캐릭터 108 + 여백 14 + 문구 22 + 여백 16 + 버튼 50
+    // + 상하 패딩 48 = 258 > 250). 최소 높이로 두면 카드가 대신 늘어난다.
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('로그아웃 전에 기록 보존 안내와 확인 선택지를 보여준다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -144,6 +169,18 @@ class _FakeQuestRepository extends QuestRepository {
   @override
   Future<TodayQuests> fetchToday() async =>
       const TodayQuests(assignedDate: '2026-07-24', quests: []);
+}
+
+/// 서버가 아직 `GET /quests/today`를 제공하지 않을 때의 홈 화면 상태를 재현한다.
+class _FailingQuestRepository extends QuestRepository {
+  _FailingQuestRepository() : super(Dio());
+
+  @override
+  Future<TodayQuests> fetchToday() async => throw const ApiException(
+    code: 'INTERNAL_SERVER_ERROR',
+    message: '서버 오류가 발생했습니다.',
+    statusCode: 500,
+  );
 }
 
 class _FakeUserRepository extends UserRepository {
