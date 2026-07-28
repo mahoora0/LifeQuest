@@ -36,12 +36,12 @@ abstract final class LqSampleData {
   /// 부를 엔드포인트 자체가 없는 구간(친구·알림)에 쓴다. 호출할 경로가 있으면
   /// [orSample]을 쓰는 쪽이 낫다 — 그쪽은 서버가 생기면 저절로 물러난다.
   ///
-  /// 404 + `RESOURCE_NOT_FOUND`가 아닌 코드라야 `isFeatureNotReady`가 참이 되어
-  /// 오류 화면이 아닌 준비 중 안내로 간다.
+  /// 서버가 미매핑 경로에 붙이는 것과 **같은 코드**로 던진다. 다른 코드를 쓰면
+  /// `isFeatureNotReady`가 이 예외를 못 알아보고 준비 중 안내 대신 오류 화면이 뜬다.
   static void guard(String feature) {
     if (enabled) return;
     throw ApiException(
-      code: 'FEATURE_NOT_READY',
+      code: endpointNotFound,
       message: '$feature은(는) 아직 준비 중이에요',
       statusCode: 404,
     );
@@ -52,12 +52,11 @@ abstract final class LqSampleData {
   /// [guard]와 달리 회수가 자동이다 — 서버가 그 경로를 열면 [call]이 성공하므로
   /// 표본은 두 번 다시 쓰이지 않는다. 지우는 것을 잊어도 가짜가 실데이터를 덮지 않는다.
   ///
-  /// 떨어지는 조건을 좁게 잡았다. 이 백엔드는 미매핑 경로에 대한 핸들러가 없어
-  /// 공통 envelope 없이 404가 나가므로 [ApiException.unknownError]로 정규화된다.
-  /// 반대로 **살아 있는 엔드포인트가 내는 404는 언제나 코드를 달고 온다**
-  /// (`ErrorCode.RESOURCE_NOT_FOUND` 등). 그래서 "코드 없는 404"만 컨트롤러 부재로 본다.
-  /// 코드가 붙은 404까지 받으면 서버가 붙은 뒤에도 특정 요청에서만 가짜가 나가고,
-  /// 500이나 네트워크 단절까지 받으면 서버가 죽은 것을 개발 중에 알아채지 못한다.
+  /// 떨어지는 조건을 좁게 잡았다. 백엔드가 미매핑 경로에만
+  /// `ENDPOINT_NOT_FOUND`(404)를 내보내므로 그 코드만 컨트롤러 부재로 본다.
+  /// 대상만 없는 `RESOURCE_NOT_FOUND`까지 받으면 서버가 붙은 뒤에도 특정 요청에서만
+  /// 가짜가 나가고, 500이나 네트워크 단절까지 받으면 서버가 죽은 것을 개발 중에
+  /// 알아채지 못한다.
   static Future<T> orSample<T>(
     Future<T> Function() call,
     T Function() sample,
@@ -70,10 +69,10 @@ abstract final class LqSampleData {
     }
   }
 
-  /// 경로에 컨트롤러가 없어 보이는지. 코드 없는 404만 그렇게 본다.
-  static bool isEndpointMissing(Object error) {
-    final failure = ApiException.from(error);
-    return failure.statusCode == 404 &&
-        failure.code == ApiException.unknownError;
-  }
+  /// 경로에 컨트롤러가 없는지. 서버가 그 경우에만 붙이는 코드로 판정한다.
+  static bool isEndpointMissing(Object error) =>
+      ApiException.from(error).code == endpointNotFound;
+
+  /// 백엔드 `ErrorCode.ENDPOINT_NOT_FOUND`.
+  static const endpointNotFound = 'ENDPOINT_NOT_FOUND';
 }

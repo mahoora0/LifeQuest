@@ -24,8 +24,10 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  /// 어디에도 닿지 않는 Dio — 컨트롤러가 없는 서버를 흉내 낸다.
-  /// 미매핑 경로는 공통 envelope 없이 404가 나가므로 본문을 비운다.
+  /// 컨트롤러가 없는 서버를 흉내 낸다.
+  ///
+  /// 백엔드가 미매핑 경로에 붙이는 응답 모양 그대로다 — 404 + envelope의
+  /// `ENDPOINT_NOT_FOUND`. 본문을 비운 404로 두면 실제 서버와 다른 것을 검사하게 된다.
   Dio unreachableDio() {
     final dio = Dio();
     dio.interceptors.add(
@@ -36,6 +38,14 @@ void main() {
             response: Response<dynamic>(
               requestOptions: options,
               statusCode: 404,
+              data: const {
+                'success': false,
+                'data': null,
+                'error': {
+                  'code': 'ENDPOINT_NOT_FOUND',
+                  'message': '아직 제공되지 않는 기능입니다.',
+                },
+              },
             ),
             type: DioExceptionType.badResponse,
           ),

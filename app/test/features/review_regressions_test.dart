@@ -322,7 +322,7 @@ class _ListBrokenFriendRepository extends FriendRepository {
   @override
   Future<FriendList> fetchFriends() async {
     throw const ApiException(
-      code: 'FEATURE_NOT_READY',
+      code: 'ENDPOINT_NOT_FOUND',
       message: '',
       statusCode: 404,
     );
@@ -367,7 +367,7 @@ class _NotReadyNotificationRepository extends NotificationRepository {
   @override
   Future<LqNotificationFeed> fetchFeed() async {
     throw const ApiException(
-      code: 'FEATURE_NOT_READY',
+      code: 'ENDPOINT_NOT_FOUND',
       message: '',
       statusCode: 404,
     );

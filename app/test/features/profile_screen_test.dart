@@ -102,14 +102,20 @@ void main() {
   });
 }
 
-/// 매핑이 없는 경로에서 오는 Spring 기본 404.
+/// 매핑된 컨트롤러가 없는 경로에서 오는 응답.
+///
+/// 백엔드가 `NoResourceFoundException`을 잡아 404 + `ENDPOINT_NOT_FOUND`로 내보낸다.
 ApiException _notFound(String path) => ApiException.from(
   DioException(
     requestOptions: RequestOptions(path: path),
     response: Response<dynamic>(
       requestOptions: RequestOptions(path: path),
       statusCode: 404,
-      data: const {'status': 404, 'error': 'Not Found'},
+      data: const {
+        'success': false,
+        'data': null,
+        'error': {'code': 'ENDPOINT_NOT_FOUND', 'message': '아직 제공되지 않는 기능입니다.'},
+      },
     ),
     type: DioExceptionType.badResponse,
   ),

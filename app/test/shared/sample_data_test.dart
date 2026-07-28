@@ -18,7 +18,7 @@ void main() {
         throwsA(
           isA<ApiException>()
               .having((e) => e.statusCode, 'statusCode', 404)
-              .having((e) => e.code, 'code', 'FEATURE_NOT_READY'),
+              .having((e) => e.code, 'code', LqSampleData.endpointNotFound),
         ),
       );
     });
@@ -29,7 +29,7 @@ void main() {
       await expectLater(
         LqSampleData.orSample(
           () async => throw const ApiException(
-            code: ApiException.unknownError,
+            code: LqSampleData.endpointNotFound,
             message: '',
             statusCode: 404,
           ),
@@ -45,12 +45,11 @@ void main() {
   });
 
   group('컨트롤러 부재 판정', () {
-    test('코드 없는 404만 컨트롤러 부재로 본다', () {
-      // 이 백엔드는 미매핑 경로용 핸들러가 없어 공통 envelope 없이 404가 나간다.
+    test('서버가 붙인 ENDPOINT_NOT_FOUND만 컨트롤러 부재로 본다', () {
       expect(
         LqSampleData.isEndpointMissing(
           const ApiException(
-            code: ApiException.unknownError,
+            code: LqSampleData.endpointNotFound,
             message: '',
             statusCode: 404,
           ),
@@ -59,13 +58,14 @@ void main() {
       );
     });
 
-    test('살아 있는 엔드포인트가 내는 404는 코드를 달고 온다', () {
-      // 코드가 붙은 404까지 표본으로 받으면 서버가 붙은 뒤에도 특정 요청에서만
-      // 가짜가 나간다. RESOURCE_NOT_FOUND뿐 아니라 어떤 코드든 제외해야 한다.
+    test('다른 코드는 컨트롤러 부재가 아니다', () {
+      // RESOURCE_NOT_FOUND는 엔드포인트가 살아 있고 대상만 없는 경우다.
+      // 코드 없는 404는 중간 계층이 낸 것이라 서버의 의도가 아니다.
       for (final code in [
         'RESOURCE_NOT_FOUND',
         'FRIEND_NOT_FOUND',
         'FORBIDDEN',
+        ApiException.unknownError,
       ]) {
         expect(
           LqSampleData.isEndpointMissing(
@@ -77,13 +77,14 @@ void main() {
       }
     });
 
-    test('서버 장애와 네트워크 단절은 컨트롤러 부재가 아니다', () {
-      // 표본으로 가리면 서버가 죽은 것을 개발 중에 알아채지 못한다.
+    test('포괄 핸들러가 삼킨 500과 네트워크 단절은 컨트롤러 부재가 아니다', () {
+      // 실기기에서 미매핑 경로가 이 500 모양으로 왔다. 이것까지 표본으로 받으면
+      // 진짜 서버 장애를 가짜 데이터로 덮게 된다.
       expect(
         LqSampleData.isEndpointMissing(
           const ApiException(
-            code: ApiException.unknownError,
-            message: '',
+            code: 'INTERNAL_SERVER_ERROR',
+            message: '서버 오류가 발생했습니다.',
             statusCode: 500,
           ),
         ),

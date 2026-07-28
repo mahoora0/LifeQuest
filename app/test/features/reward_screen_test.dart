@@ -123,9 +123,9 @@ class _NotReadyRewardRepository extends RewardRepository {
 
   @override
   Future<RewardOverview> fetchOverview() async {
-    // 컨트롤러가 없는 경로의 순수 404 — `isFeatureNotReady`가 참이 되는 모양이다.
+    // 미매핑 경로에 백엔드가 붙이는 코드 — `isFeatureNotReady`가 참이 되는 모양이다.
     throw const ApiException(
-      code: 'FEATURE_NOT_READY',
+      code: 'ENDPOINT_NOT_FOUND',
       message: '',
       statusCode: 404,
     );
