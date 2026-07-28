@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/features/location/presentation/widgets/location_consent_prompts.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
@@ -57,12 +58,10 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
         bottom: false,
         child: Column(
           children: [
-            const LqHeader(
-              title: '퀘스트 목록',
-              showBack: false,
-              // 검색은 이번 범위에서 시각 요소만 둔다.
-              trailing: LqIconButton(icon: Icons.search, semanticLabel: '검색'),
-            ),
+            // 헤더에 검색을 두지 않는다. 목록이 3~8개인 화면에 검색이 있으면
+            // 데이터가 더 많아 보이는 오해를 주고, 이번 범위에 검색 기능이
+            // 없어 눌러도 아무 일이 없는 컨트롤이 된다.
+            const LqHeader(title: '퀘스트 목록', showBack: false),
             Padding(
               padding: const EdgeInsets.fromLTRB(LqSpacing.screen, 0, 0, 6),
               child: Align(
@@ -98,7 +97,15 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
     );
   }
 
-  void _openDetail(DailyQuest dailyQuest) {
+  Future<void> _openDetail(DailyQuest dailyQuest) async {
+    // 위치 퀘스트를 눌렀을 때만 시트를 올린다(2b). 홈과 같은 규칙이다.
+    await ensureLocationConsent(
+      context,
+      ref,
+      isLocationQuest: dailyQuest.quest.completionType.isLocation,
+    );
+
+    if (!mounted) return;
     context.push(
       '/quests/${dailyQuest.questId}',
       extra: QuestDetailArgs(

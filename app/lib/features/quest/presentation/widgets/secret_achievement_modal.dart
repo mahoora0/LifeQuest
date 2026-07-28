@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_pulse_ring.dart';
+import 'package:life_quest/shared/widgets/lq_speck.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 
 /// 메달 안쪽 채움 — 골드 계열이지만 배지 칸(`goldBg`)보다 한 톤 밝아 글자가 선다.
@@ -98,17 +98,22 @@ class _SecretAchievementDialog extends StatelessWidget {
                     const Positioned(
                       top: 0,
                       left: 0,
-                      child: _Speck(
+                      child: LqSpeck(
                         color: LqColors.gold,
-                        size: 10,
-                        angle: 20,
-                        rounded: false,
+                        angleDegrees: 20,
+                        shape: BoxShape.rectangle,
+                        duration: Duration(milliseconds: 2600),
                       ),
                     ),
                     const Positioned(
                       top: 12,
                       right: 2,
-                      child: _Speck(color: LqColors.accent, size: 9),
+                      child: LqSpeck(
+                        color: LqColors.accent,
+                        size: 9,
+                        duration: Duration(milliseconds: 3000),
+                        delay: Duration(milliseconds: 400),
+                      ),
                     ),
                     Column(
                       mainAxisSize: MainAxisSize.min,
@@ -233,68 +238,6 @@ class _Medallion extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 떠다니는 장식 조각.
-class _Speck extends StatefulWidget {
-  const _Speck({
-    required this.color,
-    required this.size,
-    this.angle = 0,
-    this.rounded = true,
-  });
-
-  final Color color;
-  final double size;
-  final double angle;
-  final bool rounded;
-
-  @override
-  State<_Speck> createState() => _SpeckState();
-}
-
-class _SpeckState extends State<_Speck> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2600),
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, -9 * _controller.value),
-          child: child,
-        ),
-        child: Transform.rotate(
-          angle: widget.angle * math.pi / 180,
-          child: Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(
-              color: widget.color,
-              shape: widget.rounded ? BoxShape.circle : BoxShape.rectangle,
-              borderRadius: widget.rounded
-                  ? null
-                  : BorderRadius.circular(3),
-              border: Border.all(
-                color: LqColors.ink,
-                width: LqShape.borderWidth,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

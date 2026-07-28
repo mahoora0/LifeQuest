@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/features/location/application/location_consent_controller.dart';
+import 'package:life_quest/features/location/presentation/widgets/location_consent_prompts.dart';
+import 'package:life_quest/features/notification/application/notification_providers.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
@@ -29,6 +32,27 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// 완료 요청 중인 배정 건 — 같은 행의 중복 탭을 막는다.
   final _completing = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowIntro());
+  }
+
+  /// 위치 권한 전면 안내(2a)는 실행당 한 번만 띄운다.
+  ///
+  /// 홈으로 돌아올 때마다 다시 띄우면 재촉으로 읽힌다. 권한 판정이 끝나기 전에는
+  /// 아무것도 하지 않는다 — 이미 허용한 사람에게 안내가 스쳐 보이면 안 된다.
+  Future<void> _maybeShowIntro() async {
+    if (ref.read(locationIntroShownProvider)) return;
+
+    final stage = await ref.read(locationConsentProvider.future);
+    if (!mounted || stage != LocationConsentStage.intro) return;
+    if (ref.read(locationIntroShownProvider)) return;
+
+    ref.read(locationIntroShownProvider.notifier).markShown();
+    if (mounted) context.push('/location-consent');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +84,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: LqSpacing.gap),
               _Greeting(profile: profile),
               const SizedBox(height: LqSpacing.gap),
+              // 1단계에서 넘긴 사람에게만 보이고 권한을 허용하면 함께 걷힌다.
+              const LocationConsentBanner(),
               _LevelCard(level: level),
               const SizedBox(height: LqSpacing.gap),
               _TodayQuestCard(
@@ -75,7 +101,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _openDetail(DailyQuest dailyQuest) {
+  Future<void> _openDetail(DailyQuest dailyQuest) async {
+    // 위치 퀘스트를 눌렀을 때만 시트를 올린다(2b).
+    await ensureLocationConsent(
+      context,
+      ref,
+      isLocationQuest: dailyQuest.quest.completionType.isLocation,
+    );
+
+    if (!mounted) return;
     context.push(
       '/quests/${dailyQuest.questId}',
       extra: QuestDetailArgs(
@@ -109,11 +143,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _LogoRow extends StatelessWidget {
+class _LogoRow extends ConsumerWidget {
   const _LogoRow();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 점은 읽지 않은 알림이 실제로 있을 때만 찍는다. 늘 켜 두면 표식이 뜻을 잃는다.
+    final unread = ref.watch(notificationFeedProvider).value?.unreadCount ?? 0;
+
     return Row(
       children: [
         const LqImage(LqAssets.logoChar, width: 30),
@@ -123,13 +160,13 @@ class _LogoRow extends StatelessWidget {
           style: LqText.screenTitle.copyWith(color: LqColors.primary),
         ),
         const Spacer(),
-        // 알림은 이번 범위에서 시각 요소만 둔다(알림 화면 미구현).
-        const LqIconButton(
+        LqIconButton(
           icon: Icons.notifications_none,
           size: 26,
           iconSize: 15,
-          showDot: true,
-          semanticLabel: '알림',
+          showDot: unread > 0,
+          semanticLabel: unread > 0 ? '알림 $unread건' : '알림',
+          onTap: () => context.push('/notifications'),
         ),
       ],
     );

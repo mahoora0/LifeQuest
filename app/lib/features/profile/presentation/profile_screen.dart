@@ -389,6 +389,9 @@ class _ExpCard extends ConsumerWidget {
     return LqCard(
       background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      // 레벨 · 보상(S-05)의 유일한 진입점. "나의 기록"에 행을 더하는 대신 값이
+      // 이미 보이는 자리를 누르게 하는 쪽이 어디로 가는지 예측하기 쉽다.
+      onTap: () => context.push('/rewards'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -401,9 +404,21 @@ class _ExpCard extends ConsumerWidget {
                 style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
+              // 남은 EXP가 길어져도 ›를 밀어내지 않도록 이쪽이 먼저 줄어든다.
+              Flexible(
+                child: Text(
+                  status == null ? '' : '다음 레벨까지 ${status.remainingExp}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: LqText.caption,
+                ),
+              ),
+              // 누를 수 있다는 표식. 없으면 카드가 눌리는지 알 수 없다.
+              const SizedBox(width: 6),
               Text(
-                status == null ? '' : '다음 레벨까지 ${status.remainingExp}',
-                style: LqText.caption,
+                '›',
+                style: LqText.cardTitle.copyWith(color: LqColors.textSecondary),
               ),
             ],
           ),

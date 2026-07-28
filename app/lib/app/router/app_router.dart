@@ -13,6 +13,7 @@ import 'package:life_quest/features/friends/presentation/friend_search_screen.da
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
+import 'package:life_quest/features/location/presentation/location_consent_screen.dart';
 import 'package:life_quest/features/notification/presentation/notification_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
@@ -194,6 +195,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rewards',
         builder: (context, state) => const RewardScreen(),
+      ),
+      // 위치 권한 전면 안내(1단계). 홈이 첫 프레임 뒤에 실행당 한 번 push한다.
+      GoRoute(
+        path: '/location-consent',
+        builder: (context, state) => const LocationConsentScreen(),
       ),
       // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
       // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.

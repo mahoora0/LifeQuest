@@ -109,12 +109,8 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text('LifeDex', style: LqText.screenTitle),
-          const Spacer(),
-          LqIconButton(
-            icon: Icons.emoji_events_outlined,
-            semanticLabel: '업적',
-            onTap: () => context.push('/achievements'),
-          ),
+          // 업적으로 건너가는 트로피 버튼은 뺐다. 도감과 업적은 형제 화면이 아니라
+          // 둘 다 마이페이지 "나의 기록" 아래에 있어, 서로를 여는 문이 계층을 흐린다.
         ],
       ),
     );
