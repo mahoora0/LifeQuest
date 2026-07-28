@@ -68,15 +68,26 @@ class LqCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // 제목에 닉네임 같은 사용자 입력이 들어올 수 있다. 고정 Text로 두면
+                // 20자 닉네임 하나에 카드가 통째로 넘친다.
+                //
+                // Spacer로 우측 정렬하던 것을 spaceBetween으로 바꿨다. Spacer는
+                // tight flex라 제목·보조 요소와 공간을 나눠 가져, 둘을 Flexible로
+                // 감싸도 제목이 자리가 남는데도 먼저 잘린다.
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      header!,
-                      style: LqText.cardTitle.copyWith(fontSize: 16),
+                    Flexible(
+                      child: Text(
+                        header!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LqText.cardTitle.copyWith(fontSize: 16),
+                      ),
                     ),
                     if (headerTrailing != null) ...[
-                      const Spacer(),
-                      headerTrailing!,
+                      const SizedBox(width: 8),
+                      Flexible(child: headerTrailing!),
                     ],
                   ],
                 ),

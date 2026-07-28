@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -7,6 +8,9 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 ///
 /// 축하·안내 화면의 여백을 채우는 용도라 포인터를 받지 않는다.
 /// 시안이 정한 장식 애니메이션은 이것과 위치 펄스([LqPulseRing]) 둘뿐이다.
+///
+/// > 이 위젯이 든 화면은 애니메이션이 끝나지 않으므로 위젯 테스트에서
+/// > `pumpAndSettle()`이 타임아웃한다. `pump()` 또는 `pump(Duration(...))`을 쓸 것.
 class LqSpeck extends StatefulWidget {
   const LqSpeck({
     super.key,
@@ -37,13 +41,17 @@ class _LqSpeckState extends State<LqSpeck> with SingleTickerProviderStateMixin {
     duration: widget.duration,
   );
 
+  /// 시작 지연 타이머. 위젯이 먼저 사라지면 반드시 끊어야 한다 —
+  /// 남겨 두면 위젯 테스트가 `!timersPending`으로 실패해 이 화면을 아예 검증할 수 없다.
+  Timer? _startDelay;
+
   @override
   void initState() {
     super.initState();
     if (widget.delay == Duration.zero) {
       _controller.repeat(reverse: true);
     } else {
-      Future<void>.delayed(widget.delay, () {
+      _startDelay = Timer(widget.delay, () {
         if (mounted) _controller.repeat(reverse: true);
       });
     }
@@ -51,6 +59,7 @@ class _LqSpeckState extends State<LqSpeck> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
+    _startDelay?.cancel();
     _controller.dispose();
     super.dispose();
   }

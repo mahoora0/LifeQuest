@@ -41,7 +41,7 @@ class FriendJourneyScreen extends ConsumerWidget {
                 onRetry: () => ref.invalidate(friendJourneyProvider(userId)),
                 notReadyMessage: '동료의 여정은 아직 준비 중이에요',
                 notReadyHint: '친구 목록에서 오늘 진행도는 볼 수 있어요.',
-                data: (value) => _Body(journey: value),
+                data: (value) => _Body(userId: userId, journey: value),
               ),
             ),
           ],
@@ -52,7 +52,14 @@ class FriendJourneyScreen extends ConsumerWidget {
 }
 
 class _Body extends ConsumerWidget {
-  const _Body({required this.journey});
+  const _Body({required this.userId, required this.journey});
+
+  /// 라우트가 준 대상 id. **프로바이더 접근은 반드시 이 값으로 한다.**
+  ///
+  /// 응답 본문의 `journey.userId`를 쓰면 서버가 그 필드를 빠뜨렸을 때 0으로 떨어져
+  /// 엉뚱한 family 인스턴스를 잡는다. 동료 해제는 되돌릴 수 없으므로 다른 상대에게
+  /// 나가면 복구할 방법이 없다.
+  final int userId;
 
   final FriendJourney journey;
 
@@ -109,7 +116,7 @@ class _Body extends ConsumerWidget {
 
   Future<void> _cheer(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(friendJourneyProvider(journey.userId).notifier).cheer();
+      await ref.read(friendJourneyProvider(userId).notifier).cheer();
       if (context.mounted) showLqSnack(context, '응원을 보냈어요 · EXP 5');
     } catch (error) {
       if (context.mounted) showLqError(context, error);
@@ -156,7 +163,7 @@ class _Body extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     try {
-      await ref.read(friendJourneyProvider(journey.userId).notifier).unfriend();
+      await ref.read(friendJourneyProvider(userId).notifier).unfriend();
       if (context.mounted) context.pop();
     } catch (error) {
       if (context.mounted) showLqError(context, error);
@@ -429,13 +436,15 @@ class _BadgeCard extends StatelessWidget {
       header: '$nickname님의 대표 배지',
       background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-      child: Row(
+      // 배지 개수는 서버가 정한다. 한 줄에 고정하면 여섯 칸을 넘는 순간 넘치므로
+      // 줄바꿈으로 받는다.
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
         children: [
-          for (var i = 0; i < badges.length; i++) ...[
-            if (i > 0) const SizedBox(width: 10),
+          for (var i = 0; i < badges.length; i++)
             // 첫 칸이 대표 배지다. 마이페이지 배지 칸과 같은 gold 언어를 쓴다.
             _BadgeSlot(badge: badges[i], representative: i == 0),
-          ],
         ],
       ),
     );
@@ -467,7 +476,9 @@ class _BadgeSlot extends StatelessWidget {
         ),
         child: asset == null
             ? Text(
-                badge.name.characters.first,
+                // 서버가 이름을 빈 문자열로 주면 `characters.first`가 던진다.
+                // 다른 배지 칸(마이페이지·업적)과 같은 대체 글자를 쓴다.
+                badge.name.isEmpty ? '?' : badge.name.characters.first,
                 style: LqText.badge.copyWith(
                   fontSize: 17,
                   color: representative

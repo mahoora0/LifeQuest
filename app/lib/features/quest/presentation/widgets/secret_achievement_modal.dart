@@ -12,6 +12,19 @@ import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 /// 메달 안쪽 채움 — 골드 계열이지만 배지 칸(`goldBg`)보다 한 톤 밝아 글자가 선다.
 const _medallionFill = Color(0xFFF3DFA6);
 
+/// 메달에 새길 글자.
+///
+/// 서버가 `symbol`을 주면 그대로 쓰고, 없으면 이름 첫 글자로 떨어진다. **이름이 빈
+/// 문자열일 수 있다** — 비밀 업적의 마스킹을 빈 이름으로 표현하는 것이 이 앱의 규약이고
+/// (`achievement_repository.dart`), 서버가 해금 응답에서 그 값을 그대로 흘려보낼 수 있다.
+/// `characters.first`는 빈 문자열에서 던지므로 여기서 막지 않으면 완료 직후 모달이
+/// 크래시하고, 완료는 다시 일으킬 수 없어 사용자가 복구할 방법이 없다.
+String _medallionSymbol(CollectionEntry achievement) {
+  final symbol = achievement.symbol;
+  if (symbol != null && symbol.isNotEmpty) return symbol;
+  return achievement.name.isEmpty ? '?' : achievement.name.characters.first;
+}
+
 /// S-17 비밀 업적 해금 알림 (화면맵 2e).
 ///
 /// 완료 결과 위에 겹친다 — 해금은 사건이라 목록 한 줄로 알리면 놓친다.
@@ -22,7 +35,7 @@ Future<void> showSecretAchievementModals(
 ) async {
   for (final achievement in achievements) {
     if (!context.mounted) return;
-    await showGeneralDialog<void>(
+    final openedAchievements = await showGeneralDialog<bool>(
       context: context,
       barrierDismissible: false,
       barrierLabel: '비밀 업적 해금',
@@ -43,6 +56,11 @@ Future<void> showSecretAchievementModals(
         );
       },
     );
+
+    // "업적에서 보기"로 나갔으면 남은 해금은 띄우지 않는다. 그대로 이어 가면
+    // 다음 모달이 방금 연 업적 화면 위에 겹치고, barrierDismissible이 false라
+    // 사용자가 그 화면을 볼 수 없다.
+    if (openedAchievements ?? false) return;
   }
 }
 
@@ -120,11 +138,7 @@ class _SecretAchievementDialog extends StatelessWidget {
                       children: [
                         const LqStamp(label: '비밀 업적 해금', angleDegrees: -4),
                         const SizedBox(height: 11),
-                        _Medallion(
-                          symbol:
-                              achievement.symbol ??
-                              achievement.name.characters.first,
-                        ),
+                        _Medallion(symbol: _medallionSymbol(achievement)),
                         const SizedBox(height: 11),
                         Text(
                           achievement.name,
@@ -172,12 +186,14 @@ class _SecretAchievementDialog extends StatelessWidget {
                           height: 46,
                           fontSize: 18,
                           onPressed: () {
-                            Navigator.of(context).pop();
+                            Navigator.of(context).pop(true);
                             context.push('/achievements');
                           },
                         ),
                         const SizedBox(height: 4),
-                        _CloseLink(onTap: () => Navigator.of(context).pop()),
+                        _CloseLink(
+                          onTap: () => Navigator.of(context).pop(false),
+                        ),
                       ],
                     ),
                   ],
