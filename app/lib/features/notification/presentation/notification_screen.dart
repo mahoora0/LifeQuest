@@ -46,40 +46,55 @@ class NotificationScreen extends ConsumerWidget {
                 onTap: () => _markAllRead(context, ref),
               ),
             ),
+            // 목록의 상태와 무관하게 설정 카드는 늘 그린다.
+            //
+            // 목록 조회 결과 안에 두면 빈 상태·준비 중·오류에서 통째로 사라지는데,
+            // 하필 준비 중 안내가 "알림 설정은 아래에서 미리 정해 둘 수 있어요"라고
+            // 그 카드를 가리킨다. 마이페이지의 "알림 설정" 행도 이 화면으로 오므로,
+            // 그 진입점이 아무것도 없는 화면에서 끝나게 된다.
             Expanded(
-              child: LqAsyncView<LqNotificationFeed>(
-                value: feed,
-                onRetry: () =>
+              child: RefreshIndicator(
+                color: LqColors.primary,
+                backgroundColor: LqColors.surfaceRaised,
+                onRefresh: () =>
                     ref.read(notificationFeedProvider.notifier).refresh(),
-                notReadyMessage: '알림은 아직 준비 중이에요',
-                notReadyHint: '알림 설정은 아래에서 미리 정해 둘 수 있어요.',
-                isEmpty: (value) => value.isEmpty,
-                emptyMessage: '새 소식이 없어요',
-                emptyAsset: LqAssets.charPlainSit,
-                data: (value) => RefreshIndicator(
-                  color: LqColors.primary,
-                  backgroundColor: LqColors.surfaceRaised,
-                  onRefresh: () =>
-                      ref.read(notificationFeedProvider.notifier).refresh(),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      LqSpacing.screen,
-                      4,
-                      LqSpacing.screen,
-                      24,
-                    ),
-                    children: [
-                      for (final item in value.items) ...[
-                        _NotificationRow(
-                          item: item,
-                          onTap: () => _open(context, ref, item),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      const SizedBox(height: 4),
-                      const _SettingsCard(),
-                    ],
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    LqSpacing.screen,
+                    4,
+                    LqSpacing.screen,
+                    24,
                   ),
+                  children: [
+                    // 로딩·빈·오류가 카드 높이를 흔들지 않도록 일정한 자리를 차지한다.
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 250),
+                      child: LqAsyncView<LqNotificationFeed>(
+                        value: feed,
+                        onRetry: () => ref
+                            .read(notificationFeedProvider.notifier)
+                            .refresh(),
+                        notReadyMessage: '알림은 아직 준비 중이에요',
+                        notReadyHint: '알림 설정은 아래에서 미리 정해 둘 수 있어요.',
+                        isEmpty: (value) => value.isEmpty,
+                        emptyMessage: '새 소식이 없어요',
+                        emptyAsset: LqAssets.charPlainSit,
+                        data: (value) => Column(
+                          children: [
+                            for (final item in value.items) ...[
+                              _NotificationRow(
+                                item: item,
+                                onTap: () => _open(context, ref, item),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const _SettingsCard(),
+                  ],
                 ),
               ),
             ),
@@ -268,15 +283,30 @@ class _SettingsCard extends ConsumerWidget {
               // 값을 읽기 전에는 기본값을 보여준다. 토글이 사라졌다 나타나면
               // 설정이 초기화된 것처럼 읽힌다.
               enabled: settings.value?[channel] ?? channel.defaultOn,
-              onChanged: (value) => ref
-                  .read(notificationSettingsProvider.notifier)
-                  .toggle(channel, value),
+              onChanged: (value) => _toggle(context, ref, channel, value),
             ),
           const SizedBox(height: 6),
           Text('"재촉" 계열은 기본으로 꺼 둬요. 필요할 때만 켜세요.', style: LqText.caption),
         ],
       ),
     );
+  }
+
+  Future<void> _toggle(
+    BuildContext context,
+    WidgetRef ref,
+    LqNotificationChannel channel,
+    bool enabled,
+  ) async {
+    try {
+      await ref
+          .read(notificationSettingsProvider.notifier)
+          .toggle(channel, enabled);
+    } catch (error) {
+      // 저장에 실패하면 스위치가 되돌아간다. 이유를 말하지 않으면 탭이 씹힌 것으로
+      // 읽힌다.
+      if (context.mounted) showLqError(context, error);
+    }
   }
 }
 

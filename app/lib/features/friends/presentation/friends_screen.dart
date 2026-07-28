@@ -84,6 +84,24 @@ class _FriendListTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final friends = ref.watch(friendListProvider);
 
+    // 받은 요청 배너는 목록 조회 밖에 둔다. 안에 두면 목록이 실패·준비 중일 때
+    // /friends/requests로 가는 유일한 문이 함께 사라진다.
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: LqSpacing.screen),
+          child: _RequestBanner(),
+        ),
+        Expanded(child: _list(context, ref, friends)),
+      ],
+    );
+  }
+
+  Widget _list(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<FriendList> friends,
+  ) {
     return LqAsyncView<FriendList>(
       value: friends,
       onRetry: () => ref.read(friendListProvider.notifier).refresh(),
@@ -102,9 +120,6 @@ class _FriendListTab extends ConsumerWidget {
             24,
           ),
           children: [
-            // 받은 요청은 상태가 아니라 처리할 일이라 세그먼트가 아닌 배너로 띄운다.
-            // 요청이 없을 때는 자리도 차지하지 않는다.
-            const _RequestBanner(),
             _IntroCard(friendCount: value.friends.length),
             const SizedBox(height: LqSpacing.gap),
             for (final friend in value.friends) ...[
@@ -135,7 +150,10 @@ class _FriendListTab extends ConsumerWidget {
   }
 }
 
-/// "동료 신청이 N건 도착했어요 ›" — 받은 요청이 있을 때만 목록 최상단에 뜬다.
+/// "동료 신청이 N건 도착했어요 ›" — 받은 요청이 있을 때만 목록 위에 뜬다.
+///
+/// 요청은 상태가 아니라 처리할 일이라 세그먼트가 아닌 배너로 띄운다.
+/// 요청이 없으면 자리도 차지하지 않는다.
 class _RequestBanner extends ConsumerWidget {
   const _RequestBanner();
 
@@ -146,7 +164,7 @@ class _RequestBanner extends ConsumerWidget {
     if (count == 0) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: LqSpacing.gap),
+      padding: const EdgeInsets.only(top: 4, bottom: LqSpacing.gap),
       child: LqCard(
         radius: LqShape.rowRadius,
         background: LqColors.goldBg,

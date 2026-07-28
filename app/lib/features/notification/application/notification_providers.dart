@@ -84,12 +84,23 @@ class NotificationSettingsNotifier
   }
 
   Future<void> toggle(LqNotificationChannel channel, bool enabled) async {
-    final current = state.value;
-    if (current == null) return;
+    // 값을 읽기 전에도 화면은 기본값으로 스위치를 그려 두므로 탭이 들어올 수 있다.
+    // `null`이면 그냥 버리던 것을 기본값 위에 얹어 처리한다 — 누른 스위치가
+    // 아무 반응 없이 되돌아가면 고장으로 읽힌다.
+    final current =
+        state.value ??
+        {for (final each in LqNotificationChannel.values) each: each.defaultOn};
 
     state = AsyncData({...current, channel: enabled});
 
-    final prefs = await ref.read(sharedPreferencesProvider.future);
-    await prefs.setBool('$_prefix${channel.key}', enabled);
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      await prefs.setBool('$_prefix${channel.key}', enabled);
+    } catch (error, stackTrace) {
+      // 저장에 실패했는데 스위치를 켠 채로 두면, 다시 열었을 때 조용히 되돌아가
+      // 사용자는 언제 꺼졌는지 모른다. 다른 낙관적 갱신과 같이 되돌린다.
+      state = AsyncData({...current, channel: !enabled});
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 }
