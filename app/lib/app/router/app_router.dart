@@ -20,6 +20,7 @@ import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_result_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/quest_verify_screen.dart';
+import 'package:life_quest/features/reward/presentation/reward_screen.dart';
 import 'package:life_quest/shared/presentation/feature_placeholder_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -168,6 +169,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      // 마이페이지의 EXP 바를 눌러 연다. 값이 이미 보이는 자리를 누르는 쪽이
+      // "나의 기록"에 행을 하나 더 붙이는 것보다 예측 가능하다.
+      GoRoute(
+        path: '/rewards',
+        builder: (context, state) => const RewardScreen(),
       ),
       // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
       // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.
