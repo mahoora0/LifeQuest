@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
+import 'package:life_quest/features/quest/presentation/widgets/secret_achievement_modal.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
@@ -12,13 +13,31 @@ import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 ///
 /// 완료 응답 객체를 `extra`로 받아 그대로 렌더링한다(재호출 없음).
 /// 탭 밖 push 라우트라 하단 탭바는 표시되지 않는다.
-class QuestResultScreen extends StatelessWidget {
+class QuestResultScreen extends StatefulWidget {
   const QuestResultScreen({super.key, required this.result});
 
   final QuestCompletionResult result;
 
   @override
+  State<QuestResultScreen> createState() => _QuestResultScreenState();
+}
+
+class _QuestResultScreenState extends State<QuestResultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 비밀 업적 해금은 사건이라 이 화면 위에 모달로 겹친다(S-17).
+    // 첫 프레임 뒤에 띄워야 완료 결과가 먼저 그려지고 그 위에 얹힌 것으로 읽힌다.
+    final secrets = widget.result.collection.newSecretAchievements;
+    if (secrets.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showSecretAchievementModals(context, secrets);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final result = widget.result;
     final growth = result.growth;
 
     return Scaffold(
@@ -102,9 +121,14 @@ class QuestResultScreen extends StatelessWidget {
                             message: "LifeDex '${item.name}' 도장이 새로 찍혔어요",
                           ),
                       ],
-                      if (result.collection.newAchievements.isNotEmpty) ...[
+                      // 비밀 업적은 모달이 맡으므로 줄로 중복해 알리지 않는다.
+                      if (result
+                          .collection
+                          .newPlainAchievements
+                          .isNotEmpty) ...[
                         const SizedBox(height: LqSpacing.gap),
-                        for (final item in result.collection.newAchievements)
+                        for (final item
+                            in result.collection.newPlainAchievements)
                           _CollectionNotice(
                             message: "업적 '${item.name}' 을(를) 달성했어요",
                           ),

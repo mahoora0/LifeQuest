@@ -296,15 +296,42 @@ class GrowthResult {
 
 /// 신규 도감·업적 항목.
 class CollectionEntry {
-  const CollectionEntry({required this.name, this.id});
+  const CollectionEntry({
+    required this.name,
+    this.id,
+    this.secret = false,
+    this.condition,
+    this.expReward,
+    this.titleReward,
+    this.symbol,
+  });
 
   final String name;
   final int? id;
+
+  /// 비밀 업적인지. 목록에 묻히면 놓치므로 완료 결과 위에 모달로 겹친다.
+  final bool secret;
+
+  /// 해금 조건 문장. 비밀 업적은 **해금된 뒤에만** 서버가 내려준다.
+  final String? condition;
+
+  final int? expReward;
+
+  /// 함께 받은 칭호 이름.
+  final String? titleReward;
+
+  /// 메달에 새길 짧은 글자. 서버가 주지 않으면 이름 첫 글자를 쓴다.
+  final String? symbol;
 
   factory CollectionEntry.fromJson(Map<String, dynamic> json) =>
       CollectionEntry(
         id: asInt(json['id']),
         name: asString(json['name']) ?? '새 항목',
+        secret: asBool(pick(json, ['secret', 'isSecret', 'hidden'])),
+        condition: asString(pick(json, ['condition', 'conditionText'])),
+        expReward: asInt(pick(json, ['expReward', 'exp'])),
+        titleReward: asString(pick(json, ['titleReward', 'title'])),
+        symbol: asString(pick(json, ['symbol', 'icon'])),
       );
 }
 
@@ -318,6 +345,18 @@ class CollectionResult {
   final List<CollectionEntry> newAchievements;
 
   bool get isEmpty => newLifedexItems.isEmpty && newAchievements.isEmpty;
+
+  /// 비밀 업적 해금분. 목록 한 줄로 알리면 놓치므로 모달로 따로 겹친다(S-17).
+  List<CollectionEntry> get newSecretAchievements => [
+    for (final entry in newAchievements)
+      if (entry.secret) entry,
+  ];
+
+  /// 목록에 줄로 알릴 업적 — 비밀 업적은 모달이 맡으므로 뺀다.
+  List<CollectionEntry> get newPlainAchievements => [
+    for (final entry in newAchievements)
+      if (!entry.secret) entry,
+  ];
 
   factory CollectionResult.fromJson(Map<String, dynamic> json) =>
       CollectionResult(
