@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:life_quest/core/network/api_exception.dart';
+import 'package:life_quest/shared/error/lq_error_messages.dart';
 
 /// 서버가 아직 열리지 않은 구간에서 화면 검토용 표본을 내주는 관문.
 ///
@@ -19,6 +20,9 @@ abstract final class LqSampleData {
 
   /// 표본을 내주기 전에 부른다. 릴리스 빌드에서는 준비 중으로 떨어진다.
   ///
+  /// 부를 엔드포인트 자체가 없는 구간(친구·알림)에 쓴다. 호출할 경로가 있으면
+  /// [orSample]을 쓰는 쪽이 낫다 — 그쪽은 서버가 생기면 저절로 물러난다.
+  ///
   /// 404 + `RESOURCE_NOT_FOUND`가 아닌 코드라야 `isFeatureNotReady`가 참이 되어
   /// 오류 화면이 아닌 준비 중 안내로 간다.
   static void guard(String feature) {
@@ -28,5 +32,25 @@ abstract final class LqSampleData {
       message: '$feature은(는) 아직 준비 중이에요',
       statusCode: 404,
     );
+  }
+
+  /// 실제 호출을 먼저 시도하고, **엔드포인트가 아직 없을 때만** 표본으로 떨어진다.
+  ///
+  /// [guard]와 달리 회수가 자동이다 — 서버가 그 경로를 열면 [call]이 성공하므로
+  /// 표본은 두 번 다시 쓰이지 않는다. 지우는 것을 잊어도 가짜가 실데이터를 덮지 않는다.
+  ///
+  /// 떨어지는 조건을 404로 좁힌 이유는, 네트워크 단절이나 500까지 표본으로 가리면
+  /// 서버가 죽은 것을 개발 중에 알아채지 못하기 때문이다. 릴리스 빌드에서는
+  /// [enabled]가 거짓이라 404가 그대로 올라가 준비 중 안내로 간다.
+  static Future<T> orSample<T>(
+    Future<T> Function() call,
+    T Function() sample,
+  ) async {
+    try {
+      return await call();
+    } on Object catch (error) {
+      if (enabled && isFeatureNotReady(error)) return sample();
+      rethrow;
+    }
   }
 }

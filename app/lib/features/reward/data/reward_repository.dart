@@ -3,12 +3,20 @@ import 'package:life_quest/shared/data/sample_data.dart';
 
 /// 레벨 · 보상 조회.
 ///
-/// ⚠ **서버 미구현 구간이다.** `GET /api/users/me/rewards`가 아직 없다. 표본은
-/// 시안(`LifeQuest 화면맵` 2c)의 예시를 옮긴 것으로 실제 사용자 데이터가 아니며,
+/// ⚠ **엔드포인트는 있으나 응답이 이 화면에 모자란다.** `GET /users/me/rewards`는
+/// 존재하지만(`UserController.java:109`) `{titles, profileItems}`만 돌려줘서,
+/// S-05가 필요한 레벨·다음 관문·획득 시점·주간 EXP가 전부 빠져 있다. 부분만 실데이터로
+/// 채우면 어느 수치가 진짜인지 화면에서 구분되지 않으므로 통째로 표본을 쓴다.
+///
+/// 표본은 시안(`LifeQuest 화면맵` 2c)의 예시이고 실제 사용자 데이터가 아니다.
 /// [LqSampleData.guard] 때문에 **릴리스 빌드에서는 나오지 않는다**(준비 중 안내로 떨어진다).
 ///
-// TODO(server): GET /api/users/me/rewards 개설 시 fetchOverview 본문을 Dio 호출로
-//  바꾸고 LqSampleData.guard 호출과 표본 상수를 지운다.
+/// 호출 경로가 이미 있으므로 응답이 확장되면 [LqSampleData.orSample]로 바꿔 표본이
+/// 저절로 물러나게 하는 편이 낫다. 지금은 200이 오지만 필드가 없어 그 방식이 안 통한다.
+///
+// TODO(server): RewardHistoryResponse에 레벨·다음 관문·획득 시점(acquiredAt)·주간
+//  EXP를 더한 뒤, fetchOverview를 UserRepository.fetchRewards와 같은 실호출로 바꾸고
+//  표본 상수를 지운다. 지금 응답으로는 "받은 보상" 목록조차 언제 받았는지 알 수 없다.
 // TODO(server): questsToNextLevel(남은 EXP ÷ 평균 퀘스트 보상)은 서버 계산값이다.
 //  응답에 없으면 화면이 해당 문구를 감춘다 — 클라이언트에서 추정하지 않는다.
 class RewardRepository {
