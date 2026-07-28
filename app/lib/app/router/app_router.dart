@@ -10,6 +10,7 @@ import 'package:life_quest/features/achievement/presentation/achievement_screen.
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
+import 'package:life_quest/features/notification/presentation/notification_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
@@ -168,12 +169,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
       ),
+      // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
+      // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationScreen(),
+      ),
       GoRoute(
         path: '/settings/notifications',
-        builder: (context, state) => const FeaturePlaceholderScreen(
-          title: '알림 설정',
-          message: '알림 설정은 다음 단계에서 열려요',
-        ),
+        redirect: (context, state) => '/notifications',
       ),
     ],
   );
