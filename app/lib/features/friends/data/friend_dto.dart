@@ -62,6 +62,225 @@ class FriendList {
   }
 }
 
+/// 나와 상대의 관계. 동료 찾기 결과 행의 우측 표시가 이 값으로 갈린다.
+enum FriendRelation {
+  /// 아직 아무 관계도 아님 — 유일하게 누를 수 있는 상태.
+  none('요청'),
+
+  /// 이미 함께 모험 중.
+  friend('친구'),
+
+  /// 내가 보낸 요청이 처리되기를 기다리는 중.
+  requestSent('대기'),
+
+  /// 상대가 나에게 보낸 요청이 있음.
+  ///
+  // TODO(design): 시안의 동료 찾기는 상태를 셋(친구 / 요청 / 대기)으로만 그린다.
+  //  "상대가 먼저 요청을 보낸 경우"의 표시가 정해지지 않아 대기와 같은 모습으로
+  //  묶어 뒀다. 이 자리에서 바로 수락하게 할지, 받은 요청으로 보낼지 결정 필요.
+  requestReceived('대기');
+
+  const FriendRelation(this.actionLabel);
+
+  /// 행 우측에 적는 짧은 라벨.
+  final String actionLabel;
+
+  /// 이 화면에서 누를 수 있는 것은 아직 관계가 없는 상대뿐이다.
+  bool get isActionable => this == FriendRelation.none;
+
+  static FriendRelation parse(String? raw) => switch (raw) {
+    'FRIEND' || 'friend' => friend,
+    'REQUEST_SENT' || 'requestSent' || 'PENDING' => requestSent,
+    'REQUEST_RECEIVED' || 'requestReceived' => requestReceived,
+    _ => none,
+  };
+}
+
+/// 동료 찾기 결과 한 줄 (`GET /api/users/search`).
+class AdventurerSearchResult {
+  const AdventurerSearchResult({
+    required this.userId,
+    required this.nickname,
+    required this.level,
+    required this.relation,
+    this.statusLine,
+  });
+
+  final int userId;
+  final String nickname;
+  final int level;
+  final FriendRelation relation;
+
+  /// "이미 함께 모험 중", "칭호 · 첫 걸음"처럼 관계·상태를 한 줄로 적은 보조 문구.
+  final String? statusLine;
+
+  AdventurerSearchResult copyWith({
+    FriendRelation? relation,
+    String? statusLine,
+  }) => AdventurerSearchResult(
+    userId: userId,
+    nickname: nickname,
+    level: level,
+    relation: relation ?? this.relation,
+    statusLine: statusLine ?? this.statusLine,
+  );
+
+  factory AdventurerSearchResult.fromJson(Map<String, dynamic> json) =>
+      AdventurerSearchResult(
+        userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
+        nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
+        level: asInt(json['level']) ?? 1,
+        relation: FriendRelation.parse(
+          asString(pick(json, ['relation', 'status'])),
+        ),
+        statusLine: asString(pick(json, ['statusLine', 'summary'])),
+      );
+}
+
+/// 동료 신청 한 건 (`GET /api/friends/requests`).
+class FriendRequest {
+  const FriendRequest({
+    required this.userId,
+    required this.nickname,
+    required this.level,
+    this.statusLine,
+  });
+
+  final int userId;
+  final String nickname;
+  final int level;
+  final String? statusLine;
+
+  factory FriendRequest.fromJson(Map<String, dynamic> json) => FriendRequest(
+    userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
+    nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
+    level: asInt(json['level']) ?? 1,
+    statusLine: asString(pick(json, ['statusLine', 'summary'])),
+  );
+}
+
+/// 받은 요청 · 보낸 요청.
+class FriendRequestBox {
+  const FriendRequestBox({this.received = const [], this.sent = const []});
+
+  final List<FriendRequest> received;
+  final List<FriendRequest> sent;
+
+  /// 친구 목록 상단 배너는 **받은** 요청이 있을 때만 뜬다.
+  /// 보낸 요청은 내가 처리할 일이 아니라 기다릴 일이다.
+  int get receivedCount => received.length;
+
+  bool get isEmpty => received.isEmpty && sent.isEmpty;
+
+  FriendRequestBox removeReceived(int userId) => FriendRequestBox(
+    received: [
+      for (final request in received)
+        if (request.userId != userId) request,
+    ],
+    sent: sent,
+  );
+
+  factory FriendRequestBox.fromJson(Object? body) {
+    final json = asMap(body);
+    return FriendRequestBox(
+      received: asMapList(
+        pick(json, ['received', 'incoming']),
+      ).map(FriendRequest.fromJson).toList(),
+      sent: asMapList(
+        pick(json, ['sent', 'outgoing']),
+      ).map(FriendRequest.fromJson).toList(),
+    );
+  }
+}
+
+/// 나란히 보기 한쪽의 수치.
+class JourneySide {
+  const JourneySide({
+    required this.level,
+    required this.lifedexCollected,
+    required this.achievements,
+    this.lifedexTotal = 100,
+    this.streakDays,
+  });
+
+  final int level;
+  final int lifedexCollected;
+  final int achievements;
+  final int lifedexTotal;
+
+  /// 연속 달성 일수. 서버 판정이 필요해 `LqFeatures.streakEnabled`가 켜질 때까지
+  /// 화면에서 감춘다.
+  final int? streakDays;
+
+  factory JourneySide.fromJson(Map<String, dynamic> json) => JourneySide(
+    level: asInt(json['level']) ?? 1,
+    lifedexCollected: asInt(pick(json, ['lifedexCollected', 'collected'])) ?? 0,
+    lifedexTotal: asInt(pick(json, ['lifedexTotal', 'total'])) ?? 100,
+    achievements: asInt(pick(json, ['achievements', 'achievementCount'])) ?? 0,
+    streakDays: asInt(pick(json, ['streakDays', 'streak'])),
+  );
+}
+
+/// 동료의 대표 배지 한 칸.
+class JourneyBadge {
+  const JourneyBadge({required this.name, this.iconAsset});
+
+  final String name;
+
+  /// 번들 아이콘 경로. 없으면 이름 첫 글자로 그린다(마이페이지 배지 칸과 같은 방식).
+  final String? iconAsset;
+}
+
+/// S-21 동료 여정 비교 (`GET /api/friends/{userId}/journey`).
+class FriendJourney {
+  const FriendJourney({
+    required this.userId,
+    required this.nickname,
+    required this.me,
+    required this.friend,
+    this.titleLine,
+    this.cheered = false,
+    this.badges = const [],
+  });
+
+  final int userId;
+  final String nickname;
+
+  /// "칭호 · 새벽의 개척자". 대표 칭호가 없으면 비운다.
+  final String? titleLine;
+
+  final bool cheered;
+  final JourneySide me;
+  final JourneySide friend;
+  final List<JourneyBadge> badges;
+
+  FriendJourney copyWith({bool? cheered}) => FriendJourney(
+    userId: userId,
+    nickname: nickname,
+    titleLine: titleLine,
+    cheered: cheered ?? this.cheered,
+    me: me,
+    friend: friend,
+    badges: badges,
+  );
+
+  factory FriendJourney.fromJson(Object? body) {
+    final json = asMap(body);
+    return FriendJourney(
+      userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
+      nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
+      titleLine: asString(pick(json, ['titleLine', 'title'])),
+      cheered: asBool(pick(json, ['cheered', 'cheeredToday'])),
+      me: JourneySide.fromJson(asMap(json['me'])),
+      friend: JourneySide.fromJson(asMap(pick(json, ['friend', 'other']))),
+      badges: [
+        for (final badge in asMapList(json['badges']))
+          JourneyBadge(name: asString(pick(badge, ['name', 'label'])) ?? '배지'),
+      ],
+    );
+  }
+}
+
 /// 주간 랭킹 한 줄 (`GET /api/rankings/friends`).
 class RankEntry {
   const RankEntry({

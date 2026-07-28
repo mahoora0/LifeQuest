@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
+import 'package:life_quest/features/friends/presentation/widgets/friend_widgets.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
@@ -10,17 +12,6 @@ import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
-
-/// 아바타 원형 배경 — 시안(`Life Quest 초안.dc.html` 10번 화면)이 친구별로 지정한 4색.
-/// 서버가 색을 주지 않으므로 사용자 id로 순환시켜 같은 친구는 항상 같은 색을 갖게 한다.
-const _avatarColors = <Color>[
-  Color(0xFFDCE8C6),
-  Color(0xFFF0E1C4),
-  Color(0xFFCFE3EC),
-  Color(0xFFEADFF3),
-];
-
-Color _avatarColorFor(int id) => _avatarColors[id.abs() % _avatarColors.length];
 
 /// 순위 메달 색. 1위는 브랜드 골드를 그대로 쓰고 2·3위만 이 화면 전용 색이다.
 const _silver = Color(0xFFDDD6C4);
@@ -57,15 +48,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         bottom: false,
         child: Column(
           children: [
-            const LqHeader(
+            LqHeader(
               title: '친구',
               showBack: false,
-              // 친구 추가는 서버 연동 후 열린다. 홈의 알림 버튼과 같이 시각 요소만 둔다.
               trailing: LqIconButton(
                 icon: Icons.person_add_alt,
                 size: 26,
                 iconSize: 15,
-                semanticLabel: '친구 추가',
+                semanticLabel: '동료 찾기',
+                onTap: () => context.push('/friends/search'),
               ),
             ),
             LqChipRow(
@@ -111,12 +102,16 @@ class _FriendListTab extends ConsumerWidget {
             24,
           ),
           children: [
+            // 받은 요청은 상태가 아니라 처리할 일이라 세그먼트가 아닌 배너로 띄운다.
+            // 요청이 없을 때는 자리도 차지하지 않는다.
+            const _RequestBanner(),
             _IntroCard(friendCount: value.friends.length),
             const SizedBox(height: LqSpacing.gap),
             for (final friend in value.friends) ...[
               _FriendRow(
                 friend: friend,
                 onCheer: () => _cheer(context, ref, friend),
+                onOpen: () => context.push('/friends/${friend.userId}'),
               ),
               const SizedBox(height: 10),
             ],
@@ -137,6 +132,66 @@ class _FriendListTab extends ConsumerWidget {
     } catch (error) {
       if (context.mounted) showLqError(context, error);
     }
+  }
+}
+
+/// "동료 신청이 N건 도착했어요 ›" — 받은 요청이 있을 때만 목록 최상단에 뜬다.
+class _RequestBanner extends ConsumerWidget {
+  const _RequestBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 조회에 실패해도 배너만 조용히 사라진다. 목록 자체를 막을 값이 아니다.
+    final count = ref.watch(friendRequestsProvider).value?.receivedCount ?? 0;
+    if (count == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: LqSpacing.gap),
+      child: LqCard(
+        radius: LqShape.rowRadius,
+        background: LqColors.goldBg,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        onTap: () => context.push('/friends/requests'),
+        child: Row(
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: LqColors.accent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: LqColors.ink,
+                  width: LqShape.borderWidth,
+                ),
+              ),
+              child: Text(
+                '$count',
+                style: LqText.badge.copyWith(
+                  fontSize: 13,
+                  color: LqColors.onDark,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '동료 신청이 $count건 도착했어요',
+                style: LqText.bodySm.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: LqColors.goldText,
+                ),
+              ),
+            ),
+            Text(
+              '›',
+              style: LqText.cardTitle.copyWith(color: LqColors.goldText),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -169,87 +224,38 @@ class _IntroCard extends StatelessWidget {
 }
 
 class _FriendRow extends StatelessWidget {
-  const _FriendRow({required this.friend, required this.onCheer});
+  const _FriendRow({
+    required this.friend,
+    required this.onCheer,
+    required this.onOpen,
+  });
 
   final Friend friend;
   final VoidCallback onCheer;
+
+  /// 행 전체가 동료의 여정(S-21)으로 가는 문이다.
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
     return LqCard(
       radius: LqShape.rowRadius,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      onTap: onOpen,
       child: Row(
         children: [
-          _Avatar(nickname: friend.nickname, seed: friend.userId),
+          LqAvatar(nickname: friend.nickname, seed: friend.userId),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        friend.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LqText.cardTitle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Lv.${friend.level}',
-                      style: LqText.caption.copyWith(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: LqColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                if (friend.statusLine != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    friend.statusLine!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LqText.caption,
-                  ),
-                ],
-              ],
+            child: LqAdventurerIdentity(
+              nickname: friend.nickname,
+              level: friend.level,
+              statusLine: friend.statusLine,
             ),
           ),
           const SizedBox(width: 8),
           _CheerButton(cheered: friend.cheered, onTap: onCheer),
         ],
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.nickname, required this.seed});
-
-  final String nickname;
-  final int seed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 38,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: _avatarColorFor(seed),
-        shape: BoxShape.circle,
-        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
-      ),
-      child: Text(
-        nickname.isEmpty ? '?' : nickname.characters.first,
-        style: LqText.badge.copyWith(fontSize: 16, color: LqColors.goldText),
       ),
     );
   }
@@ -270,7 +276,10 @@ class _CheerButton extends StatelessWidget {
       label: cheered ? '응원함' : '응원하기',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: cheered ? null : onTap,
+        // 행 전체가 동료의 여정으로 가는 문이 됐으므로 이 버튼은 탭을 삼켜야 한다.
+        // 이미 응원한 뒤에도 빈 콜백을 둬서 제스처 경쟁에서 이기게 한다 —
+        // null로 두면 부모가 탭을 가져가 응원 자리를 눌렀는데 화면이 넘어간다.
+        onTap: cheered ? () {} : onTap,
         child: Container(
           constraints: const BoxConstraints(
             minHeight: LqSpacing.minTouchTarget,
@@ -313,6 +322,9 @@ class _FriendCodeCard extends StatelessWidget {
       locked: true,
       radius: LqShape.rowRadius,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // 코드 카드의 ›는 동료 찾기(코드 입력)로 간다. 헤더 +와 같은 곳이지만
+      // 코드를 들고 있는 사람은 여기서 바로 들어오는 흐름이 자연스럽다.
+      onTap: () => context.push('/friends/search'),
       child: Row(
         children: [
           Container(
@@ -384,7 +396,14 @@ class _RankingTab extends ConsumerWidget {
           _RankSummaryCard(ranking: value),
           const SizedBox(height: LqSpacing.gap),
           for (final entry in value.entries) ...[
-            _RankRow(entry: entry),
+            _RankRow(
+              entry: entry,
+              // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
+              // 상대가 없으므로 열지 않는다.
+              onOpen: entry.isMe
+                  ? null
+                  : () => context.push('/friends/${entry.userId}'),
+            ),
             const SizedBox(height: 8),
           ],
           const SizedBox(height: 4),
@@ -482,9 +501,10 @@ class _DeltaPill extends StatelessWidget {
 }
 
 class _RankRow extends StatelessWidget {
-  const _RankRow({required this.entry});
+  const _RankRow({required this.entry, this.onOpen});
 
   final RankEntry entry;
+  final VoidCallback? onOpen;
 
   Color get _medalColor => switch (entry.rank) {
     1 => LqColors.gold,
@@ -501,6 +521,7 @@ class _RankRow extends StatelessWidget {
       background: entry.isMe ? _selfRowBackground : LqColors.surfaceTile,
       borderColor: entry.isMe ? LqColors.ink : LqColors.divider,
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      onTap: onOpen,
       child: Row(
         children: [
           Container(

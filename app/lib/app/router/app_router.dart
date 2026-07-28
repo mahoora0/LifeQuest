@@ -7,6 +7,9 @@ import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
 import 'package:life_quest/features/auth/presentation/login_screen.dart';
 import 'package:life_quest/features/auth/presentation/signup_screen.dart';
 import 'package:life_quest/features/achievement/presentation/achievement_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_journey_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_requests_screen.dart';
+import 'package:life_quest/features/friends/presentation/friend_search_screen.dart';
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
@@ -151,6 +154,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             quest: args.quest,
           );
         },
+      ),
+      // `/friends/search`·`/friends/requests`를 `/friends/:userId`보다 먼저
+      // 선언해야 "search"가 userId로 잡히지 않는다.
+      GoRoute(
+        path: '/friends/search',
+        builder: (context, state) => const FriendSearchScreen(),
+      ),
+      GoRoute(
+        path: '/friends/requests',
+        builder: (context, state) => const FriendRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/friends/:userId',
+        builder: (context, state) => FriendJourneyScreen(
+          userId: int.tryParse(state.pathParameters['userId'] ?? '') ?? 0,
+        ),
       ),
       GoRoute(
         path: '/lifedex',
