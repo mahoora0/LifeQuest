@@ -37,8 +37,8 @@ public class RewardService {
         this.userProfileItemRepository = userProfileItemRepository;
     }
 
-    public List<String> grantLevelRewards(User user, int fromLevel, int toLevel) {
-        List<String> granted = new ArrayList<>();
+    public List<RewardGrant> grantLevelRewards(User user, int fromLevel, int toLevel) {
+        List<RewardGrant> granted = new ArrayList<>();
         for (LevelReward reward :
                 levelRewardRepository.findAllByLevelBetweenOrderByLevelAscIdAsc(
                         fromLevel, toLevel)) {
@@ -51,7 +51,7 @@ public class RewardService {
         return List.copyOf(granted);
     }
 
-    private void grantTitle(User user, LevelReward reward, List<String> granted) {
+    private void grantTitle(User user, LevelReward reward, List<RewardGrant> granted) {
         if (userTitleRepository.existsByUserIdAndTitleId(
                 user.getId(), reward.getRewardRefId())) {
             return;
@@ -63,10 +63,11 @@ public class RewardService {
         if (user.getRepresentativeTitle() == null) {
             user.selectRepresentativeTitle(title);
         }
-        granted.add(title.getName());
+        granted.add(new RewardGrant(
+                LevelReward.RewardType.TITLE.name(), title.getCode(), title.getName()));
     }
 
-    private void grantProfileItem(User user, LevelReward reward, List<String> granted) {
+    private void grantProfileItem(User user, LevelReward reward, List<RewardGrant> granted) {
         if (userProfileItemRepository.existsByUserIdAndProfileItemId(
                 user.getId(), reward.getRewardRefId())) {
             return;
@@ -79,6 +80,7 @@ public class RewardService {
                 && user.getRepresentativeBadge() == null) {
             user.selectRepresentativeBadge(item);
         }
-        granted.add(item.getName());
+        granted.add(new RewardGrant(
+                LevelReward.RewardType.PROFILE_ITEM.name(), item.getCode(), item.getName()));
     }
 }

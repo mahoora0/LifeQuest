@@ -45,7 +45,7 @@ public class GrowthService {
         expLogRepository.save(new ExpLog(user, sourceType, sourceId, expAmount));
         user.addExp(expAmount, currentLevel);
 
-        List<String> rewards = currentLevel > previousLevel
+        List<RewardGrant> rewards = currentLevel > previousLevel
                 ? rewardService.grantLevelRewards(user, previousLevel + 1, currentLevel)
                 : List.of();
         return new GrowthResult(

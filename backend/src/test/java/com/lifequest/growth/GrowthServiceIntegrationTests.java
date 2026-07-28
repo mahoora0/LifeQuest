@@ -40,7 +40,11 @@ class GrowthServiceIntegrationTests {
         assertThat(first.previousLevel()).isEqualTo(1);
         assertThat(first.currentLevel()).isEqualTo(3);
         assertThat(first.levelUp()).isTrue();
-        assertThat(first.rewards()).containsExactly("동네 탐험가", "나침반 배지");
+        // 이름만 보면 칭호와 프로필 아이템을 구분하지 못한다. 완료 응답 계약이
+        // 요구하는 세 필드를 모두 고정한다(docs/04-api-spec.md §4).
+        assertThat(first.rewards()).containsExactly(
+                new RewardGrant("TITLE", "NEIGHBORHOOD_EXPLORER", "동네 탐험가"),
+                new RewardGrant("PROFILE_ITEM", "COMPASS_BADGE", "나침반 배지"));
 
         GrowthResult duplicated =
                 growthService.grantExp(user.getId(), "QUEST_COMPLETION", 9001L, 350);

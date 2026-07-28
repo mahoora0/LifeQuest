@@ -8,5 +8,5 @@ public record GrowthResult(
         int currentLevel,
         boolean levelUp,
         boolean duplicated,
-        List<String> rewards) {
+        List<RewardGrant> rewards) {
 }
