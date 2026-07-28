@@ -81,6 +81,9 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
                 value: today,
                 isEmpty: (value) => value.isEmpty,
                 emptyMessage: '오늘 배정된 퀘스트가 없어요',
+                // 홈과 같은 배정 API를 쓴다. 준비 중에는 재시도 버튼을 붙이지 않는다.
+                notReadyMessage: '퀘스트 목록은 아직 준비 중이에요',
+                notReadyHint: '배정이 열리면 주기별로 나눠 보여드려요.',
                 onRetry: () => ref.read(todayQuestsProvider.notifier).refresh(),
                 data: (value) => _QuestList(
                   quests: value.quests.where(_filter.matches).toList(),

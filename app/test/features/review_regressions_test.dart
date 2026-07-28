@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,8 +12,14 @@ import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/notification/application/notification_providers.dart';
 import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
+import 'package:life_quest/features/home/presentation/home_screen.dart';
 import 'package:life_quest/features/notification/presentation/notification_screen.dart';
+import 'package:life_quest/features/quest/application/quest_providers.dart';
+import 'package:life_quest/features/quest/data/quest_dto.dart';
+import 'package:life_quest/features/quest/data/quest_repository.dart';
+import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/core/network/api_exception.dart';
+import 'package:life_quest/core/network/provider_retry.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -169,6 +176,59 @@ void main() {
       await tester.scrollUntilVisible(find.text('알림 설정'), 200);
       expect(find.text('알림 설정'), findsOneWidget);
       expect(find.text(LqNotificationChannel.deadline.label), findsOneWidget);
+    });
+  });
+
+  group('준비 중에는 재시도 버튼을 붙이지 않는다', () {
+    // 시안 §5 상태 4종 — "준비 중: 재시도 버튼 없음. 눌러도 결과가 같아 헛돌게 됨."
+    //
+    // 백엔드가 미매핑 경로를 500으로 감싸던 동안에는 준비 중 분기 자체가 죽어 있어
+    // 이 규칙을 어긴 화면이 드러나지 않았다. 서버가 ENDPOINT_NOT_FOUND를 내보내기
+    // 시작하자 홈·목록·상세가 "아직 준비 중인 기능이에요" 아래에 "다시 시도"를
+    // 달고 있는 것이 실기기에서 보였다.
+    testWidgets('홈의 오늘의 퀘스트', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          // 앱과 같은 재시도 정책을 써야 404가 즉시 실패로 확정된다. 기본 정책은
+          // 4xx도 재시도해서 화면이 로딩에 머문다.
+          retry: lqProviderRetry,
+          overrides: [
+            questRepositoryProvider.overrideWithValue(
+              _NotReadyQuestRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: HomeScreen()),
+        ),
+      );
+      // 홈은 프로필·레벨도 함께 물어 스피너가 계속 돌므로 pumpAndSettle이 끝나지
+      // 않는다. 퀘스트 카드가 상태를 잡는 데 필요한 만큼만 진행시킨다.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('오늘의 퀘스트는 아직 준비 중이에요'), findsOneWidget);
+      expect(find.text('다시 시도'), findsNothing);
+    });
+
+    testWidgets('퀘스트 목록', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          // 앱과 같은 재시도 정책을 써야 404가 즉시 실패로 확정된다. 기본 정책은
+          // 4xx도 재시도해서 화면이 로딩에 머문다.
+          retry: lqProviderRetry,
+          overrides: [
+            questRepositoryProvider.overrideWithValue(
+              _NotReadyQuestRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: QuestListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('퀘스트 목록은 아직 준비 중이에요'), findsOneWidget);
+      expect(find.text('다시 시도'), findsNothing);
+      // 헤더는 본문과 분리되어 남아야 한다.
+      expect(find.text('퀘스트 목록'), findsOneWidget);
     });
   });
 
@@ -335,6 +395,19 @@ class _ListBrokenFriendRepository extends FriendRepository {
       FriendRequest(userId: 21, nickname: '단풍', level: 4),
     ],
   );
+}
+
+class _NotReadyQuestRepository extends QuestRepository {
+  _NotReadyQuestRepository() : super(Dio());
+
+  @override
+  Future<TodayQuests> fetchToday() async {
+    throw const ApiException(
+      code: 'ENDPOINT_NOT_FOUND',
+      message: '',
+      statusCode: 404,
+    );
+  }
 }
 
 class _UnreadNotificationRepository extends NotificationRepository {

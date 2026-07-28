@@ -376,6 +376,10 @@ class _TodayQuestCard extends ConsumerWidget {
               isEmpty: (value) => value.isEmpty,
               emptyMessage: '오늘 배정된 퀘스트가 없어요',
               emptyAsset: LqAssets.charSit,
+              // 배정 API가 아직 없다. 준비 중에는 재시도 버튼을 붙이지 않는다 —
+              // 눌러도 결과가 같아 헛돌게 된다(시안 §5).
+              notReadyMessage: '오늘의 퀘스트는 아직 준비 중이에요',
+              notReadyHint: '곧 아침마다 새 퀘스트가 도착해요.',
               onRetry: () => ref.read(todayQuestsProvider.notifier).refresh(),
               data: (value) => Column(
                 children: [
