@@ -7,6 +7,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -34,6 +35,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleInvalidRequest(Exception exception) {
         ErrorCode errorCode = ErrorCode.VALIDATION_FAILED;
         return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(errorCode.code(), errorCode.message()));
+    }
+
+    /**
+     * 매핑된 컨트롤러가 없는 경로.
+     *
+     * <p>이 핸들러가 없으면 아래 {@code Exception} 포괄 핸들러가 스프링의
+     * {@link NoResourceFoundException}까지 삼켜 <b>500</b>으로 내보낸다. 그러면
+     * 클라이언트는 "서버가 죽었다"와 "그 기능이 아직 없다"를 구분할 수 없다.
+     * 실제로 앱이 아직 열리지 않은 구간(도감·업적·퀘스트)에서 준비 중 안내 대신
+     * 서버 오류를 띄웠고, 5xx는 재시도 대상이라 40초 가까이 로딩만 돌았다.
+     * 없는 경로가 5xx로 집계되면 장애 모니터링도 함께 오염된다.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
+            NoResourceFoundException exception) {
+        ErrorCode errorCode = ErrorCode.ENDPOINT_NOT_FOUND;
+        return ResponseEntity.status(errorCode.status())
                 .body(ApiResponse.failure(errorCode.code(), errorCode.message()));
     }
 
