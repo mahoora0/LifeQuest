@@ -24,6 +24,11 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.lifequest.user.dto.UserSearchPageResponse;
+import com.lifequest.user.dto.UserSearchResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class UserService {
@@ -188,4 +193,39 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+public UserSearchPageResponse searchUsers(
+        Long currentUserId,
+        String nickname,
+        int page,
+        int size
+) {
+    String keyword = nickname == null ? "" : nickname.trim();
+
+    if (keyword.isEmpty()) {
+        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
+
+    if (page < 0 || size < 1 || size > 100) {
+        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
+
+    PageRequest pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.ASC, "nickname")
+                    .and(Sort.by(Sort.Direction.ASC, "id"))
+    );
+
+    Page<UserSearchResponse> result = userRepository
+            .findByNicknameContainingIgnoreCaseAndIdNot(
+                    keyword,
+                    currentUserId,
+                    pageable
+            )
+            .map(UserSearchResponse::from);
+
+    return UserSearchPageResponse.from(result);
+}
 }
