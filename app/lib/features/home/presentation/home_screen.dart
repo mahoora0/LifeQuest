@@ -326,9 +326,14 @@ class _TodayQuestCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 4),
-          SizedBox(
+          ConstrainedBox(
             // 로딩·빈·오류 상태는 카드 안에서 일정한 높이를 차지하게 한다.
-            height: (loaded?.quests.isNotEmpty ?? false) ? null : 250,
+            // 고정 높이가 아니라 최소 높이인 이유: 오류 상태는 캐릭터(108) + 문구 +
+            // "다시 시도" 버튼 + 상하 패딩(48)이 쌓여 250을 넘긴다. 고정하면 잘린다.
+            // 글꼴 크기 설정이나 문구 길이에 따라서도 높이가 달라지므로 상한을 두지 않는다.
+            constraints: BoxConstraints(
+              minHeight: (loaded?.quests.isNotEmpty ?? false) ? 0 : 250,
+            ),
             child: LqAsyncView<TodayQuests>(
               value: today,
               isEmpty: (value) => value.isEmpty,

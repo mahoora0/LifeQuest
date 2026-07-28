@@ -40,6 +40,11 @@ public class Quest {
     @Column(name = "grade", nullable = false, length = 20)
     private QuestGrade grade;
 
+    /** 반복 주기(일간·주간·월간). 목록 화면의 조회 필터 기준이며 완료 방식과는 별개의 축이다. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cadence", nullable = false, length = 20)
+    private QuestCadence cadence;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "completion_type", nullable = false, length = 20)
     private CompletionType completionType;
@@ -76,13 +81,15 @@ public class Quest {
     protected Quest() {
     }
 
-    public Quest(String title, String description, QuestGrade grade, CompletionType completionType,
-                 int expReward, String placeName, BigDecimal latitude, BigDecimal longitude,
-                 Integer radiusM, Long lifedexItemId, QuestCreator createdBy, boolean active) {
+    public Quest(String title, String description, QuestGrade grade, QuestCadence cadence,
+                 CompletionType completionType, int expReward, String placeName,
+                 BigDecimal latitude, BigDecimal longitude, Integer radiusM, Long lifedexItemId,
+                 QuestCreator createdBy, boolean active) {
         requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
         this.title = title;
         this.description = description;
         this.grade = grade;
+        this.cadence = cadence;
         this.completionType = completionType;
         this.expReward = expReward;
         this.placeName = placeName;
@@ -135,6 +142,10 @@ public class Quest {
 
     public QuestGrade getGrade() {
         return grade;
+    }
+
+    public QuestCadence getCadence() {
+        return cadence;
     }
 
     public CompletionType getCompletionType() {

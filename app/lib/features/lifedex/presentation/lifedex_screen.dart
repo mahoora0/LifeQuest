@@ -265,9 +265,13 @@ class _ItemGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(lifedexItemsProvider(categoryId));
 
-    return SizedBox(
+    return ConstrainedBox(
       // 항목 그리드는 로딩·빈·오류 상태에서도 일정한 높이를 차지한다.
-      height: (items.value?.isNotEmpty ?? false) ? null : 240,
+      // 홈의 오늘의 퀘스트 카드와 같은 이유로 고정이 아닌 최소 높이다:
+      // 오류 상태(캐릭터 + 문구 + "다시 시도" 버튼 + 패딩)가 240을 넘겨 잘린다.
+      constraints: BoxConstraints(
+        minHeight: (items.value?.isNotEmpty ?? false) ? 0 : 240,
+      ),
       child: LqAsyncView<List<LifedexItem>>(
         value: items,
         isEmpty: (value) => value.isEmpty,
