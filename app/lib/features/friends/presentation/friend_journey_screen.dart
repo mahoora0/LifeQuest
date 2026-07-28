@@ -343,7 +343,10 @@ class _TrackBar extends StatelessWidget {
       child: Row(
         children: [
           if (filled > 0)
-            Expanded(flex: filled, child: _Bar(color: color)),
+            Expanded(
+              flex: filled,
+              child: _Bar(color: color),
+            ),
           if (filled > 0 && rest > 0) const SizedBox(width: 5),
           if (rest > 0)
             Expanded(
@@ -380,10 +383,7 @@ class _StatRow extends StatelessWidget {
             ),
           ),
           if (showStreak) ...[
-            const LqDashedDivider(
-              axis: Axis.vertical,
-              color: LqColors.divider,
-            ),
+            const LqDashedDivider(axis: Axis.vertical, color: LqColors.divider),
             Expanded(
               child: _Stat(
                 label: '연속 달성',

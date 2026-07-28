@@ -273,10 +273,7 @@ class _SettingsCard extends ConsumerWidget {
                   .toggle(channel, value),
             ),
           const SizedBox(height: 6),
-          Text(
-            '"재촉" 계열은 기본으로 꺼 둬요. 필요할 때만 켜세요.',
-            style: LqText.caption,
-          ),
+          Text('"재촉" 계열은 기본으로 꺼 둬요. 필요할 때만 켜세요.', style: LqText.caption),
         ],
       ),
     );

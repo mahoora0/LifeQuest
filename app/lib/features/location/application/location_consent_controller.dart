@@ -24,10 +24,13 @@ enum LocationConsentStage {
 
   /// 홈 배너를 띄울 단계인지.
   bool get needsBanner =>
-      this == LocationConsentStage.deferred || this == LocationConsentStage.blocked;
+      this == LocationConsentStage.deferred ||
+      this == LocationConsentStage.blocked;
 
   /// 위치 퀘스트를 열 때 시트를 올려야 하는 단계인지.
-  bool get needsSheet => this != LocationConsentStage.granted && this != LocationConsentStage.unknown;
+  bool get needsSheet =>
+      this != LocationConsentStage.granted &&
+      this != LocationConsentStage.unknown;
 }
 
 /// 권한 안내의 단계 판정과 "미룬 날짜" 보관.

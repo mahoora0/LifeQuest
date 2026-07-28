@@ -118,10 +118,7 @@ class _SecretAchievementDialog extends StatelessWidget {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const LqStamp(
-                          label: '비밀 업적 해금',
-                          angleDegrees: -4,
-                        ),
+                        const LqStamp(label: '비밀 업적 해금', angleDegrees: -4),
                         const SizedBox(height: 11),
                         _Medallion(
                           symbol:

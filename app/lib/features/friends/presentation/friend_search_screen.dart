@@ -125,11 +125,7 @@ class _SearchField extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const LqIcon(
-            LqIcons.search,
-            size: 18,
-            color: LqColors.textSecondary,
-          ),
+          const LqIcon(LqIcons.search, size: 18, color: LqColors.textSecondary),
           const SizedBox(width: 9),
           Expanded(
             child: TextField(
