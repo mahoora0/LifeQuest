@@ -39,6 +39,22 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// 소스와 문서 인코딩을 UTF-8로 고정한다.
+//
+// 지정하지 않으면 플랫폼 기본 인코딩을 쓴다. 한국어 Windows 에서는 CP949(x-windows-949)라
+// 한글 주석·메시지가 깨지고, javadoc 은 별도 프로세스라 먼저 드러난다
+// (`unmappable character ... for encoding x-windows-949` 로 생성이 실패한다).
+// 리눅스 CI 는 기본이 UTF-8 이라 통과하므로, 이 설정이 없으면 실패가 특정 개발자
+// 환경에서만 나타난다.
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+	options.encoding = 'UTF-8'
+	options.charSet = 'UTF-8'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
