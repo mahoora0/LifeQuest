@@ -29,8 +29,7 @@ Future<void> _refresh(WidgetRef ref) async {
     ..invalidate(questHistoryProvider)
     ..invalidate(lifedexOverviewProvider)
     ..invalidate(achievementOverviewProvider)
-    ..invalidate(titleCollectionProvider)
-    ..invalidate(badgeCollectionProvider);
+    ..invalidate(titleCollectionProvider);
 
   await Future.wait([
     _settle(ref.read(myProfileProvider.future)),
@@ -40,7 +39,6 @@ Future<void> _refresh(WidgetRef ref) async {
     _settle(ref.read(lifedexOverviewProvider.future)),
     _settle(ref.read(achievementOverviewProvider.future)),
     _settle(ref.read(titleCollectionProvider.future)),
-    _settle(ref.read(badgeCollectionProvider.future)),
   ]);
 }
 
@@ -89,8 +87,6 @@ class ProfileScreen extends ConsumerWidget {
                 // ① 재화 2칸은 서버에 재화가 없어 v1에서 노출하지 않는다.
                 const SizedBox(height: LqSpacing.gap),
                 const _GrowthRecordCard(),
-                const SizedBox(height: LqSpacing.gap),
-                const _BadgeCard(),
                 const SizedBox(height: LqSpacing.gap),
                 const _MyRecordCard(),
                 const SizedBox(height: LqSpacing.gap),
@@ -311,12 +307,6 @@ class _ProfileHeader extends ConsumerWidget {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  // 대표 배지는 업적 화면 배지 탭에서 지정한다. 지정 화면과 표시 화면이
-                  // 떨어져 있어, 여기에 나타나지 않으면 지정이 먹혔는지 알 길이 없다.
-                  if (profile.representativeBadge != null) ...[
-                    _RepresentativeBadge(name: profile.representativeBadge!),
-                    const SizedBox(width: 6),
-                  ],
                   Flexible(
                     child: Text(
                       profile.representativeTitle ?? '대표 칭호 없음',
@@ -348,33 +338,6 @@ class _ProfileHeader extends ConsumerWidget {
 }
 
 /// 헤더에 붙는 대표 배지 표식. 배지 탭의 선택 상태와 같은 색 언어(gold)를 쓴다.
-class _RepresentativeBadge extends StatelessWidget {
-  const _RepresentativeBadge({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '대표 배지 $name',
-      child: Container(
-        width: 22,
-        height: 22,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: LqColors.gold,
-          shape: BoxShape.circle,
-          border: Border.all(color: LqColors.ink, width: 1.6),
-        ),
-        child: Text(
-          name.isEmpty ? '?' : name.characters.first,
-          style: LqText.badge.copyWith(fontSize: 12, color: LqColors.goldText),
-        ),
-      ),
-    );
-  }
-}
-
 class _ExpCard extends ConsumerWidget {
   const _ExpCard();
 
@@ -629,7 +592,7 @@ class _MyRecordCard extends ConsumerWidget {
         children: [
           _RecordRow(
             leading: const _RecordTile(asset: LqAssets.iconMap, width: 26),
-            label: 'LifeDex 도감',
+            label: '도감',
             caption: _caption(
               lifedex,
               (value) =>

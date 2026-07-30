@@ -51,22 +51,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('대표 배지를 헤더와 배지 카드 양쪽에 표시한다', (tester) async {
+  testWidgets('마이페이지에 배지 영역을 표시하지 않는다', (tester) async {
     await pumpProfile(tester);
 
-    // 헤더의 표식과 "내 배지" 첫 칸 — 지정 결과가 두 곳에서 함께 읽힌다.
-    // 라벨은 자식 Text와 병합되므로 부분 일치로 찾는다.
-    expect(find.bySemanticsLabel(RegExp('대표 배지 나침반 배지')), findsNWidgets(2));
-  });
-
-  testWidgets('대표 배지가 뒤쪽에 있어도 4칸 미리보기 안으로 끌어온다', (tester) async {
-    await pumpProfile(tester);
-
-    // 대표(id 5)는 보유 목록의 마지막이라 정렬하지 않으면 4칸에서 밀려난다.
-    // 헤더 표식과 미리보기 첫 칸 두 곳에서 같은 첫 글자를 쓴다.
-    expect(find.text('나'), findsNWidgets(2));
-    // 대표를 앞으로 당긴 만큼 마지막 칸 하나가 미리보기 밖으로 나간다.
-    expect(find.text('달'), findsNothing);
+    expect(find.text('내 배지'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('대표 배지')), findsNothing);
   });
 
   testWidgets('최근 획득은 획득 시각 최신순으로 보여준다', (tester) async {

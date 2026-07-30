@@ -118,7 +118,7 @@ class _QuestResultScreenState extends State<QuestResultScreen> {
                         const SizedBox(height: LqSpacing.gap),
                         for (final item in result.collection.newLifedexItems)
                           _CollectionNotice(
-                            message: "LifeDex '${item.name}' 도장이 새로 찍혔어요",
+                            message: "도감에 '${item.name}' 도장이 새로 찍혔어요",
                           ),
                       ],
                       // 비밀 업적은 모달이 맡으므로 줄로 중복해 알리지 않는다.

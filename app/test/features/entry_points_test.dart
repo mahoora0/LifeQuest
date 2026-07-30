@@ -50,7 +50,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('LifeDex'), findsOneWidget);
+    expect(find.text('도감'), findsOneWidget);
     // 도감과 업적은 형제가 아니라 둘 다 마이페이지 하위라 계층을 흐린다.
     expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
     expect(find.bySemanticsLabel('업적'), findsNothing);

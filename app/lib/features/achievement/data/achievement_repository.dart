@@ -99,7 +99,7 @@ class AchievementRepository {
       name: '길 위의 수집가',
       achieved: false,
       secret: false,
-      condition: 'LifeDex 항목을 60개 모아요',
+      condition: '도감 항목을 60개 모아요',
       currentValue: 42,
       requiredValue: 60,
       expReward: 100,
