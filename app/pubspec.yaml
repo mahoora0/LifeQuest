@@ -12,11 +12,16 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.3.2
   flutter_secure_storage: ^10.3.1
+  # 탭·기능 아이콘은 아이콘 폰트가 아니라 stroke 2.2 SVG로 그린다(시안 규칙).
+  flutter_svg: ^2.2.1
   geolocator: ^14.0.3
   go_router: ^17.3.0
   google_sign_in: ^7.2.0
   google_fonts: ^8.2.0
   image_picker: ^1.2.1
+  # 기기별 상태(위치 권한 안내를 미룬 날짜, 알림 토글)는 계정을 따라다닐 값이 아니라
+  # 로컬에 둔다. 시안 "화면 구성 규칙" §11이 지정한 저장소다.
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -29,3 +34,4 @@ flutter:
   assets:
     - assets/images/
     - assets/images/characters/
+    - assets/images/icons/

@@ -25,10 +25,10 @@ class LifeQuestApp extends ConsumerWidget {
 ThemeData _buildTheme() {
   final base = ThemeData(
     useMaterial3: true,
-    scaffoldBackgroundColor: LqColors.surface,
+    scaffoldBackgroundColor: LqColors.surfacePanel,
     colorScheme: ColorScheme.fromSeed(
       seedColor: LqColors.primary,
-      surface: LqColors.surface,
+      surface: LqColors.surfacePanel,
     ),
   );
 

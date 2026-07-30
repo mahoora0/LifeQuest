@@ -123,9 +123,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final characters = ref.watch(characterCollectionProvider);
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       appBar: AppBar(
-        backgroundColor: LqColors.surface,
+        backgroundColor: LqColors.surfacePanel,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           onPressed: () => context.pop(),
@@ -262,7 +262,7 @@ class _ProfilePhoto extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: LqColors.card,
+            color: LqColors.surfaceRaised,
             border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
             boxShadow: LqShape.cardShadow,
           ),
@@ -321,7 +321,7 @@ class _CharacterChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       onTap: onTap,
-      background: selected ? LqColors.panel : LqColors.card,
+      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
       padding: const EdgeInsets.all(10),
       child: Stack(
         children: [

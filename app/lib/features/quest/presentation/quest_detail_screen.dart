@@ -45,7 +45,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
         );
 
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [
@@ -53,6 +53,9 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
             Expanded(
               child: LqAsyncView<Quest>(
                 value: detail,
+                // 퀘스트 조회 API가 아직 없다. 준비 중에는 재시도 버튼을 붙이지 않는다.
+                notReadyMessage: '퀘스트 정보는 아직 준비 중이에요',
+                notReadyHint: '목록이 열리면 여기서 반경과 장소를 확인할 수 있어요.',
                 onRetry: () =>
                     ref.invalidate(questDetailProvider(widget.questId)),
                 data: (quest) => _DetailBody(
@@ -204,6 +207,7 @@ class _InfoCard extends StatelessWidget {
     final isLocation = quest.completionType.isLocation;
 
     return LqCard(
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Column(
         children: [

@@ -27,7 +27,7 @@ class LqChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 32),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? LqColors.primary : LqColors.card,
+          color: selected ? LqColors.primary : LqColors.surfaceRaised,
           borderRadius: LqShape.pillRadius,
           border: Border.all(
             color: selected ? LqColors.ink : LqColors.borderMuted,

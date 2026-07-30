@@ -13,11 +13,14 @@ import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
-/// S-15 업적 / S-16 칭호.
+/// S-15 업적 / S-16 칭호 / 배지.
+///
+/// 대표 지정이 가능한 보상 컬렉션(칭호·배지)을 업적과 한 화면에 모은다.
+/// 마이페이지에서는 "나의 기록" 카드가 이 화면의 유일한 진입점이다.
 class AchievementScreen extends ConsumerStatefulWidget {
   const AchievementScreen({super.key, this.initialTab = 0});
 
-  /// 0 = 업적, 1 = 칭호.
+  /// 0 = 업적, 1 = 칭호, 2 = 배지.
   final int initialTab;
 
   @override
@@ -31,7 +34,7 @@ class _AchievementScreenState extends ConsumerState<AchievementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         child: Column(
           children: [
@@ -41,13 +44,14 @@ class _AchievementScreenState extends ConsumerState<AchievementScreen> {
               onChanged: (index) => setState(() => _tab = index),
             ),
             Expanded(
-              child: _tab == 0
-                  ? _AchievementTab(
-                      filter: _filter,
-                      onFilterChanged: (filter) =>
-                          setState(() => _filter = filter),
-                    )
-                  : const _TitleTab(),
+              child: switch (_tab) {
+                0 => _AchievementTab(
+                  filter: _filter,
+                  onFilterChanged: (filter) => setState(() => _filter = filter),
+                ),
+                1 => const _TitleTab(),
+                _ => const _BadgeTab(),
+              },
             ),
           ],
         ),
@@ -62,7 +66,7 @@ class _TabBar extends StatelessWidget {
   final int current;
   final ValueChanged<int> onChanged;
 
-  static const _labels = ['업적', '칭호'];
+  static const _labels = ['업적', '칭호', '배지'];
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +120,10 @@ class _AchievementTab extends ConsumerWidget {
       value: overview,
       isEmpty: (value) => value.isEmpty,
       emptyMessage: '아직 등록된 업적이 없어요',
+      // 업적 목록만 서버가 없고 칭호·배지는 조회된다. 첫 탭이 오류로 막히면
+      // 동작하는 두 탭까지 함께 죽은 것처럼 보이므로 그쪽으로 안내한다.
+      notReadyMessage: '업적 목록은 아직 준비 중이에요',
+      notReadyHint: '칭호·배지 탭은 지금도 확인할 수 있어요.',
       onRetry: () => ref.invalidate(achievementOverviewProvider),
       data: (value) {
         final visible = value.achievements.where(filter.matches).toList();
@@ -166,7 +174,7 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      background: LqColors.panel,
+      background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Row(
         children: [
@@ -234,7 +242,7 @@ class _AchievementRow extends StatelessWidget {
                   ? LqColors.lockedTile
                   : achievement.achieved
                   ? LqColors.goldBg
-                  : LqColors.panel,
+                  : LqColors.surfaceTint,
               border: Border.all(
                 color: hidden ? LqColors.borderMuted : LqColors.ink,
                 width: LqShape.borderWidth,
@@ -364,6 +372,125 @@ class _TitleTab extends ConsumerWidget {
   }
 }
 
+/// 배지 목록 + 대표 배지 지정.
+///
+/// 대표 지정이 가능한 보상 컬렉션이라는 점에서 칭호와 같은 성격이라 같은 화면에 둔다.
+/// 마이페이지 "내 배지" 카드는 미리보기와 "더보기" 진입만 맡고, 지정은 이 탭에서만 한다.
+/// 지정 결과는 마이페이지 헤더의 대표 배지 표식과 미리보기 첫 칸에 반영된다.
+class _BadgeTab extends ConsumerWidget {
+  const _BadgeTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final collection = ref.watch(badgeCollectionProvider);
+
+    return LqAsyncView<BadgeCollection>(
+      value: collection,
+      isEmpty: (value) => value.badges.isEmpty,
+      emptyMessage: '아직 획득한 배지가 없어요',
+      onRetry: () => ref.invalidate(badgeCollectionProvider),
+      data: (value) => ListView(
+        padding: const EdgeInsets.fromLTRB(
+          LqSpacing.screen,
+          LqSpacing.gap,
+          LqSpacing.screen,
+          24,
+        ),
+        children: [
+          Text('탭하면 대표 배지로 지정돼요 — 다시 누르면 해제됩니다', style: LqText.caption),
+          const SizedBox(height: 10),
+          for (final badge in value.badges)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _BadgeRow(
+                badge: badge,
+                selected:
+                    badge.id != null && value.representativeBadgeId == badge.id,
+                // id가 없으면 어느 배지를 지정할지 서버에 전달할 수 없다.
+                onTap: badge.id == null
+                    ? null
+                    : () => _select(context, ref, badge.id!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _select(BuildContext context, WidgetRef ref, int badgeId) async {
+    try {
+      await ref.read(badgeCollectionProvider.notifier).select(badgeId);
+    } catch (error) {
+      if (!context.mounted) return;
+      showLqError(context, error);
+    }
+  }
+}
+
+class _BadgeRow extends StatelessWidget {
+  const _BadgeRow({
+    required this.badge,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ProfileItem badge;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LqCard(
+      radius: LqShape.rowRadius,
+      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? LqColors.gold : LqColors.surfaceTint,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: LqColors.ink,
+                width: LqShape.borderWidth,
+              ),
+            ),
+            child: Text(
+              badge.name.isEmpty ? '?' : badge.name.characters.first,
+              style: LqText.cardTitle.copyWith(fontSize: 17),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(badge.name, style: LqText.cardTitle),
+                if (badge.sourceType != null) ...[
+                  const SizedBox(height: 3),
+                  Text(_sourceLabel(badge.sourceType!), style: LqText.caption),
+                ],
+              ],
+            ),
+          ),
+          if (selected)
+            const Icon(Icons.check_circle, size: 22, color: LqColors.primary),
+        ],
+      ),
+    );
+  }
+
+  static String _sourceLabel(String sourceType) => switch (sourceType) {
+    'LEVEL' => '레벨업 보상',
+    'ACHIEVEMENT' => '업적 보상',
+    _ => sourceType,
+  };
+}
+
 class _TitleRow extends StatelessWidget {
   const _TitleRow({
     required this.title,
@@ -379,7 +506,7 @@ class _TitleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       radius: LqShape.rowRadius,
-      background: selected ? LqColors.panel : LqColors.card,
+      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(

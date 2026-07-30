@@ -85,6 +85,37 @@ void main() {
     });
   });
 
+  group('QuestCadence.parse', () {
+    test('서버가 준 주기 값을 읽는다', () {
+      expect(QuestCadence.parse('DAILY'), QuestCadence.daily);
+      expect(QuestCadence.parse('WEEKLY'), QuestCadence.weekly);
+      expect(QuestCadence.parse('monthly'), QuestCadence.monthly);
+    });
+
+    test('누락·미지의 값은 일간으로 다룬다', () {
+      // 목록에 "전체" 칩이 없어, 어느 주기에도 속하지 않으면 어떤 탭에서도 보이지 않는다.
+      expect(QuestCadence.parse(null), QuestCadence.daily);
+      expect(QuestCadence.parse('YEARLY'), QuestCadence.daily);
+    });
+
+    test('주기와 완료 방식은 서로 다른 축으로 읽는다', () {
+      // 주간이면서 위치 인증인 퀘스트가 실제로 있어 한쪽으로 다른 쪽을 유추할 수 없다.
+      final quest = DailyQuest.fromJson({
+        'dailyQuestId': 1,
+        'questId': 25,
+        'title': '새로운 카페 방문하기',
+        'cadence': 'WEEKLY',
+        'completionType': 'LOCATION',
+        'latitude': 37.5445,
+        'longitude': 127.0557,
+        'radiusM': 100,
+      });
+
+      expect(quest.quest.cadence, QuestCadence.weekly);
+      expect(quest.quest.completionType.isLocation, isTrue);
+    });
+  });
+
   group('DailyQuestStatus.isActionable', () {
     test('배정 상태만 완료 요청을 보낼 수 있다', () {
       expect(DailyQuestStatus.assigned.isActionable, isTrue);

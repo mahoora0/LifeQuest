@@ -7,7 +7,7 @@ class AuthSplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

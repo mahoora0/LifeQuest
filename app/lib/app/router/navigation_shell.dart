@@ -11,7 +11,7 @@ class NavigationShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LqColors.surface,
+      backgroundColor: LqColors.surfacePanel,
       body: navigationShell,
       bottomNavigationBar: LqBottomNav(
         currentIndex: navigationShell.currentIndex,

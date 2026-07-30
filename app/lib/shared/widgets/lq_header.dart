@@ -72,7 +72,7 @@ class LqIconButton extends StatelessWidget {
     this.onTap,
     this.size = 30,
     this.iconSize = 17,
-    this.background = LqColors.card,
+    this.background = LqColors.surfaceRaised,
     this.showDot = false,
     this.semanticLabel,
   });
@@ -126,7 +126,10 @@ class LqIconButton extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: LqColors.accent,
                         shape: BoxShape.circle,
-                        border: Border.all(color: LqColors.surface, width: 1.5),
+                        border: Border.all(
+                          color: LqColors.surfaceRaised,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),

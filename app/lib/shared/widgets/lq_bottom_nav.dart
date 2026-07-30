@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_icon.dart';
 
 /// 하단 탭바 — Material `NavigationBar`는 스타일이 맞지 않아 사용하지 않는다.
 ///
-/// `panel` 배경 · 상단 ink 2px 테두리 · 상하 패딩 8/10 · 아이콘 20 + 라벨 11.5.
+/// `surfaceNav` 배경 · 상단 ink 2px 테두리 · 상하 패딩 8/10 · 아이콘 20 + 라벨 11.5.
+///
+/// 탭 바는 프레임(`surfacePanel`)보다 한 톤 어둡게 두어 화면 바탕과 구분한다.
 class LqBottomNav extends StatelessWidget {
   const LqBottomNav({
     super.key,
@@ -15,18 +19,19 @@ class LqBottomNav extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   static const destinations = <LqNavDestination>[
-    LqNavDestination(icon: Icons.home_outlined, label: '홈'),
-    LqNavDestination(icon: Icons.flag_outlined, label: '퀘스트'),
-    LqNavDestination(icon: Icons.map_outlined, label: '지도'),
-    LqNavDestination(icon: Icons.auto_stories_outlined, label: 'LifeDex'),
-    LqNavDestination(icon: Icons.person_outline, label: '마이'),
+    LqNavDestination(icon: LqIcons.home, label: '홈'),
+    LqNavDestination(icon: LqIcons.quest, label: '퀘스트'),
+    LqNavDestination(icon: LqIcons.map, label: '지도'),
+    // LifeDex 도감은 탭에서 빠지고 마이페이지 "나의 기록"에서 push로 연다.
+    LqNavDestination(icon: LqIcons.friends, label: '친구'),
+    LqNavDestination(icon: LqIcons.my, label: '마이'),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: LqColors.panel,
+        color: LqColors.surfaceNav,
         border: Border(
           top: BorderSide(color: LqColors.ink, width: LqShape.borderWidth),
         ),
@@ -56,7 +61,8 @@ class LqBottomNav extends StatelessWidget {
 class LqNavDestination {
   const LqNavDestination({required this.icon, required this.label});
 
-  final IconData icon;
+  /// `LqIcons`의 SVG 에셋 경로.
+  final String icon;
   final String label;
 }
 
@@ -85,7 +91,7 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(destination.icon, size: 20, color: color),
+            LqIcon(destination.icon, size: 20, color: color),
             const SizedBox(height: 3),
             Text(
               destination.label,

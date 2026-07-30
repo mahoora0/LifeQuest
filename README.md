@@ -158,6 +158,8 @@ iOS 네이티브 OAuth 설정은 `docs/07-auth-setup.md`를 참고합니다.
 ## Development rules
 
 - API 응답과 오류 코드는 `docs/04-api-spec.md`를 기준으로 합니다.
+- 화면을 새로 만들 때는 `docs/09-design-system.md`를 기준으로 합니다.
+  색·치수는 `app/lib/shared/design/lq_tokens.dart`에서만 가져옵니다.
 - DB 변경은 `backend/src/main/resources/db/migration`에 새 Flyway 파일로 추가합니다.
 - 기능 패키지는 백엔드의 `auth`, `user`, `quest`, `growth`, `collection`,
   `social`, `admin` 경계를 유지합니다.
