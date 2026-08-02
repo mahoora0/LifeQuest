@@ -4,9 +4,10 @@ import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class GrowthService {
@@ -16,9 +17,9 @@ public class GrowthService {
     private final RewardService rewardService;
 
     public GrowthService(
-            UserRepository userRepository,
-            ExpLogRepository expLogRepository,
-            RewardService rewardService) {
+        UserRepository userRepository,
+        ExpLogRepository expLogRepository,
+        RewardService rewardService) {
         this.userRepository = userRepository;
         this.expLogRepository = expLogRepository;
         this.rewardService = rewardService;
@@ -26,18 +27,18 @@ public class GrowthService {
 
     @Transactional
     public GrowthResult grantExp(
-            Long userId, String sourceType, Long sourceId, int expAmount) {
+        Long userId, String sourceType, Long sourceId, int expAmount) {
         if (expAmount <= 0) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
 
         User user = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         int previousLevel = user.getLevel();
         if (expLogRepository.existsByUserIdAndSourceTypeAndSourceId(
-                userId, sourceType, sourceId)) {
+            userId, sourceType, sourceId)) {
             return new GrowthResult(
-                    0, previousLevel, previousLevel, false, true, List.of());
+                0, previousLevel, previousLevel, false, true, List.of());
         }
 
         int totalExp = user.getTotalExp() + expAmount;
@@ -46,15 +47,21 @@ public class GrowthService {
         user.addExp(expAmount, currentLevel);
 
         List<RewardGrant> rewards = currentLevel > previousLevel
-                ? rewardService.grantLevelRewards(user, previousLevel + 1, currentLevel)
-                : List.of();
+            ? rewardService.grantLevelRewards(user, previousLevel + 1, currentLevel)
+            : List.of();
         return new GrowthResult(
-                expAmount,
-                previousLevel,
-                currentLevel,
-                currentLevel > previousLevel,
-                false,
-                rewards);
+            expAmount,
+            previousLevel,
+            currentLevel,
+            currentLevel > previousLevel,
+            false,
+            rewards);
+    }
+
+    public GrowthSnapshot getGrowthById(Long userId) {
+        User user = userRepository.findByIdForUpdate(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        return new GrowthSnapshot(user.getTotalExp(), user.getLevel());
     }
 
     public static int levelFor(int totalExp) {

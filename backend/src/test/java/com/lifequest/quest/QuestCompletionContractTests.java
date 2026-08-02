@@ -1,11 +1,5 @@
 package com.lifequest.quest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +10,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 완료 API가 계약대로 응답하는지 고정한다. 계약 원본은 {@code docs/04-api-spec.md} §4.
@@ -39,7 +38,13 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
  *   <li>TODO(impl): 멱등의 근거 — 동시 요청에서도 완료 기록이 하나뿐인지.
  *       보장은 {@code uk_quest_completions_udq}가 하므로 DB 없이는 확인할 수 없다
  *   <li>TODO(impl): EXP 재지급 2차 방어선 — {@code exp_logs}의
- *       {@code UNIQUE(user_id, source_type, source_id)}에 {@code completionId}가 실리는지
+ *       {@code UNIQUE(user_id, source_type, source_id)}에 {@code completionId}가 실리는지.
+ *       <b>{@code source_type} 값도 함께 본다</b> — 이 제약은 정상 경로에서 한 번도
+ *       발동하지 않으므로(중복 완료는 지급을 시도조차 하지 않는다) 문자열이 어긋나도
+ *       조용하다. 볼 것은 방어선의 <b>발동</b>이 아니라 <b>전제</b>다
+ *   <li>TODO(impl): {@code growth.totalExp}가 완료 전 값 + {@code expGained}와 같은지.
+ *       앱이 이 필드를 파싱만 하고 화면에는 쓰지 않아(기본값 0) <b>틀려도 어디서도
+ *       드러나지 않는다</b>
  *   <li>TODO(impl): 거리 계산이 실제로 맞는지(Haversine 경계값). 지금은 메시지에 숫자가
  *       있는지만 본다
  *   <li>TODO(impl): 만료 판정이 04:00 일자 경계를 따르는지
@@ -71,9 +76,7 @@ class QuestCompletionContractTests {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.duplicated").value(false))
                 .andExpect(jsonPath("$.data.completionId").isNumber())
-                .andExpect(jsonPath("$.data.location.distanceM").isNotEmpty())
-                // 받는 쪽이 실제 동작으로 오해하지 않도록 스텁임을 숨기지 않는다.
-                .andExpect(header().string("X-Stub", "true"));
+                .andExpect(jsonPath("$.data.location.distanceM").isNotEmpty());
     }
 
     @Test

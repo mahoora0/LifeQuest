@@ -18,12 +18,25 @@ import java.math.BigDecimal;
  * {@code DECIMAL(10,7)}이라 그대로 넣을 수 있고, 거리 계산에서만 실수로 바꾼다.
  */
 public record QuestCompletionRequest(
-        BigDecimal latitude,
-        BigDecimal longitude,
-        BigDecimal accuracy) {
+    BigDecimal latitude,
+    BigDecimal longitude,
+    BigDecimal accuracy) {
 
-    /** 위치 검증에 필요한 세 값이 모두 있는지. 하나라도 없으면 검증을 시작할 수 없다. */
+    /**
+     * 위치 검증에 필요한 세 값이 모두 있는지. 하나라도 없으면 검증을 시작할 수 없다.
+     */
     public boolean hasLocation() {
         return latitude != null && longitude != null && accuracy != null;
+    }
+
+    public boolean isCoordinatesValid() {
+        if (latitude == null || longitude == null) {
+            return false;
+        }
+
+        return latitude.compareTo(BigDecimal.valueOf(-90)) >= 0 &&
+            latitude.compareTo(BigDecimal.valueOf(90)) <= 0 &&
+            longitude.compareTo(BigDecimal.valueOf(-180)) >= 0 &&
+            longitude.compareTo(BigDecimal.valueOf(180)) <= 0;
     }
 }

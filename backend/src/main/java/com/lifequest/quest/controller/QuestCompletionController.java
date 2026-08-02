@@ -4,15 +4,10 @@ import com.lifequest.common.response.ApiResponse;
 import com.lifequest.quest.dto.QuestCompletionRequest;
 import com.lifequest.quest.dto.QuestCompletionResponse;
 import com.lifequest.quest.service.QuestCompletionService;
-import com.lifequest.quest.service.StubQuestCompletionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 퀘스트 완료 엔드포인트. 계약은 {@code docs/04-api-spec.md} §4.
@@ -50,15 +45,6 @@ public class QuestCompletionController {
                 dailyQuestId,
                 request != null ? request : new QuestCompletionRequest(null, null, null));
 
-        ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
-        // 스텁이 응답하고 있다는 사실을 숨기지 않는다.
-        //
-        // 구현체를 직접 지목하는 것은 의도된 결합이다 — 스텁 클래스를 지우면 이 줄이
-        // 컴파일되지 않아 함께 지우게 된다. 회수를 잊었을 때 빌드가 깨지는 편이,
-        // 잊은 채로 조용히 배포되는 것보다 낫다(`UserController`의 전례).
-        if (questCompletionService instanceof StubQuestCompletionService) {
-            builder.header("X-Stub", "true");
-        }
-        return builder.body(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
