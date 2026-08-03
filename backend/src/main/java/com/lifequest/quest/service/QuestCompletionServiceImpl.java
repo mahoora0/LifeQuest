@@ -200,31 +200,31 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
     }
 
     private double calculateDistance(
-        double reportedLat, double reportedLon,  // 배정 위치
-        double targetLat, double targetLon     // 요청 위치
+        double reportedLat, double reportedLon,  // 요청자가 제공한 위치
+        double targetLat, double targetLon     // 퀘스트가 지정한 위치
     ) {
         final double EARTH_RADIUS_M = 6371000;
 
         // 라디안으로 변환
-        double assignedLatRad = Math.toRadians(reportedLat);
-        double assignedLonRad = Math.toRadians(reportedLon);
-        double requestLatRad = Math.toRadians(targetLat);
-        double requestLonRad = Math.toRadians(targetLon);
+        double reportedLatRad = Math.toRadians(reportedLat);
+        double reportedLonRad = Math.toRadians(reportedLon);
+        double targetLatRad = Math.toRadians(targetLat);
+        double targetLonRad = Math.toRadians(targetLon);
 
         // 위도·경도 차이(라디안)
-        double deltaLatRad = requestLatRad - assignedLatRad;
-        double deltaLonRad = requestLonRad - assignedLonRad;
+        double deltaLatRad = reportedLatRad - targetLatRad;
+        double deltaLonRad = reportedLonRad - targetLonRad;
 
         // 삼각함수 중간값 계산
         double sinDeltaLatHalf = Math.sin(deltaLatRad / 2);
         double sinDeltaLonHalf = Math.sin(deltaLonRad / 2);
-        double cosAssignedLat = Math.cos(assignedLatRad);
-        double cosRequestLat = Math.cos(requestLatRad);
+        double cosReportedLat = Math.cos(reportedLatRad);
+        double cosTargetLat = Math.cos(targetLatRad);
 
         // Haversine 공식의 a 값
         // a = sin²(Δlat/2) + cos(lat₁)·cos(lat₂)·sin²(Δlon/2)
         double a = sinDeltaLatHalf * sinDeltaLatHalf +
-            cosAssignedLat * cosRequestLat *
+            cosReportedLat * cosTargetLat *
                 sinDeltaLonHalf * sinDeltaLonHalf;
 
         // 중심각(라디안)
