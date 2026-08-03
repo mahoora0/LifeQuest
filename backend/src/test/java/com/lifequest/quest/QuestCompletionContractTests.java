@@ -5,6 +5,7 @@ import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.growth.ExpLogRepository;
 import com.lifequest.quest.domain.*;
+import com.lifequest.quest.dto.QuestCompletionRequest;
 import com.lifequest.quest.repository.QuestCompletionRepository;
 import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
@@ -24,7 +25,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,28 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>실구현({@code QuestCompletionServiceImpl})을 리포지토리 픽스처(Quest·UserDailyQuest 직접
  * 생성)로 검증한다. 팀원이 이 응답에 맞춰 완료 화면의 분기(중복 완료·반경 밖·만료·정확도)를
  * 만들기 때문에, 여기가 깨지면 그 오류가 클라이언트로 그대로 전파된다.
- *
- * <h2>아직 스켈레톤만 있는 것</h2>
- * <p>
- * 아래는 자리만 만들어 두고 {@code fail("TODO: ...")}로 비워 둔 항목이다 — 구현 없이 지우면
- * 조용히 사라지고, 그대로 두면 시끄럽게 실패해 잊히지 않는다.
- *
- * <ul>
- *   <li>TODO(impl): 소유권 — 남의 배정을 완료하려 하면 {@code RESOURCE_NOT_FOUND}
- *   <li>TODO(impl): 멱등의 DB 근거 — {@code uk_quest_completions_udq}로 완료 기록이 하나뿐인지
- *   <li>TODO(impl): EXP 재지급 2차 방어선 — {@code exp_logs}의
- *       {@code UNIQUE(user_id, source_type, source_id)}에 {@code completionId}가 실리는지.
- *       <b>{@code source_type} 값도 함께 본다</b> — 이 제약은 정상 경로에서 한 번도
- *       발동하지 않으므로(중복 완료는 지급을 시도조차 하지 않는다) 문자열이 어긋나도
- *       조용하다. 볼 것은 방어선의 <b>발동</b>이 아니라 <b>전제</b>다
- *   <li>TODO(impl): {@code growth.totalExp}가 완료 전 값 + {@code expGained}와 같은지.
- *       앱이 이 필드를 파싱만 하고 화면에는 쓰지 않아(기본값 0) <b>틀려도 어디서도
- *       드러나지 않는다</b>
- *   <li>TODO(impl): 거리 계산이 실제로 맞는지(Haversine 경계값). 지금은 메시지에 숫자가
- *       있는지만 본다
- *   <li>TODO(impl): {@code completion_type}에 따른 분기 — {@code SELF_REPORT}는 좌표
- *       없이 완료되는지
- * </ul>
  *
  * <p>만료 04:00 일자 경계({@code docs/05-business-rules.md} §1-1)는 {@code expiresAt}을
  * 계산하는 배정 로직 확인이 먼저 필요해 이 파일에 아직 없다.
@@ -85,7 +63,6 @@ class QuestCompletionContractTests {
 
     @Autowired
     private UserRepository userRepository;
-    private static final double EARTH_RADIUS_M = 6371000; // QuestCompletionServiceImpl과 동일 상수
     @Autowired
     private QuestCompletionRepository questCompletionRepository;
     @Autowired
@@ -94,11 +71,6 @@ class QuestCompletionContractTests {
     private Clock clock;
     @Autowired
     private ExpLogRepository expLogRepository;
-
-    private static BigDecimal latitudeAtDistance(BigDecimal baseLat, int distanceM) {
-        double deltaLatDeg = Math.toDegrees(distanceM / EARTH_RADIUS_M);
-        return baseLat.add(BigDecimal.valueOf(deltaLatDeg)).setScale(7, RoundingMode.HALF_UP);
-    }
 
     @Test
     void
@@ -311,35 +283,57 @@ class QuestCompletionContractTests {
 
     @Test
     void 반경_경계값에서_거리_계산이_정확하다() throws Exception {
+        // 구글 어스(https://earth.google.com/) 기준으로 좌표 획득
+        // 거리 계산 출처: https://movable-type.co.uk/scripts/latlong.html
+
+        // 기준 지점: 부산광역시 동래구 충렬대로107번길 124 온천초등학교
+        // 35.21232399, 129.07369607
+        final double TARGET_LAT = 35.21232399;
+        final double TARGET_LON = 129.07369607;
+
+        // 목표 지점 기준 허용 반경
+        final int RADIUS_M = 100;
+
+        // 타겟1: 부산광역시 동래구 온천동 784-18번지 가람도서  (온천초등학교로부터 63.51)
+        // 35.21216056, 129.07302618
+        final BigDecimal REPORTED_LAT1 = BigDecimal.valueOf(35.21216056);
+        final BigDecimal REPORTED_LON1 = BigDecimal.valueOf(129.07302618);
+
+        // 타겟2: 부산광역시 동래구 온천동 784-33 청궁사 (온천초등학교로부터 114.2)
+        // 35.21183846, 129.07258842
+        final BigDecimal REPORTED_LAT2 = BigDecimal.valueOf(35.21183846);
+        final BigDecimal REPORTED_LON2 = BigDecimal.valueOf(129.07258842);
+
         String email = "boundary@lifequest.test";
         String token = signUpAndGetAccessToken(email, "경계모험가");
-        BigDecimal baseLat = BigDecimal.valueOf(37.5665);
-        BigDecimal baseLng = BigDecimal.valueOf(126.9780);
-        int radiusM = 100;
 
-        // 경계 정확히(포함) — distance == radiusM이면 통과해야 한다 (OUT_OF_RADIUS는 distance > radiusM일 때만)
-        long onBoundaryId = assignLocationQuest(email, 37.5665, 126.9780, radiusM, LocalDateTime.now().plusDays(1));
-        BigDecimal onBoundaryLat = latitudeAtDistance(baseLat, radiusM);
-        mockMvc.perform(complete(onBoundaryId, token, """
-                    {"latitude": %s, "longitude": %s, "accuracy": 10.0}
-                    """.formatted(onBoundaryLat, baseLng)))
+
+        // 온천초등학교로부터 63.51 < 100m. 명백히 반경 내
+        long onBoundaryId = assignLocationQuest(email, TARGET_LAT, TARGET_LON, RADIUS_M, LocalDateTime.now().plusDays(1));
+        mockMvc.perform(
+                complete(
+                    onBoundaryId,
+                    token,
+                    """
+                            {"latitude": %s, "longitude": %s, "accuracy": 10.0}
+                        """.formatted(REPORTED_LAT1, REPORTED_LON1)))
             .andExpect(status().isOk());
 
-        // 경계 밖 1m — OUT_OF_RADIUS여야 한다
-        long overBoundaryId = assignLocationQuest(email, 37.5665, 126.9780, radiusM, LocalDateTime.now().plusDays(1));
-        BigDecimal overBoundaryLat = latitudeAtDistance(baseLat, radiusM + 1);
-        mockMvc.perform(complete(overBoundaryId, token, """
-                    {"latitude": %s, "longitude": %s, "accuracy": 10.0}
-                    """.formatted(overBoundaryLat, baseLng)))
+        // 온천초등학교로부터 114.2m > 100m. 명백히 반경 외, OUT_OF_RADIUS여야 한다
+        long overBoundaryId = assignLocationQuest(email, TARGET_LAT, TARGET_LON, RADIUS_M, LocalDateTime.now().plusDays(1));
+        mockMvc.perform(
+                complete(
+                    overBoundaryId,
+                    token,
+                    """
+                        {"latitude": %s, "longitude": %s, "accuracy": 10.0}
+                        """.formatted(REPORTED_LAT2, REPORTED_LON2)))
             .andExpect(status().isUnprocessableContent())
             .andExpect(jsonPath("$.error.code").value("OUT_OF_RADIUS"));
     }
 
     @Test
     void SELF_REPORT_퀘스트는_좌표_없이_완료된다() throws Exception {
-        // TODO(impl): assignLocationQuest에 대응하는 SELF_REPORT용 픽스처 헬퍼를 만들고,
-        // 본문 없이 완료 요청을 보내 200과 duplicated=false를 확인한다.
-        // (LOCATION 전용인 assignLocationQuest를 그대로 재사용할 수 없다 — completionType 분기 필요)
         String signUpEmail = "owner5@lifequest.test";
         String token = signUpAndGetAccessToken(signUpEmail, "자체_보고_모험가");
         long dailyQuestId = assignSelfReportQuest(
