@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -105,7 +106,8 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
                 quest.getGrade(),
                 questCompletion.getCompletedAt(),
                 true,
-                new QuestCompletionResponse.Location(questCompletion.getDistanceM(), questCompletion.getAccuracyM()),
+                request.hasLocation() ?
+                    new QuestCompletionResponse.Location(questCompletion.getDistanceM(), questCompletion.getAccuracyM()) : null,
                 QuestCompletionResponse.noGrowth(user.getTotalExp(), user.getLevel()),
                 QuestCompletionResponse.nothingCollected());
         }
@@ -114,22 +116,24 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             throw new BusinessException(ErrorCode.QUEST_EXPIRED);
         }
 
-        BigDecimal verifiedLatitude = null;
-        BigDecimal verifiedLongitude = null;
+        BigDecimal reportedLatitude = null;
+        BigDecimal reportedLongitude = null;
         BigDecimal distanceM = null;
         BigDecimal accuracyM = null;
         if (quest.getCompletionType() == CompletionType.LOCATION &&
             checkAccuracy(request, quest)) {
-            verifiedLatitude = quest.getLatitude();
-            verifiedLongitude = quest.getLongitude();
-            accuracyM = request.accuracy();
+            reportedLatitude = request.latitude();
+            reportedLongitude = request.longitude();
+            accuracyM = request
+                .accuracy()
+                .setScale(2, RoundingMode.HALF_UP);
             distanceM = BigDecimal.valueOf(
-                calculateDistance(
-                    verifiedLatitude.doubleValue(),
-                    verifiedLongitude.doubleValue(),
-                    request.latitude().doubleValue(),
-                    request.longitude().doubleValue()
-                ));
+                    calculateDistance(
+                        reportedLatitude.doubleValue(),
+                        reportedLongitude.doubleValue(),
+                        quest.getLatitude().doubleValue(),
+                        quest.getLongitude().doubleValue()))
+                .setScale(2, RoundingMode.HALF_UP);
 
             if (distanceM.compareTo(BigDecimal.valueOf(quest.getRadiusM())) > 0) {
                 throw new BusinessException(
@@ -144,12 +148,13 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
         QuestCompletion questCompletion = questCompletionRepository.save(
             new QuestCompletion(
                 userDailyQuest,
-                verifiedLatitude,
-                verifiedLongitude,
+                reportedLatitude,
+                reportedLongitude,
                 distanceM,
                 accuracyM,
                 now
             ));
+        userDailyQuest.markCompleted();
 
         GrowthResult growthResult = growthService.grantExp(
             requestUserId, "QUEST_COMPLETION", questCompletion.getId(), quest.getExpReward());
@@ -172,7 +177,8 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             quest.getGrade(),
             now,
             false,
-            new QuestCompletionResponse.Location(distanceM, accuracyM),
+            request.hasLocation() ?
+                new QuestCompletionResponse.Location(distanceM, accuracyM) : null,
             new QuestCompletionResponse.Growth(
                 growthResult.expGained(),
                 growthSnapshot.totalExp(),
@@ -194,16 +200,16 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
     }
 
     private double calculateDistance(
-        double assignedLat, double assignedLon,  // 배정 위치
-        double requestLat, double requestLon     // 요청 위치
+        double reportedLat, double reportedLon,  // 배정 위치
+        double targetLat, double targetLon     // 요청 위치
     ) {
         final double EARTH_RADIUS_M = 6371000;
 
         // 라디안으로 변환
-        double assignedLatRad = Math.toRadians(assignedLat);
-        double assignedLonRad = Math.toRadians(assignedLon);
-        double requestLatRad = Math.toRadians(requestLat);
-        double requestLonRad = Math.toRadians(requestLon);
+        double assignedLatRad = Math.toRadians(reportedLat);
+        double assignedLonRad = Math.toRadians(reportedLon);
+        double requestLatRad = Math.toRadians(targetLat);
+        double requestLonRad = Math.toRadians(targetLon);
 
         // 위도·경도 차이(라디안)
         double deltaLatRad = requestLatRad - assignedLatRad;
