@@ -237,7 +237,7 @@ class QuestCompletionContractTests {
         Long completionId = questCompletionService.complete(
                 userId,
                 assignSelfReportQuest(signUpEmail, LocalDateTime.now().plusDays(1)),
-                null)
+                QuestCompletionRequest.empty())
             .completionId();
 
         assertThat(
@@ -272,7 +272,7 @@ class QuestCompletionContractTests {
         questCompletionService.complete(
             userId,
             userDailyQuestId,
-            null);
+            QuestCompletionRequest.empty());
 
         assertThat(
             userRepository.findById(userId)

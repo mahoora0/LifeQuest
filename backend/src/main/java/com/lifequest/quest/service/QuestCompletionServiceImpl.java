@@ -26,6 +26,7 @@ import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
@@ -80,6 +81,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
 
     @Override
     public QuestCompletionResponse complete(Long requestUserId, Long dailyQuestId, QuestCompletionRequest request) {
+        Objects.requireNonNull(request);
         LocalDateTime now = LocalDateTime.now(clock);
 
         // 비관적 락이 선행되어야함.

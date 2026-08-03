@@ -22,6 +22,10 @@ public record QuestCompletionRequest(
     BigDecimal longitude,
     BigDecimal accuracy) {
 
+    static public QuestCompletionRequest empty() {
+        return new QuestCompletionRequest(null, null, null);
+    }
+
     /**
      * 위치 검증에 필요한 세 값이 모두 있는지. 하나라도 없으면 검증을 시작할 수 없다.
      */
