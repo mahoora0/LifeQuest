@@ -1,6 +1,19 @@
 package com.lifequest.quest;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lifequest.quest.domain.CompletionType;
+import com.lifequest.quest.domain.Quest;
+import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCreator;
+import com.lifequest.quest.domain.QuestGrade;
+import com.lifequest.quest.domain.UserDailyQuest;
+import com.lifequest.quest.repository.QuestRepository;
+import com.lifequest.quest.repository.UserDailyQuestRepository;
+import com.lifequest.user.User;
+import com.lifequest.user.UserRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,11 +78,23 @@ class QuestCompletionContractTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    void 완료하면_결과와_스텁_표식이_함께_온다() throws Exception {
-        String token = signUpAndGetAccessToken("complete@lifequest.test", "완료모험가");
+    @Autowired
+    private QuestRepository questRepository;
 
-        mockMvc.perform(complete(7001L, token, """
+    @Autowired
+    private UserDailyQuestRepository userDailyQuestRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Test
+    void
+    완료하면_결과와_스텁_표식이_함께_온다() throws Exception {
+        String token = signUpAndGetAccessToken("complete@lifequest.test", "완료모험가");
+        long dailyQuestId = assignLocationQuest(
+                "complete@lifequest.test", 37.5665, 126.9780, 100, LocalDateTime.now().plusDays(1));
+
+        mockMvc.perform(complete(dailyQuestId, token, """
                         {"latitude": 37.5665, "longitude": 126.9780, "accuracy": 12.5}
                         """))
                 .andExpect(status().isOk())
@@ -82,11 +107,13 @@ class QuestCompletionContractTests {
     @Test
     void 두번째_완료는_오류가_아니라_재지급_없는_현재_상태다() throws Exception {
         String token = signUpAndGetAccessToken("dup@lifequest.test", "중복모험가");
+        long dailyQuestId = assignLocationQuest(
+                "dup@lifequest.test", 37.5665, 126.9780, 100, LocalDateTime.now().plusDays(1));
         String body = """
                 {"latitude": 37.5665, "longitude": 126.9780, "accuracy": 12.5}
                 """;
 
-        MvcResult first = mockMvc.perform(complete(7002L, token, body))
+        MvcResult first = mockMvc.perform(complete(dailyQuestId, token, body))
                 .andExpect(status().isOk())
                 .andReturn();
         int completionId =
@@ -94,7 +121,7 @@ class QuestCompletionContractTests {
 
         // 계약: HTTP 200 · 같은 completionId · 어떤 보상도 재지급하지 않는다.
         // 오류로 처리하면 앱이 "완료 실패"를 띄워, 이미 받은 완료를 사용자가 의심하게 된다.
-        mockMvc.perform(complete(7002L, token, body))
+        mockMvc.perform(complete(dailyQuestId, token, body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.duplicated").value(true))
                 .andExpect(jsonPath("$.data.completionId").value(completionId))
@@ -108,8 +135,10 @@ class QuestCompletionContractTests {
     @Test
     void 반경_밖이면_현재_거리를_함께_알린다() throws Exception {
         String token = signUpAndGetAccessToken("radius@lifequest.test", "반경모험가");
+        long dailyQuestId = assignLocationQuest(
+                "radius@lifequest.test", 37.5665, 126.9780, 50, LocalDateTime.now().plusDays(1));
 
-        MvcResult result = mockMvc.perform(complete(9002L, token, """
+        MvcResult result = mockMvc.perform(complete(dailyQuestId, token, """
                         {"latitude": 37.5000, "longitude": 126.9000, "accuracy": 10.0}
                         """))
                 .andExpect(status().isUnprocessableEntity())
@@ -125,8 +154,10 @@ class QuestCompletionContractTests {
     @Test
     void 만료된_배정은_완료할_수_없다() throws Exception {
         String token = signUpAndGetAccessToken("expired@lifequest.test", "만료모험가");
+        long dailyQuestId = assignLocationQuest(
+                "expired@lifequest.test", 37.5665, 126.9780, 100, LocalDateTime.now().minusDays(1));
 
-        mockMvc.perform(complete(9001L, token, """
+        mockMvc.perform(complete(dailyQuestId, token, """
                         {"latitude": 37.5665, "longitude": 126.9780, "accuracy": 12.5}
                         """))
                 .andExpect(status().isConflict())
@@ -136,10 +167,12 @@ class QuestCompletionContractTests {
     @Test
     void 위치_퀘스트에_좌표가_없으면_검증_실패가_아니라_위치_요구다() throws Exception {
         String token = signUpAndGetAccessToken("noloc@lifequest.test", "좌표없는모험가");
+        long dailyQuestId = assignLocationQuest(
+                "noloc@lifequest.test", 37.5665, 126.9780, 100, LocalDateTime.now().plusDays(1));
 
         // 일반 VALIDATION_FAILED 로 나가면 앱이 권한·정확도 유도 화면을 띄울 수 없다.
         // 본문 없이 호출하는 것은 SELF_REPORT 퀘스트의 정상 경로이기도 하다.
-        mockMvc.perform(post("/api/daily-quests/{id}/complete", 9003L)
+        mockMvc.perform(post("/api/daily-quests/{id}/complete", dailyQuestId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("LOCATION_REQUIRED"));
@@ -148,8 +181,10 @@ class QuestCompletionContractTests {
     @Test
     void 정확도가_기준보다_낮으면_거절한다() throws Exception {
         String token = signUpAndGetAccessToken("acc@lifequest.test", "정확도모험가");
+        long dailyQuestId = assignLocationQuest(
+                "acc@lifequest.test", 37.5665, 126.9780, 100, LocalDateTime.now().plusDays(1));
 
-        mockMvc.perform(complete(7003L, token, """
+        mockMvc.perform(complete(dailyQuestId, token, """
                         {"latitude": 37.5665, "longitude": 126.9780, "accuracy": 120.0}
                         """))
                 .andExpect(status().isUnprocessableEntity())
@@ -180,6 +215,27 @@ class QuestCompletionContractTests {
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body);
+    }
+
+    /**
+     * LOCATION 퀘스트를 만들고 해당 사용자에게 배정한다. 반환값은 완료 요청 대상인
+     * {@code UserDailyQuest.id} — {@code IDENTITY} 자동생성이라 시나리오 리터럴로 고정할 수 없다.
+     */
+    private long assignLocationQuest(
+            String email, double latitude, double longitude, int radiusM, LocalDateTime expiresAt) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalStateException("픽스처 대상 사용자가 없다: " + email));
+
+        Quest quest = questRepository.save(new Quest(
+                "테스트용 위치 퀘스트", "계약 테스트 픽스처", QuestGrade.NORMAL, QuestCadence.DAILY,
+                CompletionType.LOCATION, 50, "테스트 장소",
+                BigDecimal.valueOf(latitude), BigDecimal.valueOf(longitude), radiusM,
+                null, QuestCreator.SYSTEM, true));
+
+        UserDailyQuest assignment = userDailyQuestRepository.save(
+                new UserDailyQuest(user.getId(), quest.getId(), LocalDate.now(), expiresAt));
+
+        return assignment.getId();
     }
 
     private String signUpAndGetAccessToken(String email, String nickname) throws Exception {

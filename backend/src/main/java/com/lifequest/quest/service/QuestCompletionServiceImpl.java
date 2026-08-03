@@ -1,5 +1,7 @@
 package com.lifequest.quest.service;
 
+import com.lifequest.collection.CollectionOutcome;
+import com.lifequest.collection.CollectionService;
 import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.growth.GrowthResult;
@@ -34,20 +36,23 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
     private final QuestRepository questRepository;
     private final QuestCompletionRepository questCompletionRepository;
     private final GrowthService growthService;
+    private final CollectionService collectionService;
     private final Clock clock;
     private final UserRepository userRepository;
 
-    private QuestCompletionServiceImpl(
+    QuestCompletionServiceImpl(
         UserDailyQuestRepository userDailyQuestRepository,
         QuestRepository questRepository,
         QuestCompletionRepository questCompletionRepository,
         GrowthService growthService,
+        CollectionService collectionService,
         Clock clock,
         UserRepository userRepository) {
         this.userDailyQuestRepository = userDailyQuestRepository;
         this.questRepository = questRepository;
         this.questCompletionRepository = questCompletionRepository;
         this.growthService = growthService;
+        this.collectionService = collectionService;
         this.clock = clock;
         this.userRepository = userRepository;
     }
@@ -151,6 +156,9 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
 
         GrowthSnapshot growthSnapshot = growthService.getGrowthById(requestUserId);
 
+        CollectionOutcome collectionOutcome = collectionService.evaluateOnQuestCompletion(
+            requestUserId, quest.getId(), quest.getLifedexItemId(), questCompletion.getId());
+
         return new QuestCompletionResponse(
             questCompletion.getId(),
             userDailyQuest.getId(),
@@ -166,7 +174,17 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
                 growthResult.currentLevel(),
                 growthResult.levelUp(),
                 growthResult.rewards()),
-            QuestCompletionResponse.nothingCollected());
+            toCollectionResult(collectionOutcome));
+    }
+
+    private static QuestCompletionResponse.CollectionResult toCollectionResult(CollectionOutcome outcome) {
+        return new QuestCompletionResponse.CollectionResult(
+            outcome.newLifedexItems().stream().map(QuestCompletionServiceImpl::toEntry).toList(),
+            outcome.newAchievements().stream().map(QuestCompletionServiceImpl::toEntry).toList());
+    }
+
+    private static QuestCompletionResponse.Entry toEntry(CollectionOutcome.Entry entry) {
+        return new QuestCompletionResponse.Entry(entry.id(), entry.name(), entry.secret());
     }
 
     private double calculateDistance(
