@@ -131,8 +131,7 @@ public class UserService {
         User user = getUser(userId);
         List<ProfileItemResponse> badges = userProfileItemRepository
                 .findAllByUserIdOrderByAcquiredAtDesc(userId).stream()
-                .filter(owned -> owned.getProfileItem().getItemType()
-                        == ProfileItem.ItemType.BADGE)
+                .filter(owned -> owned.getProfileItem().getItemType() == ProfileItem.ItemType.BADGE)
                 .map(ProfileItemResponse::from)
                 .toList();
         return new BadgeCollectionResponse(
@@ -148,11 +147,9 @@ public class UserService {
         if (badgeId == null) {
             user.selectRepresentativeBadge(null);
         } else {
-            UserProfileItem owned =
-                    userProfileItemRepository.findByUserIdAndProfileItemId(userId, badgeId)
-                            .filter(item -> item.getProfileItem().getItemType()
-                                    == ProfileItem.ItemType.BADGE)
-                            .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
+            UserProfileItem owned = userProfileItemRepository.findByUserIdAndProfileItemId(userId, badgeId)
+                    .filter(item -> item.getProfileItem().getItemType() == ProfileItem.ItemType.BADGE)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
             user.selectRepresentativeBadge(owned.getProfileItem());
         }
         return UserProfileResponse.from(user);
@@ -194,38 +191,36 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
+    // 사용자 검색 조건 검증, 페이지·정렬 설정 및 Repository 호출
     @Transactional(readOnly = true)
-public UserSearchPageResponse searchUsers(
-        Long currentUserId,
-        String nickname,
-        int page,
-        int size
-) {
-    String keyword = nickname == null ? "" : nickname.trim();
+    public UserSearchPageResponse searchUsers(
+            Long currentUserId,
+            String nickname,
+            int page,
+            int size) {
+        String keyword = nickname == null ? "" : nickname.trim();
 
-    if (keyword.isEmpty()) {
-        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        if (keyword.isEmpty()) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        }
+
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        }
+
+        PageRequest pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.ASC, "nickname")
+                        .and(Sort.by(Sort.Direction.ASC, "id")));
+
+        Page<UserSearchResponse> result = userRepository
+                .findByNicknameContainingIgnoreCaseAndIdNot(
+                        keyword,
+                        currentUserId,
+                        pageable)
+                .map(UserSearchResponse::from);
+
+        return UserSearchPageResponse.from(result);
     }
-
-    if (page < 0 || size < 1 || size > 100) {
-        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-    }
-
-    PageRequest pageable = PageRequest.of(
-            page,
-            size,
-            Sort.by(Sort.Direction.ASC, "nickname")
-                    .and(Sort.by(Sort.Direction.ASC, "id"))
-    );
-
-    Page<UserSearchResponse> result = userRepository
-            .findByNicknameContainingIgnoreCaseAndIdNot(
-                    keyword,
-                    currentUserId,
-                    pageable
-            )
-            .map(UserSearchResponse::from);
-
-    return UserSearchPageResponse.from(result);
-}
 }

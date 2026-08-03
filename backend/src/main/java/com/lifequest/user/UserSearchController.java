@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
+// 사용자 검색 관련 API를 처리하는 컨트롤러
 public class UserSearchController {
-
     private final UserService userService;
 
     public UserSearchController(UserService userService) {
@@ -24,8 +24,8 @@ public class UserSearchController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam("nickname") String nickname,
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size
-    ) {
+            @RequestParam(name = "size", defaultValue = "20") int size) {
+        // 자기 자신을 검색 결과에서 제외
         Long currentUserId = Long.valueOf(jwt.getSubject());
 
         return ApiResponse.success(
@@ -33,8 +33,6 @@ public class UserSearchController {
                         currentUserId,
                         nickname,
                         page,
-                        size
-                )
-        );
+                        size));
     }
 }
