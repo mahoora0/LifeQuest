@@ -10,7 +10,6 @@ import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
-import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 
 /// 카테고리별 블롭 색 — 채도가 낮은 색을 순환해서 쓴다.
 const _blobColors = <Color>[
@@ -143,7 +142,7 @@ class _Body extends ConsumerWidget {
         24,
       ),
       children: [
-        _CollectionRate(overview: overview),
+        _CollectionSummary(overview: overview),
         const SizedBox(height: LqSpacing.gap),
         LqChipRow(
           padding: EdgeInsets.zero,
@@ -179,40 +178,28 @@ class _Body extends ConsumerWidget {
   }
 }
 
-class _CollectionRate extends StatelessWidget {
-  const _CollectionRate({required this.overview});
+class _CollectionSummary extends StatelessWidget {
+  const _CollectionSummary({required this.overview});
 
   final LifedexOverview overview;
 
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text('수집률', style: LqText.label),
-              const SizedBox(width: 8),
-              Text(
-                '${overview.percent}%',
-                style: LqText.levelNumber.copyWith(
-                  fontSize: 22,
-                  color: LqColors.primary,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${overview.ownedCount}/${overview.totalCount}',
-                style: LqText.bodySm,
-              ),
-            ],
+          Text('수집한 경험', style: LqText.label),
+          const Spacer(),
+          Text(
+            '${overview.ownedCount}개',
+            style: LqText.levelNumber.copyWith(
+              fontSize: 22,
+              color: LqColors.primary,
+            ),
           ),
-          const SizedBox(height: 8),
-          LqProgressBar(value: overview.ownedCount, max: overview.totalCount),
         ],
       ),
     );

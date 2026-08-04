@@ -25,7 +25,6 @@ Future<void> _refresh(WidgetRef ref) async {
   ref
     ..invalidate(myProfileProvider)
     ..invalidate(levelStatusProvider)
-    ..invalidate(rewardHistoryProvider)
     ..invalidate(questHistoryProvider)
     ..invalidate(lifedexOverviewProvider)
     ..invalidate(achievementOverviewProvider)
@@ -34,7 +33,6 @@ Future<void> _refresh(WidgetRef ref) async {
   await Future.wait([
     _settle(ref.read(myProfileProvider.future)),
     _settle(ref.read(levelStatusProvider.future)),
-    _settle(ref.read(rewardHistoryProvider.future)),
     _settle(ref.read(questHistoryProvider.future)),
     _settle(ref.read(lifedexOverviewProvider.future)),
     _settle(ref.read(achievementOverviewProvider.future)),
@@ -81,8 +79,6 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _ProfileHeader(profile: value),
                 const SizedBox(height: LqSpacing.gap),
-                const _RecentRewardCard(),
-                const SizedBox(height: LqSpacing.gap),
                 const _ExpCard(),
                 // ① 재화 2칸은 서버에 재화가 없어 v1에서 노출하지 않는다.
                 const SizedBox(height: LqSpacing.gap),
@@ -100,133 +96,6 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// "최근 획득" — 마지막에 얻은 보상 몇 건.
-///
-/// 캐릭터 카드가 있던 자리다. 캐릭터는 헤더 아바타에 이미 그려지고 변경도 프로필
-/// 수정에서만 되기 때문에, 이 자리에는 방금 무엇을 얻었는지 알려주는 편이 읽을 값이
-/// 있다. 종류별 전체 목록은 업적 화면의 칭호·배지 탭이 맡는다.
-class _RecentRewardCard extends ConsumerWidget {
-  const _RecentRewardCard();
-
-  static const _maxRows = 3;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rewards = ref.watch(rewardHistoryProvider);
-    final entries = rewards.value?.recent ?? const <RewardEntry>[];
-
-    return LqCard(
-      background: LqColors.surfaceCard,
-      header: '최근 획득',
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 새로고침 중에도 이전 목록을 유지한다 — 값이 있으면 상태 표시로 갈아끼우지 않는다.
-          if (!rewards.hasValue && rewards.isLoading)
-            const LinearProgressIndicator(minHeight: 3)
-          else if (!rewards.hasValue && rewards.hasError)
-            Text('보상 이력을 불러오지 못했어요.', style: LqText.caption)
-          else if (entries.isEmpty)
-            Text('아직 획득한 보상이 없어요.', style: LqText.caption)
-          else
-            for (final entry in entries.take(_maxRows))
-              _RewardRow(entry: entry),
-        ],
-      ),
-    );
-  }
-}
-
-class _RewardRow extends StatelessWidget {
-  const _RewardRow({required this.entry});
-
-  final RewardEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final when = _relativeDay(entry.acquiredAt);
-    final kind = _kindLabel(entry.kind);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LqColors.tileFill,
-              borderRadius: LqShape.tileRadius,
-              border: Border.all(
-                color: LqColors.ink,
-                width: LqShape.borderWidth,
-              ),
-            ),
-            child: Icon(
-              _kindIcon(entry.kind),
-              size: 16,
-              color: LqColors.primary,
-            ),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LqText.bodySm,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  when.isEmpty ? kind : '$kind · $when',
-                  style: LqText.caption,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-IconData _kindIcon(RewardKind kind) => switch (kind) {
-  RewardKind.title => Icons.military_tech_outlined,
-  RewardKind.badge => Icons.workspace_premium_outlined,
-  RewardKind.item => Icons.card_giftcard_rounded,
-};
-
-String _kindLabel(RewardKind kind) => switch (kind) {
-  RewardKind.title => '칭호',
-  RewardKind.badge => '배지',
-  RewardKind.item => '아이템',
-};
-
-/// 획득 시각을 "오늘 / 어제 / N일 전 / M월 D일"로 읽는다.
-/// 이 카드에서는 정확한 시각보다 얼마나 최근인지가 중요하다.
-String _relativeDay(DateTime? value) {
-  if (value == null) return '';
-
-  final date = value.toLocal();
-  final now = DateTime.now();
-  // 시각이 아니라 날짜 경계로 센다 — 밤 11시에 받은 보상이 한 시간 뒤 "어제"가 되어야 한다.
-  final days = DateTime(
-    now.year,
-    now.month,
-    now.day,
-  ).difference(DateTime(date.year, date.month, date.day)).inDays;
-
-  if (days <= 0) return '오늘';
-  if (days == 1) return '어제';
-  if (days < 7) return '$days일 전';
-  return '${date.month}월 ${date.day}일';
 }
 
 class _ProfileHeader extends ConsumerWidget {
@@ -463,112 +332,6 @@ class _RecordCell extends StatelessWidget {
   }
 }
 
-/// "내 배지" — 보유 배지 4칸 미리보기. 시안 9번 화면에 "나의 기록"과 나란히 있다.
-///
-/// 여기서는 대표 지정을 하지 않고 "더보기"로 업적 화면의 배지 탭에 넘긴다.
-/// 지정 로직이 두 곳에 생기면 낙관적 갱신과 롤백을 양쪽에서 관리해야 한다.
-/// 대신 지정된 대표는 첫 칸으로 끌어와 표시해, 지정이 반영됐는지 여기서 확인된다.
-class _BadgeCard extends ConsumerWidget {
-  const _BadgeCard();
-
-  static const _slotCount = 4;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final collection = ref.watch(badgeCollectionProvider);
-    final badges = collection.value?.badges ?? const <ProfileItem>[];
-    final representativeId = collection.value?.representativeBadgeId;
-
-    // 대표 배지를 앞으로 끌어와 4칸 미리보기에서 밀려나지 않게 한다.
-    // 다섯 번째 배지를 대표로 지정했는데 이 카드가 그대로면 지정이 먹혔는지 알 수 없다.
-    final items = representativeId == null
-        ? badges
-        : [
-            ...badges.where((badge) => badge.id == representativeId),
-            ...badges.where((badge) => badge.id != representativeId),
-          ];
-
-    return LqCard(
-      background: LqColors.surfaceCard,
-      header: '내 배지',
-      headerTrailing: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => context.push('/achievements?tab=badges'),
-        child: Text('더보기 ›', style: LqText.caption),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      child: Row(
-        children: [
-          for (var i = 0; i < _slotCount; i++) ...[
-            if (i > 0) const SizedBox(width: 10),
-            _BadgeSlot(
-              item: i < items.length ? items[i] : null,
-              // id가 없는 배지끼리 null == null로 맞아떨어지지 않게 대표 id를 먼저 확인한다.
-              representative:
-                  representativeId != null &&
-                  i < items.length &&
-                  items[i].id == representativeId,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _BadgeSlot extends StatelessWidget {
-  const _BadgeSlot({required this.item, this.representative = false});
-
-  final ProfileItem? item;
-
-  /// 대표로 지정된 배지. 배지 탭의 선택 상태와 같은 gold를 쓴다.
-  final bool representative;
-
-  @override
-  Widget build(BuildContext context) {
-    final badge = item;
-
-    return Semantics(
-      // 색만으로 대표를 구분하면 읽어 주는 화면에서는 전달되지 않는다.
-      label: badge == null
-          ? '빈 배지 칸'
-          : representative
-          ? '대표 배지 ${badge.name}'
-          : badge.name,
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        decoration: BoxDecoration(
-          color: badge == null
-              ? LqColors.lockedBg
-              : representative
-              ? LqColors.gold
-              : LqColors.tileFill,
-          borderRadius: LqShape.tileRadius,
-          border: Border.all(
-            color: badge == null ? LqColors.borderMuted : LqColors.ink,
-            width: LqShape.borderWidth,
-          ),
-        ),
-        child: Text(
-          badge == null ? '?' : badge.name.characters.first,
-          maxLines: 1,
-          style: LqText.badge.copyWith(
-            fontSize: 17,
-            color: badge == null
-                ? LqColors.textMuted
-                : representative
-                ? LqColors.goldText
-                : LqColors.textPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// "나의 기록" — 하단 탭에서 빠진 LifeDex 도감과 업적·칭호의 진입점.
 ///
 /// 두 화면 모두 탭 밖 push 라우트가 되어 다른 경로로는 닿을 수 없다.
@@ -593,11 +356,7 @@ class _MyRecordCard extends ConsumerWidget {
           _RecordRow(
             leading: const _RecordTile(asset: LqAssets.iconMap, width: 26),
             label: '도감',
-            caption: _caption(
-              lifedex,
-              (value) =>
-                  '수집률 ${value.percent}% · ${value.ownedCount} / ${value.totalCount}',
-            ),
+            caption: _caption(lifedex, (value) => '${value.ownedCount}개 수집'),
             onTap: () => context.push('/lifedex'),
           ),
           const LqDashedDivider(),
@@ -697,7 +456,7 @@ class _RecordRow extends StatelessWidget {
           constraints: const BoxConstraints(
             minHeight: LqSpacing.minTouchTarget,
           ),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
               leading,

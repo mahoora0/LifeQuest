@@ -79,7 +79,7 @@ void main() {
   }
 
   group('표본이 꺼진 기본 상태', () {
-    testWidgets('도감은 가짜 수집률 대신 준비 중을 보여준다', (tester) async {
+    testWidgets('도감은 가짜 수집 현황 대신 준비 중을 보여준다', (tester) async {
       await pumpLifedex(tester, LifedexRepository(unreachableDio()));
 
       expect(find.text('도감은 아직 준비 중이에요'), findsOneWidget);
@@ -96,15 +96,16 @@ void main() {
   });
 
   group('데이터가 있을 때', () {
-    testWidgets('도감은 카테고리와 수집률을 그린다', (tester) async {
+    testWidgets('도감은 카테고리와 수집 개수를 그린다', (tester) async {
       await pumpLifedex(tester, _FakeLifedexRepository());
 
       expect(find.text('도감은 아직 준비 중이에요'), findsNothing);
       // 카테고리는 필터 칩과 격자 타일 양쪽에 나온다.
       expect(find.text('카페'), findsWidgets);
       expect(find.text('공원 · 산책로'), findsWidgets);
-      // 12+8 = 20, 24+16 = 40 → 50%
-      expect(find.textContaining('50'), findsWidgets);
+      // 12+8 = 20개를 수집했다.
+      expect(find.text('20개'), findsOneWidget);
+      expect(find.textContaining('%'), findsNothing);
     });
 
     testWidgets('업적은 달성과 진행 중을 함께 그린다', (tester) async {

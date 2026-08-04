@@ -80,7 +80,7 @@ class LifedexRepository {
     }
   }
 
-  /// 시안(`Life Quest 초안` LifeDex 화면)의 수집률 42%를 재현하는 표본이다.
+  /// 시안(`Life Quest 초안` LifeDex 화면)의 수집 현황을 재현하는 표본이다.
   /// 실제 사용자 데이터가 아니며 디버그 빌드에서만 쓰인다.
   static const _sampleOverview = LifedexOverview(
     categories: [

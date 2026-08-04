@@ -58,20 +58,12 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('대표 배지')), findsNothing);
   });
 
-  testWidgets('최근 획득은 획득 시각 최신순으로 보여준다', (tester) async {
+  testWidgets('최근 획득 영역을 표시하지 않는다', (tester) async {
     await pumpProfile(tester);
 
-    expect(find.text('최근 획득'), findsOneWidget);
-    // 캐릭터 카드를 대체했으므로 이전 "획득 보상" 카드는 남아 있지 않다.
+    expect(find.text('최근 획득'), findsNothing);
     expect(find.text('획득 보상'), findsNothing);
     expect(find.text('내 캐릭터'), findsNothing);
-
-    final names = tester
-        .widgetList<Text>(find.byType(Text))
-        .map((text) => text.data)
-        .where((data) => data == '나침반 배지' || data == '이름표' || data == '새내기 모험가')
-        .toList();
-    expect(names, ['나침반 배지', '이름표', '새내기 모험가']);
   });
 
   testWidgets('서버가 없는 구간은 오류가 아니라 준비 중으로 알린다', (tester) async {
@@ -117,7 +109,6 @@ class _FakeUserRepository extends UserRepository {
   Future<UserProfile> fetchMe() async => const UserProfile(
     id: 1,
     nickname: '모험가',
-    // 최근 획득 목록의 칭호와 다른 이름을 써서 헤더 표시와 섞이지 않게 한다.
     representativeTitle: '길잡이',
     representativeTitleId: 9,
     representativeBadge: '나침반 배지',
