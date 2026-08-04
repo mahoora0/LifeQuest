@@ -36,6 +36,12 @@ abstract final class LqAssets {
   /// 가방 아이콘(LifeDex).
   static const iconBackpack = '${_dir}icon-backpack.png';
 
+  /// 나의 기록 도감 아이콘.
+  static const book = '${_dir}Book.png';
+
+  /// 나의 기록 업적·칭호 아이콘.
+  static const trophyCup = '${_dir}Trophy Cup.png';
+
   static String character(String code) =>
       '${_dir}characters/${code.toLowerCase()}.png';
 }
