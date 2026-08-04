@@ -54,6 +54,7 @@ class GroupFlowIntegrationTests {
         GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest("소규모 그룹","두 명만 참여",GroupVisibility.PRIVATE,2));
         GroupMemberResponse invitation=memberships.invite(created.id(),owner.getId(),invited.getId());
         assertThat(invitation.status()).isEqualTo(GroupMemberStatus.INVITED);
+        assertThat(groups.detail(created.id(),invited.getId()).joinable()).isFalse();
         assertThatThrownBy(()->memberships.invite(created.id(),owner.getId(),outsider.getId()))
                 .isInstanceOfSatisfying(BusinessException.class,e->assertThat(e.errorCode()).isEqualTo(ErrorCode.GROUP_FULL));
         assertThat(memberships.acceptInvitation(invitation.memberId(),invited.getId()).status()).isEqualTo(GroupMemberStatus.ACTIVE);
