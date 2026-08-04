@@ -95,7 +95,7 @@ class LqTagPalette {
     Color(0xFF8FA3AE),
   );
   static const monthly = LqTagPalette(
-    '월간',
+    '협동',
     Color(0xFFDFEAD1),
     Color(0xFF8FA86A),
   );

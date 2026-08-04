@@ -57,7 +57,7 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
     };
     // 조회 전에는 개수를 모르므로 레이블에서 개수만 뺀다. 0개로 보이면 오해를 부른다.
     final loaded = today.value;
-    final countLabel = loaded == null
+    final countLabel = loaded == null || !unlocked
         ? '${_filter.label} 퀘스트'
         : '${_filter.label} 퀘스트 · ${loaded.quests.where(_filter.matches).length}개';
 

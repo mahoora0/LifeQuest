@@ -19,6 +19,7 @@ void main() {
   Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
     await tester.pumpWidget(
       ProviderScope(
+        key: UniqueKey(),
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           levelStatusProvider.overrideWith(

@@ -69,7 +69,7 @@ public class UserController {
     @GetMapping("/characters")
     public ApiResponse<List<CharacterResponse>> characters(
             @AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success(userService.getCharacters());
+        return ApiResponse.success(userService.getCharacters(userId(jwt)));
     }
 
     @PatchMapping("/character")
