@@ -1,8 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/features/group/application/group_chat_controller.dart';
 import 'package:life_quest/features/group/application/group_providers.dart';
-import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -18,20 +17,25 @@ class _GroupChatState extends ConsumerState<GroupChatScreen>
     with WidgetsBindingObserver {
   final input = TextEditingController();
   final scroll = ScrollController();
-  final List<GroupMessage> messages = [];
-  Timer? timer;
-  bool loading = true, polling = false, sending = false;
-  Object? error;
+  int _shownCount = 0;
+
+  // dispose()에서는 ref를 쓸 수 없으므로 컨트롤러를 필드에 들고 있는다.
+  late final GroupChatController _controller = ref.read(
+    groupChatProvider(widget.groupId),
+  );
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _load();
+    _controller.load();
   }
 
   @override
   void dispose() {
-    timer?.cancel();
+    // 화면을 벗어나면 폴링을 멈춘다. autoDispose가 컨트롤러를 정리하지만
+    // 마지막 프레임과 폐기 사이에 타이머가 한 번 더 도는 것을 막는다.
+    _controller.stop();
     WidgetsBinding.instance.removeObserver(this);
     input.dispose();
     scroll.dispose();
@@ -41,59 +45,27 @@ class _GroupChatState extends ConsumerState<GroupChatScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _start();
+      _controller.start();
     } else {
-      timer?.cancel();
+      _controller.stop();
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _send() async {
+    final text = input.text;
     try {
-      final page = await ref
-          .read(groupRepositoryProvider)
-          .messages(widget.groupId);
-      _merge(page.messages);
-      if (mounted) setState(() => loading = false);
-      _start();
+      if (await _controller.send(text)) input.clear();
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          loading = false;
-          error = e;
-        });
-      }
+      if (mounted) showLqError(context, e);
     }
   }
 
-  void _start() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 3), (_) => _poll());
-  }
-
-  Future<void> _poll() async {
-    if (polling || !mounted) return;
-    polling = true;
-    try {
-      final page = await ref
-          .read(groupRepositoryProvider)
-          .messages(
-            widget.groupId,
-            afterId: messages.isEmpty ? null : messages.last.id,
-          );
-      _merge(page.messages);
-    } catch (_) {
-    } finally {
-      polling = false;
+  void _scrollToBottomIfGrew(int count) {
+    if (count <= _shownCount) {
+      _shownCount = count;
+      return;
     }
-  }
-
-  void _merge(List<GroupMessage> incoming) {
-    final ids = messages.map((message) => message.id).toSet();
-    final additions = incoming.where((message) => ids.add(message.id)).toList();
-    if (additions.isEmpty) return;
-    messages.addAll(additions);
-    messages.sort((a, b) => a.id.compareTo(b.id));
-    if (mounted) setState(() {});
+    _shownCount = count;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scroll.hasClients) {
         scroll.animateTo(
@@ -105,27 +77,23 @@ class _GroupChatState extends ConsumerState<GroupChatScreen>
     });
   }
 
-  Future<void> _send() async {
-    final text = input.text.trim();
-    if (text.isEmpty || text.length > 1000 || sending) return;
-    setState(() => sending = true);
-    try {
-      final message = await ref
-          .read(groupRepositoryProvider)
-          .sendMessage(widget.groupId, text);
-      input.clear();
-      _merge([message]);
-    } catch (e) {
-      if (mounted) showLqError(context, e);
-    } finally {
-      if (mounted) setState(() => sending = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final archived =
         ref.watch(groupDetailProvider(widget.groupId)).value?.archived == true;
+    final chat = ref.watch(groupChatProvider(widget.groupId));
+    return ListenableBuilder(
+      listenable: chat,
+      builder: (context, _) => _body(chat, archived),
+    );
+  }
+
+  Widget _body(GroupChatController chat, bool archived) {
+    final messages = chat.messages;
+    final loading = chat.loading;
+    final error = chat.error;
+    final sending = chat.sending;
+    _scrollToBottomIfGrew(messages.length);
     Widget content;
     if (loading) {
       content = const Center(child: CircularProgressIndicator());
