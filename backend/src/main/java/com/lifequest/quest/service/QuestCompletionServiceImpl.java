@@ -178,7 +178,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             quest.getGrade(),
             now,
             false,
-            request.hasLocation() ?
+            quest.getCompletionType() == CompletionType.LOCATION ?
                 new QuestCompletionResponse.Location(distanceM, accuracyM) : null,
             new QuestCompletionResponse.Growth(
                 growthResult.expGained(),
