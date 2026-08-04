@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @GetMapping("/level")
-    public ApiResponse<Map<String, Integer>> level(@AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<Map<String, Object>> level(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(userService.getLevel(userId(jwt)));
     }
 

@@ -11,6 +11,8 @@ import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.TitleResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.growth.GrowthService;
+import com.lifequest.quest.domain.QuestFeature;
+import com.lifequest.quest.service.QuestUnlockPolicy;
 import com.lifequest.profile.AvatarCharacter;
 import com.lifequest.profile.AvatarCharacterRepository;
 import com.lifequest.profile.ProfileItem;
@@ -38,18 +40,21 @@ public class UserService {
     private final UserTitleRepository userTitleRepository;
     private final UserProfileItemRepository userProfileItemRepository;
     private final ProfileImageStorage profileImageStorage;
+    private final QuestUnlockPolicy questUnlockPolicy;
 
     public UserService(
             UserRepository userRepository,
             AvatarCharacterRepository characterRepository,
             UserTitleRepository userTitleRepository,
             UserProfileItemRepository userProfileItemRepository,
-            ProfileImageStorage profileImageStorage) {
+            ProfileImageStorage profileImageStorage,
+            QuestUnlockPolicy questUnlockPolicy) {
         this.userRepository = userRepository;
         this.characterRepository = characterRepository;
         this.userTitleRepository = userTitleRepository;
         this.userProfileItemRepository = userProfileItemRepository;
         this.profileImageStorage = profileImageStorage;
+        this.questUnlockPolicy = questUnlockPolicy;
     }
 
     @Transactional(readOnly = true)
@@ -71,7 +76,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Integer> getLevel(Long userId) {
+    public Map<String, Object> getLevel(Long userId) {
         User user = getUser(userId);
         int levelStartExp = GrowthService.cumulativeExpForLevel(user.getLevel());
         int requiredExp = GrowthService.requiredExpForNextLevel(user.getLevel());
@@ -79,7 +84,17 @@ public class UserService {
                 "level", user.getLevel(),
                 "totalExp", user.getTotalExp(),
                 "currentLevelExp", user.getTotalExp() - levelStartExp,
-                "nextLevelRequiredExp", requiredExp);
+                "nextLevelRequiredExp", requiredExp,
+                "unlocks", Map.of(
+                        "daily", unlock(user.getLevel(), QuestFeature.DAILY),
+                        "weekly", unlock(user.getLevel(), QuestFeature.WEEKLY),
+                        "coop", unlock(user.getLevel(), QuestFeature.COOP)));
+    }
+
+    private Map<String, Object> unlock(int level, QuestFeature feature) {
+        return Map.of(
+                "unlocked", questUnlockPolicy.isUnlocked(level, feature),
+                "requiredLevel", questUnlockPolicy.requiredLevel(feature));
     }
 
     @Transactional(readOnly = true)

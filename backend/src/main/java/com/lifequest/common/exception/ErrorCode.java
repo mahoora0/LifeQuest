@@ -39,6 +39,7 @@ public enum ErrorCode {
             HttpStatus.UNPROCESSABLE_CONTENT,
             "LOCATION_ACCURACY_TOO_LOW",
             "위치 정확도가 허용 기준보다 낮습니다."),
+    QUEST_FEATURE_LOCKED(HttpStatus.FORBIDDEN, "QUEST_FEATURE_LOCKED", "아직 열리지 않은 퀘스트 기능입니다."),
     DUPLICATE_FRIEND_REQUEST(
             HttpStatus.CONFLICT,
             "DUPLICATE_FRIEND_REQUEST",
