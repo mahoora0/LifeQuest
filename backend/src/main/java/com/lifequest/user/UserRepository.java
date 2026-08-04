@@ -25,6 +25,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Long currentUserId,
             Pageable pageable);
 
+    @Query("""
+            select u from User u
+            where u.id = :currentUserId
+               or u.id in (
+                   select f.friend.id from Friendship f
+                   where f.user.id = :currentUserId
+               )
+            """)
+    Page<User> findCurrentUserAndFriends(
+            @Param("currentUserId") Long currentUserId,
+            Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);

@@ -171,8 +171,8 @@
 | `GET /friends` | `page`, `size` | 친구 공개 프로필 `content[]` | `UNAUTHORIZED` |
 | `DELETE /friends/{userId}` | path `userId` | `deleted: true` | `FRIENDSHIP_NOT_FOUND` |
 | `GET /friends/{userId}/profile` | path `userId` | 공개 프로필, 본인·친구의 레벨·EXP·완료 퀘스트 수·방문 장소 수 | `FRIENDSHIP_NOT_FOUND` |
-| `GET /rankings/global` | `page`, `size` | EXP 기준 순위 `content[]` | `UNAUTHORIZED` |
-| `GET /rankings/friends` | `page`, `size` | 본인과 친구의 EXP 기준 순위 `content[]` | `UNAUTHORIZED` |
+| `GET /rankings/global` | `page`, `size` | 누적 EXP 기준 순위 `content[]`(`rank`, `userId`, `nickname`, `profileImageUrl`, `level`, `totalExp`, `isMe`) | `UNAUTHORIZED`, `VALIDATION_FAILED` |
+| `GET /rankings/friends` | `page`, `size` | 본인과 친구의 누적 EXP 기준 순위 `content[]` | `UNAUTHORIZED`, `VALIDATION_FAILED` |
 | `POST /admin/quests` | 퀘스트 필드(LOCATION이면 장소·좌표·반경 필수) | 생성된 퀘스트 | `FORBIDDEN`, `VALIDATION_FAILED` |
 | `PATCH /admin/quests/{questId}` | 변경할 퀘스트 필드 | 변경된 퀘스트 | `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED` |
 | `DELETE /admin/quests/{questId}` | path `questId` | `deactivated: true` | `FORBIDDEN`, `RESOURCE_NOT_FOUND` |
