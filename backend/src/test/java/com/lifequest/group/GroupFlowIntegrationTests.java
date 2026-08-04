@@ -22,6 +22,7 @@ class GroupFlowIntegrationTests {
     @Autowired GroupMembershipService memberships; @Autowired GroupChatService chat;
     @Autowired GroupQuestService quests; @Autowired GroupMemberRepository memberRepository;
     @Autowired JdbcTemplate jdbc;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     @Test
     void publicJoinOwnerTransferChatAndQuestFlow() {
@@ -105,6 +106,9 @@ class GroupFlowIntegrationTests {
 
         GroupMessagePageResponse after=chat.get(created.id(),owner.getId(),null,second.id(),10);
         assertThat(after.messages()).extracting(GroupMessageResponse::id).containsExactly(third.id(),fourth.id());
+        // 폴링 호출자는 afterId 이전을 이미 갖고 있다. 여기서 true를 주면 과거 로딩 UI가 헛돈다.
+        assertThat(after.hasMoreBefore()).isFalse();
+        assertThat(chat.get(created.id(),owner.getId(),null,fourth.id(),10).messages()).isEmpty();
         assertError(()->chat.get(created.id(),owner.getId(),first.id(),second.id(),20),ErrorCode.VALIDATION_FAILED);
     }
 
@@ -150,6 +154,65 @@ class GroupFlowIntegrationTests {
         assertError(()->memberships.acceptInvitation(invitation.memberId(),invited.getId()),ErrorCode.GROUP_INVITATION_EXPIRED);
         assertThat(memberRepository.findById(invitation.memberId()).orElseThrow().getStatus()).isEqualTo(GroupMemberStatus.REJECTED);
         assertThat(memberships.invitations(invited.getId(),0,20).content()).isEmpty();
+    }
+
+    @Test
+    void privateGroupHidesItselfFromNonMembersAndRejectsJoinRequests() {
+        User owner=user("privateOwner"); User outsider=user("privateOutsider");
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest("비공개 그룹","초대로만 들어옵니다",GroupVisibility.PRIVATE,5));
+
+        // 존재 자체를 숨겨야 하므로 403이 아니라 404여야 한다.
+        assertError(()->groups.detail(created.id(),outsider.getId()),ErrorCode.GROUP_NOT_FOUND);
+        assertError(()->memberships.requestJoin(created.id(),outsider.getId()),ErrorCode.GROUP_NOT_FOUND);
+        assertError(()->memberships.invite(created.id(),owner.getId(),owner.getId()),ErrorCode.CANNOT_INVITE_SELF);
+
+        // 유효 초대를 받으면 그때부터는 상세를 볼 수 있다.
+        memberships.invite(created.id(),owner.getId(),outsider.getId());
+        assertThat(groups.detail(created.id(),outsider.getId()).name()).isEqualTo("비공개 그룹");
+    }
+
+    @Test
+    void plainMemberCannotRemoveAnotherMember() {
+        User owner=user("removeOwner"); User member=user("removeMember"); User other=user("removeOther");
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest("내보내기 그룹","권한을 검증합니다",GroupVisibility.PUBLIC,5));
+        for(User joiner:new User[]{member,other}){
+            GroupMemberResponse pending=memberships.requestJoin(created.id(),joiner.getId());
+            memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
+        }
+
+        assertError(()->memberships.remove(created.id(),member.getId(),other.getId()),ErrorCode.GROUP_OWNER_REQUIRED);
+        assertThat(memberRepository.findByGroupIdAndUserId(created.id(),other.getId()).orElseThrow().getStatus())
+                .isEqualTo(GroupMemberStatus.ACTIVE);
+
+        // 그룹장이 스스로를 내보내는 것도 탈퇴와 같은 안내를 받아야 한다.
+        assertError(()->memberships.remove(created.id(),owner.getId(),owner.getId()),ErrorCode.OWNER_CANNOT_LEAVE);
+    }
+
+    @Test
+    void ownerTransferRollsBackOwnerColumnAndBothRolesTogether() {
+        User owner=user("rollbackOwner"); User member=user("rollbackMember");
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest("위임 그룹","롤백을 검증합니다",GroupVisibility.PUBLIC,5));
+        GroupMemberResponse pending=memberships.requestJoin(created.id(),member.getId());
+        memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
+
+        // owner 컬럼과 두 role이 한 트랜잭션에 묶여 있는지 확인한다. 셋 중 하나라도
+        // 별도 트랜잭션에서 쓰였다면 바깥 롤백 후에도 그 변경만 남는다.
+        var template=new org.springframework.transaction.support.TransactionTemplate(txManager);
+        template.executeWithoutResult(status->{
+            // 롤백 전에 실제로 위임이 일어났음을 확인해야 이 테스트가 공허해지지 않는다.
+            assertThat(groups.transferOwner(created.id(),owner.getId(),member.getId()).ownerUserId())
+                    .isEqualTo(member.getId());
+            status.setRollbackOnly();
+        });
+
+        assertThat(jdbc.queryForObject("select owner_user_id from quest_groups where id=?",Long.class,created.id()))
+                .isEqualTo(owner.getId());
+        assertThat(role(created.id(),owner.getId())).isEqualTo(GroupMemberRole.OWNER.name());
+        assertThat(role(created.id(),member.getId())).isEqualTo(GroupMemberRole.MEMBER.name());
+    }
+
+    private String role(Long groupId,Long userId){
+        return jdbc.queryForObject("select role from group_members where group_id=? and user_id=?",String.class,groupId,userId);
     }
 
     private void assertError(org.assertj.core.api.ThrowableAssert.ThrowingCallable action,ErrorCode code){

@@ -56,6 +56,8 @@ class _GroupMembersState extends ConsumerState<GroupMembersScreen> {
       }
       ref.invalidate(groupMembersProvider(widget.groupId));
       ref.invalidate(groupDetailProvider(widget.groupId));
+      // 위임은 목록의 내 역할을, 내보내기는 멤버 수를 바꾼다. 둘 다 목록까지 갱신해야 한다.
+      ref.invalidate(myGroupsProvider);
     } catch (e) {
       if (mounted) showLqError(context, e);
     }

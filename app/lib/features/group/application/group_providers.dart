@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:life_quest/core/network/api_client.dart';
+import 'package:life_quest/features/group/application/group_chat_controller.dart';
 import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/features/group/data/group_repository.dart';
 
@@ -29,7 +30,13 @@ final upcomingGroupQuestsProvider =
 final pastGroupQuestsProvider = FutureProvider.family<List<GroupQuest>, int>(
   (ref, id) => ref.watch(groupRepositoryProvider).quests(id, upcoming: false),
 );
-final groupChatProvider = FutureProvider.autoDispose
-    .family<GroupMessagePage, int>(
-      (ref, id) => ref.watch(groupRepositoryProvider).messages(id),
+final groupChatProvider = Provider.autoDispose.family<GroupChatController, int>(
+  (ref, id) {
+    final controller = GroupChatController(
+      repository: ref.watch(groupRepositoryProvider),
+      groupId: id,
     );
+    ref.onDispose(controller.dispose);
+    return controller;
+  },
+);

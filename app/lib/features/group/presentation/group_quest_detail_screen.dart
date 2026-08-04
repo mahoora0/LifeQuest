@@ -47,6 +47,8 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
           .cancelQuest(widget.groupId, widget.questId);
       ref.invalidate(upcomingGroupQuestsProvider(widget.groupId));
       ref.invalidate(pastGroupQuestsProvider(widget.groupId));
+      // 그룹 상세는 최근 그룹 퀘스트 3개를 함께 내려주므로 취소 후 낡은 채로 남는다.
+      ref.invalidate(groupDetailProvider(widget.groupId));
       await load();
     } catch (e) {
       if (mounted) showLqError(context, e);
