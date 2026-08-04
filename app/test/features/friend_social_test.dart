@@ -134,7 +134,7 @@ void main() {
       expect(find.text('나 · 하늘'), findsOneWidget);
       expect(find.text('레벨'), findsOneWidget);
       expect(find.text('12 · 14'), findsOneWidget);
-      expect(find.text('LifeDex 수집'), findsOneWidget);
+      expect(find.text('도감 수집'), findsOneWidget);
       expect(find.text('42 · 51'), findsOneWidget);
       expect(find.text('달성 업적'), findsOneWidget);
       expect(find.text('24 · 31'), findsOneWidget);

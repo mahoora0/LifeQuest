@@ -258,7 +258,7 @@ class _SideBySideCard extends StatelessWidget {
           const SizedBox(height: 11),
           // 도감은 각자 전체 대비 몇 개인지가 뜻이라 트랙을 따로 준다.
           _CompareHeading(
-            label: 'LifeDex 수집',
+            label: '도감 수집',
             values: '${me.lifedexCollected} · ${friend.lifedexCollected}',
           ),
           const SizedBox(height: 4),

@@ -15,7 +15,6 @@ class LifedexCategory {
   final int ownedCount;
 
   bool get isLocked => ownedCount == 0;
-  double get ratio => totalCount == 0 ? 0 : ownedCount / totalCount;
 
   factory LifedexCategory.fromJson(Map<String, dynamic> json) =>
       LifedexCategory(
@@ -70,7 +69,5 @@ class LifedexOverview {
       categories.fold(0, (sum, category) => sum + category.totalCount);
   int get ownedCount =>
       categories.fold(0, (sum, category) => sum + category.ownedCount);
-  double get ratio => totalCount == 0 ? 0 : ownedCount / totalCount;
-  int get percent => (ratio * 100).round();
   bool get isEmpty => categories.isEmpty;
 }

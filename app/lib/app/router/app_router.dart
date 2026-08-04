@@ -181,7 +181,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AchievementScreen(
           initialTab: switch (state.uri.queryParameters['tab']) {
             'titles' => 1,
-            'badges' => 2,
             _ => 0,
           },
         ),
