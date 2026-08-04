@@ -39,6 +39,19 @@ public enum ErrorCode {
             HttpStatus.UNPROCESSABLE_CONTENT,
             "LOCATION_ACCURACY_TOO_LOW",
             "위치 정확도가 허용 기준보다 낮습니다."),
+    DUPLICATE_FRIEND_REQUEST(
+            HttpStatus.CONFLICT,
+            "DUPLICATE_FRIEND_REQUEST",
+            "이미 대기 중인 친구 요청이 있거나 친구 관계입니다."),
+    SELF_FRIEND_REQUEST_NOT_ALLOWED(
+            HttpStatus.BAD_REQUEST,
+            "SELF_FRIEND_REQUEST_NOT_ALLOWED",
+            "자기 자신에게 친구 요청을 보낼 수 없습니다."),
+    FRIENDSHIP_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "FRIENDSHIP_NOT_FOUND",
+            "친구 관계를 찾을 수 없습니다."),
+    CONFLICT(HttpStatus.CONFLICT, "CONFLICT", "현재 상태에서는 요청을 처리할 수 없습니다."),
     INTERNAL_SERVER_ERROR(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "INTERNAL_SERVER_ERROR",
