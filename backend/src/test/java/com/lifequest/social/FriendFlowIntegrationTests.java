@@ -3,6 +3,7 @@ package com.lifequest.social;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -94,6 +95,65 @@ class FriendFlowIntegrationTests {
                                 .andExpect(jsonPath("$.error.code").value("CONFLICT"));
         }
 
+        // 친구 목록 조회 테스트
+        @Test
+        void acceptedFriendsAppearInOwnPaginatedListOnly() throws Exception {
+                TestUser owner = createUser("목록사용자");
+                TestUser firstFriend = createUser("첫친구");
+                TestUser secondFriend = createUser("둘째친구");
+                TestUser outsider = createUser("목록외부인");
+
+                acceptRequest(owner, sendRequest(firstFriend, owner.id()));
+                acceptRequest(owner, sendRequest(secondFriend, owner.id()));
+
+                mockMvc.perform(get("/api/friends")
+                                .header("Authorization", bearer(owner.token()))
+                                .queryParam("page", "0")
+                                .queryParam("size", "1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(1))
+                                .andExpect(jsonPath("$.data.page").value(0))
+                                .andExpect(jsonPath("$.data.size").value(1))
+                                .andExpect(jsonPath("$.data.totalElements").value(2))
+                                .andExpect(jsonPath("$.data.totalPages").value(2))
+                                .andExpect(jsonPath("$.data.content[0].userId")
+                                                .value(secondFriend.id()))
+                                .andExpect(jsonPath("$.data.content[0].nickname")
+                                                .value(secondFriend.nickname()))
+                                .andExpect(jsonPath("$.data.content[0].level").value(1))
+                                .andExpect(jsonPath("$.data.content[0].totalExp").value(0))
+                                .andExpect(jsonPath("$.data.content[0].friendsSince").isNotEmpty());
+
+                mockMvc.perform(get("/api/friends")
+                                .header("Authorization", bearer(outsider.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(0))
+                                .andExpect(jsonPath("$.data.totalElements").value(0));
+        }
+
+        // 친구 삭제 테스트
+        @Test
+        void deletingFriendRemovesBothDirectionsAndCannotBeRepeated() throws Exception {
+                TestUser first = createUser("삭제사용자");
+                TestUser second = createUser("삭제친구");
+                acceptRequest(second, sendRequest(first, second.id()));
+
+                mockMvc.perform(delete("/api/friends/{friendId}", second.id())
+                                .header("Authorization", bearer(first.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.deleted").value(true));
+
+                assertFalse(friendshipRepository.existsByUserIdAndFriendId(
+                                first.id(), second.id()));
+                assertFalse(friendshipRepository.existsByUserIdAndFriendId(
+                                second.id(), first.id()));
+
+                mockMvc.perform(delete("/api/friends/{friendId}", second.id())
+                                .header("Authorization", bearer(first.token())))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.error.code").value("FRIENDSHIP_NOT_FOUND"));
+        }
+
         // 요청 거절 테스트
         @Test
         void rejectingRequestChangesStatusWithoutCreatingFriendship() throws Exception {
@@ -183,6 +243,18 @@ class FriendFlowIntegrationTests {
                                 result.getResponse().getContentAsString(),
                                 "$.data.requestId");
                 return requestId.longValue();
+        }
+
+        // 친구 요청 수락 헬퍼
+        private void acceptRequest(TestUser receiver, long requestId)
+                        throws Exception {
+                mockMvc.perform(patch("/api/friends/requests/{requestId}", requestId)
+                                .header("Authorization", bearer(receiver.token()))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {"action":"ACCEPT"}
+                                                """))
+                                .andExpect(status().isOk());
         }
 
         // 테스트용 사용자 생성 헬퍼
