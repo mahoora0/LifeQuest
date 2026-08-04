@@ -302,7 +302,7 @@ class CollectionEntry {
     this.secret = false,
     this.condition,
     this.expReward,
-    this.titleReward,
+    this.reward,
     this.symbol,
   });
 
@@ -317,8 +317,18 @@ class CollectionEntry {
 
   final int? expReward;
 
-  /// 함께 받은 칭호 이름.
-  final String? titleReward;
+  /// 함께 받은 보상. 종류·코드까지 담아 칭호와 프로필 아이템을 구분한다 — 이름만으로는
+  /// 구분되지 않는다. 계약은 `docs/04-api-spec.md` §4.
+  ///
+  /// 도감 항목은 보상 개념이 없어 항상 null이고, 업적은 지급 대상이 없거나 지급이 아직
+  /// 구현되지 않은 동안 null이다.
+  final GrowthReward? reward;
+
+  /// 함께 받은 칭호 이름. 보상이 칭호일 때만 값이 있다.
+  String? get titleReward {
+    final granted = reward;
+    return granted != null && granted.isTitle ? granted.name : null;
+  }
 
   /// 메달에 새길 짧은 글자. 서버가 주지 않으면 이름 첫 글자를 쓴다.
   final String? symbol;
@@ -330,7 +340,9 @@ class CollectionEntry {
         secret: asBool(pick(json, ['secret', 'isSecret', 'hidden'])),
         condition: asString(pick(json, ['condition', 'conditionText'])),
         expReward: asInt(pick(json, ['expReward', 'exp'])),
-        titleReward: asString(pick(json, ['titleReward', 'title'])),
+        reward: json['reward'] is Map
+            ? GrowthReward.fromJson(asMap(json['reward']))
+            : null,
         symbol: asString(pick(json, ['symbol', 'icon'])),
       );
 }
