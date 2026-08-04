@@ -2,6 +2,8 @@ package com.lifequest.social;
 
 import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
+import com.lifequest.social.dto.DeleteFriendResponse;
+import com.lifequest.social.dto.FriendPageResponse;
 import com.lifequest.social.dto.FriendRequestAction;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
@@ -64,6 +66,30 @@ public class FriendService {
                         FriendRequestStatus.PENDING,
                         PageRequest.of(page, size));
         return FriendRequestPageResponse.from(requests);
+    }
+
+    // 친구 목록 조회
+    @Transactional(readOnly = true)
+    public FriendPageResponse getFriends(Long currentUserId, int page, int size) {
+        validatePage(page, size);
+
+        Page<Friendship> friendships = friendshipRepository
+                .findAllByUserIdOrderByCreatedAtDescIdDesc(
+                        currentUserId,
+                        PageRequest.of(page, size));
+        return FriendPageResponse.from(friendships);
+    }
+
+    // 친구 관계 삭제
+    @Transactional
+    public DeleteFriendResponse deleteFriend(Long currentUserId, Long friendId) {
+        if (!friendshipRepository.existsByUserIdAndFriendId(currentUserId, friendId)) {
+            throw new BusinessException(ErrorCode.FRIENDSHIP_NOT_FOUND);
+        }
+
+        friendshipRepository.deleteByUserIdAndFriendId(currentUserId, friendId);
+        friendshipRepository.deleteByUserIdAndFriendId(friendId, currentUserId);
+        return DeleteFriendResponse.success();
     }
 
     // 친구 요청 수락 또는 거절

@@ -1,6 +1,8 @@
 package com.lifequest.social;
 
 import com.lifequest.common.response.ApiResponse;
+import com.lifequest.social.dto.DeleteFriendResponse;
+import com.lifequest.social.dto.FriendPageResponse;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestRequest;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +53,23 @@ public class FriendController {
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.success(
                 friendService.getReceivedRequests(userId(jwt), page, size));
+    }
+
+    // 친구 목록 조회
+    @GetMapping
+    public ApiResponse<FriendPageResponse> friends(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.success(friendService.getFriends(userId(jwt), page, size));
+    }
+
+    // 친구 관계 삭제
+    @DeleteMapping("/{friendId}")
+    public ApiResponse<DeleteFriendResponse> deleteFriend(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long friendId) {
+        return ApiResponse.success(friendService.deleteFriend(userId(jwt), friendId));
     }
 
     // 친구 요청 수락 또는 거절
