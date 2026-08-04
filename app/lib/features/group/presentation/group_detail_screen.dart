@@ -119,7 +119,7 @@ class GroupDetailScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        if (group.isOwner) ...[
+                        if (group.isOwner && !group.archived) ...[
                           const SizedBox(height: 8),
                           LqButton(
                             label: '가입 승인 관리',
