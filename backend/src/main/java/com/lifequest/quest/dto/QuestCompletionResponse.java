@@ -54,8 +54,11 @@ public record QuestCompletionResponse(
      * @param secret 비밀 업적인지. 앱은 이 값으로 완료 결과 위에 모달을 겹칠지 정한다(S-17).
      *               계약 예시에는 없던 필드지만 앱이 이미 읽고 있고, 빠지면 모달이 한 번도
      *               뜨지 않는다. 도감 항목에는 해당하지 않아 항상 {@code false}다.
+     * @param reward 이 항목과 함께 지급된 보상. 없으면 {@code null}이다. 도감 항목은 보상 개념이 없어
+     *               항상 {@code null}이고, 업적은 지급 대상이 없거나 지급이 아직 구현되지 않은 동안
+     *               {@code null}이다. 자세한 구분은 {@link com.lifequest.collection.CollectionOutcome.Entry}.
      */
-    public record Entry(Long id, String name, boolean secret) {
+    public record Entry(Long id, String name, boolean secret, RewardGrant reward) {
     }
 
     /**
