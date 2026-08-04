@@ -344,7 +344,6 @@ class _MyRecordCard extends ConsumerWidget {
     final lifedex = ref.watch(lifedexOverviewProvider);
     final achievements = ref.watch(achievementOverviewProvider);
     final titles = ref.watch(titleCollectionProvider);
-    final achieved = achievements.value?.achievedCount;
 
     return LqCard(
       background: LqColors.surfaceCard,
@@ -354,33 +353,14 @@ class _MyRecordCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _RecordRow(
-            leading: const _RecordTile(asset: LqAssets.iconMap, width: 26),
+            leading: const _RecordTile(asset: LqAssets.book, width: 42),
             label: '도감',
             caption: _caption(lifedex, (value) => '${value.ownedCount}개 수집'),
             onTap: () => context.push('/lifedex'),
           ),
           const LqDashedDivider(),
           _RecordRow(
-            leading: Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: LqColors.gold,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: LqColors.ink,
-                  width: LqShape.borderWidth,
-                ),
-              ),
-              child: Text(
-                achieved == null ? '—' : '$achieved',
-                style: LqText.badge.copyWith(
-                  fontSize: 15,
-                  color: LqColors.goldText,
-                ),
-              ),
-            ),
+            leading: const _RecordTile(asset: LqAssets.trophyCup, width: 42),
             label: '업적 / 칭호',
             caption: _caption(
               achievements,
@@ -418,8 +398,8 @@ class _RecordTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 34,
-      height: 34,
+      width: 48,
+      height: 48,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: LqColors.tileFill,
@@ -456,11 +436,11 @@ class _RecordRow extends StatelessWidget {
           constraints: const BoxConstraints(
             minHeight: LqSpacing.minTouchTarget,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               leading,
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
