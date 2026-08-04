@@ -15,8 +15,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException exception) {
         ErrorCode errorCode = exception.errorCode();
+        // 예외가 들고 온 메시지를 쓴다. 기본 생성자는 여기에 errorCode.message() 를
+        // 넣으므로 기존 동작은 그대로고, 상황값을 실은 경우에만 달라진다.
+        String message = exception.getMessage() != null
+                ? exception.getMessage()
+                : errorCode.message();
         return ResponseEntity.status(errorCode.status())
-                .body(ApiResponse.failure(errorCode.code(), errorCode.message()));
+                .body(ApiResponse.failure(errorCode.code(), message));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -47,6 +52,9 @@ public class GlobalExceptionHandler {
      * 실제로 앱이 아직 열리지 않은 구간(도감·업적·퀘스트)에서 준비 중 안내 대신
      * 서버 오류를 띄웠고, 5xx는 재시도 대상이라 40초 가까이 로딩만 돌았다.
      * 없는 경로가 5xx로 집계되면 장애 모니터링도 함께 오염된다.
+     *
+     * @param exception 스프링이 미매핑 경로에서 던진 예외
+     * @return 404 {@code ENDPOINT_NOT_FOUND}
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(

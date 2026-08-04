@@ -305,10 +305,10 @@ erDiagram
 | id | BIGINT | PK | ID |
 | user_id | BIGINT | FK → USERS.id | 사용자 |
 | quest_id | BIGINT | FK → QUESTS.id | 배정된 퀘스트 |
-| assigned_date | DATE | NOT NULL | 배정일 |
+| assigned_date | DATE | NOT NULL | **주기 시작일** — 일간은 논리적 일자 당일, 주간은 그 주 월요일, 월간은 그 달 1일 (`05-business-rules.md` §1-2) |
 | status | ENUM | NOT NULL | ASSIGNED / COMPLETED / EXPIRED |
-| expires_at | DATETIME | NOT NULL | 만료 일시 |
-| | | UNIQUE(user_id, quest_id, assigned_date) | 동일 배정 중복 방지 |
+| expires_at | DATETIME | NOT NULL | 만료 일시 — 다음 주기 시작 04:00 |
+| | | UNIQUE(user_id, quest_id, assigned_date) | 주기 단위 중복 배정 방지 |
 
 **QUEST_COMPLETIONS** — 완료·위치 인증 기록
 
@@ -427,7 +427,7 @@ erDiagram
 
 | 대상 | 인덱스 | 목적 |
 |---|---|---|
-| USER_DAILY_QUESTS | UNIQUE(user_id, quest_id, assigned_date) | 동일 배정 중복 방지 |
+| USER_DAILY_QUESTS | UNIQUE(user_id, quest_id, assigned_date) | 주기 단위 중복 배정 방지 — `assigned_date`에 주기 시작일이 들어가므로 주간·월간도 이 제약 하나로 막힌다 |
 | QUEST_COMPLETIONS | UNIQUE(user_daily_quest_id) | 완료 멱등성 보장(핵심) |
 | EXP_LOGS | UNIQUE(user_id, source_type, source_id) | 동일 근거의 EXP 재지급 방지 |
 | USER_LIFEDEX | UNIQUE(user_id, lifedex_item_id) | 도감 중복 등록 방지 |

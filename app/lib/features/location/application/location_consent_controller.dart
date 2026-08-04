@@ -127,20 +127,28 @@ class LocationConsentNotifier extends AsyncNotifier<LocationConsentStage> {
   Future<void> openSettings() =>
       ref.read(locationServiceProvider).openAppSettings();
 
-  /// 날짜 경계로 센다. 시각을 쓰면 밤에 미룬 사람의 재노출 시점이 한밤중이 된다.
+  /// 하루의 경계 시각. 자정이 아니라 04:00을 쓴다 — `docs/05-business-rules.md` §1-1.
+  static const dayBoundaryHour = 4;
+
+  /// 논리적 일자를 `yyyy-MM-dd`로 돌려준다. 날짜 경계로 세되 그 경계가 04:00이다.
   ///
-  /// 마이페이지 "최근 획득"의 날짜 계산과 같은 규칙이다(시안 §11-③).
+  /// 자정 경계로 세면 밤 11시에 미룬 사람이 자정을 넘겨 앱을 다시 켤 때 안내를 한 번 더
+  /// 본다. 시안 §11-③은 그 경우를 막겠다고 적어 두고 같은 항목에서 자정 경계를 지정해
+  /// 두 문장이 어긋나 있었다. 경계를 04:00으로 옮기면 23:00과 다음날 01:00이 같은 날이
+  /// 되어 "미룬 뒤 최소 N시간" 같은 장치를 따로 두지 않고도 막힌다.
   ///
-  // TODO(design): 이 규칙이면 밤 11시에 미룬 사람이 자정을 넘겨 앱을 다시 켰을 때
-  //  안내를 한 번 더 보게 된다. 시안 §11-③은 그 경우를 막겠다고 적었지만 같은 항목이
-  //  지정한 계산 방식(날짜 경계)으로는 막히지 않는다 — 두 문장이 어긋난다.
-  //  전면 안내를 앱 실행당 한 번으로 묶어 실사용에서의 빈도는 낮췄다.
-  //  "미룬 뒤 최소 N시간"을 더할지 결정 필요.
-  static String todayKey() {
-    final now = DateTime.now();
-    final month = now.month.toString().padLeft(2, '0');
-    final day = now.day.toString().padLeft(2, '0');
-    return '${now.year}-$month-$day';
+  /// 서버의 배정·만료 판정과 같은 규칙이고, 서버는 `Clock`·`ZoneId` 주입으로 계산한다.
+  /// 이쪽은 기기 로컬 시각을 쓴다 — 미룬 기록 자체가 계정이 아니라 기기에 붙는 값이라
+  /// 사용자가 이동한 지역의 새벽 4시에 맞춰 풀리는 편이 맞다.
+  ///
+  /// [at]은 테스트에서 시각을 고정하기 위한 것이다.
+  static String todayKey([DateTime? at]) {
+    final logical = (at ?? DateTime.now()).subtract(
+      const Duration(hours: dayBoundaryHour),
+    );
+    final month = logical.month.toString().padLeft(2, '0');
+    final day = logical.day.toString().padLeft(2, '0');
+    return '${logical.year}-$month-$day';
   }
 }
 

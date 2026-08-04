@@ -150,7 +150,7 @@
 
 | API | 요청 | 성공 응답 `data` | 주요 오류 |
 |---|---|---|---|
-| `GET /quests/today` | 없음 | `assignedDate`, `quests[]`(`dailyQuestId`, `questId`, `status`, 퀘스트 요약) | `UNAUTHORIZED` |
+| `GET /quests/today` | 없음 | `assignedDate`(조회 시점의 논리적 일자), `quests[]`(`dailyQuestId`, `questId`, `status`, 퀘스트 요약) | `UNAUTHORIZED` |
 | `GET /quests/{questId}` | path `questId` | 퀘스트 상세·장소·보상 | `RESOURCE_NOT_FOUND` |
 | `GET /quests/nearby` | query `lat`, `lng`, `radiusKm` | 오늘 배정된 LOCATION 퀘스트 `quests[]`(`dailyQuestId` 포함) | `VALIDATION_FAILED` |
 | `GET /users/me/quests/history` | `page`, `size` | 완료 기록 `content[]` | `UNAUTHORIZED` |
