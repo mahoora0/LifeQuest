@@ -6,13 +6,14 @@ import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/widgets/quest_rows.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 
-/// 퀘스트 목록 필터 — 주기(일간·주간·월간) 기준.
+/// 퀘스트 목록 필터 — 주기(일간·주간·협동) 기준.
 ///
 /// "전체" 칩은 두지 않는다. 진입 시 [daily]가 선택되고 항상 하나의 주기만 켜져 있다.
 /// 위치 인증 여부는 필터가 아니라 카드 우측의 보조 뱃지로 남는다 — 주기와 완료 방식은
@@ -46,9 +47,11 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayQuestsProvider);
+    final level = ref.watch(levelStatusProvider).value?.level ?? 1;
+    final unlocked = _filter.cadence.isUnlockedAt(level);
     // 조회 전에는 개수를 모르므로 레이블에서 개수만 뺀다. 0개로 보이면 오해를 부른다.
     final loaded = today.value;
-    final countLabel = loaded == null
+    final countLabel = loaded == null || !unlocked
         ? '${_filter.label} 퀘스트'
         : '${_filter.label} 퀘스트 · ${loaded.quests.where(_filter.matches).length}개';
 
@@ -85,13 +88,19 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
                 notReadyMessage: '퀘스트 목록은 아직 준비 중이에요',
                 notReadyHint: '배정이 열리면 주기별로 나눠 보여드려요.',
                 onRetry: () => ref.read(todayQuestsProvider.notifier).refresh(),
-                data: (value) => _QuestList(
-                  quests: value.quests.where(_filter.matches).toList(),
-                  emptyMessage: '오늘 배정된 ${_filter.label} 퀘스트가 없어요',
-                  onTap: _openDetail,
-                  onRefresh: () =>
-                      ref.read(todayQuestsProvider.notifier).refresh(),
-                ),
+                data: (value) => unlocked
+                    ? _QuestList(
+                        quests: value.quests.where(_filter.matches).toList(),
+                        emptyMessage:
+                            '오늘 배정된 ${_filter.label} 퀘스트가 없어요',
+                        onTap: _openDetail,
+                        onRefresh: () =>
+                            ref.read(todayQuestsProvider.notifier).refresh(),
+                      )
+                    : _QuestUnlockView(
+                        label: _filter.label,
+                        unlockLevel: _filter.cadence.unlockLevel,
+                      ),
               ),
             ),
           ],
@@ -114,6 +123,32 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
       extra: QuestDetailArgs(
         dailyQuestId: dailyQuest.dailyQuestId,
         status: dailyQuest.status,
+      ),
+    );
+  }
+}
+
+class _QuestUnlockView extends StatelessWidget {
+  const _QuestUnlockView({required this.label, required this.unlockLevel});
+
+  final String label;
+  final int unlockLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(LqSpacing.screen),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline, size: 34, color: LqColors.textSecondary),
+            const SizedBox(height: 10),
+            Text('$label 퀘스트는 Lv.$unlockLevel에 열려요', style: LqText.cardTitle),
+            const SizedBox(height: 6),
+            Text('일간 퀘스트로 경험치를 모아 보세요.', style: LqText.caption),
+          ],
+        ),
       ),
     );
   }

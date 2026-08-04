@@ -83,9 +83,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<CharacterResponse> getCharacters() {
-        return characterRepository.findAllByActiveTrueOrderById().stream()
-                .map(CharacterResponse::from)
+    public List<CharacterResponse> getCharacters(Long userId) {
+        User user = getUser(userId);
+        List<AvatarCharacter> characters =
+                characterRepository.findAllByActiveTrueOrderById();
+        return java.util.stream.IntStream.range(0, characters.size())
+                .mapToObj(index -> CharacterResponse.from(
+                        characters.get(index), requiredLevel(index), user.getLevel()))
                 .toList();
     }
 
@@ -95,6 +99,12 @@ public class UserService {
         AvatarCharacter character = characterRepository.findById(characterId)
                 .filter(AvatarCharacter::isActive)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        List<AvatarCharacter> characters =
+                characterRepository.findAllByActiveTrueOrderById();
+        int index = characters.indexOf(character);
+        if (index < 0 || user.getLevel() < requiredLevel(index)) {
+            throw new BusinessException(ErrorCode.CHARACTER_LOCKED);
+        }
         user.selectCharacter(character);
         return UserProfileResponse.from(user);
     }
@@ -222,5 +232,9 @@ public class UserService {
                 .map(UserSearchResponse::from);
 
         return UserSearchPageResponse.from(result);
+    }
+
+    private int requiredLevel(int characterIndex) {
+        return characterIndex == 0 ? 1 : characterIndex * 5;
     }
 }

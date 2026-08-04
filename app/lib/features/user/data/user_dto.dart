@@ -58,12 +58,16 @@ class AvatarCharacter {
     required this.code,
     required this.name,
     required this.assetKey,
+    this.requiredLevel = 1,
+    this.unlocked = true,
   });
 
   final int id;
   final String code;
   final String name;
   final String assetKey;
+  final int requiredLevel;
+  final bool unlocked;
 
   factory AvatarCharacter.fromJson(Map<String, dynamic> json) =>
       AvatarCharacter(
@@ -71,6 +75,8 @@ class AvatarCharacter {
         code: asString(json['code']) ?? 'ROOKIE',
         name: asString(json['name']) ?? '캐릭터',
         assetKey: asString(json['assetKey']) ?? 'rookie.png',
+        requiredLevel: asInt(json['requiredLevel']) ?? 1,
+        unlocked: json['unlocked'] as bool? ?? true,
       );
 }
 

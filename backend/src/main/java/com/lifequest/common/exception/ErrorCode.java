@@ -14,6 +14,7 @@ public enum ErrorCode {
             "AUTH_PROVIDER_NOT_CONFIGURED",
             "Google 로그인이 아직 설정되지 않았습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
+    CHARACTER_LOCKED(HttpStatus.FORBIDDEN, "CHARACTER_LOCKED", "아직 해금되지 않은 캐릭터입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 가입된 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "DUPLICATE_NICKNAME", "이미 사용 중인 닉네임입니다."),
     INVALID_PROFILE_IMAGE(

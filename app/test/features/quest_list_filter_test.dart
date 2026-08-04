@@ -7,18 +7,27 @@ import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
+import 'package:life_quest/features/user/data/user_dto.dart';
 
-/// 퀘스트 목록(S-08)의 조회 필터는 유형이 아니라 주기(일간·주간·월간) 기준이다.
+/// 퀘스트 목록(S-08)의 조회 필터는 유형이 아니라 주기(일간·주간·협동) 기준이다.
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  Future<void> pumpList(WidgetTester tester) async {
+  Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
     await tester.pumpWidget(
       ProviderScope(
+        key: UniqueKey(),
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          levelStatusProvider.overrideWith((ref) async => LevelStatus(
+            level: level,
+            totalExp: 0,
+            currentLevelExp: 0,
+            nextLevelRequiredExp: 100,
+          )),
         ],
         child: const MaterialApp(home: QuestListScreen()),
       ),
@@ -30,10 +39,10 @@ void main() {
     await pumpList(tester);
 
     // 일간은 칩 하나와 보이는 두 행의 주기 뱃지로 세 번 잡힌다.
-    // 주간·월간은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
+    // 주간·협동은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
     expect(find.text('일간'), findsNWidgets(3));
     expect(find.text('주간'), findsOneWidget);
-    expect(find.text('월간'), findsOneWidget);
+    expect(find.text('협동'), findsOneWidget);
     // "전체"가 없으므로 기본 선택이 반드시 하나 있어야 한다.
     expect(find.text('전체'), findsNothing);
 
@@ -69,18 +78,40 @@ void main() {
   testWidgets('그 주기에 배정이 없으면 주기를 짚어 안내한다', (tester) async {
     await pumpList(tester);
 
-    await tester.tap(find.text('월간'));
+    await tester.tap(find.text('협동'));
     await tester.pumpAndSettle();
 
-    expect(find.text('월간 퀘스트 · 0개'), findsOneWidget);
-    expect(find.text('오늘 배정된 월간 퀘스트가 없어요'), findsOneWidget);
+    expect(find.text('협동 퀘스트 · 0개'), findsOneWidget);
+    expect(find.text('오늘 배정된 협동 퀘스트가 없어요'), findsOneWidget);
+  });
+
+  testWidgets('주간 퀘스트는 Lv.3부터 열린다', (tester) async {
+    await pumpList(tester, level: 2);
+
+    await tester.tap(find.text('주간'));
+    await tester.pumpAndSettle();
+    expect(find.text('주간 퀘스트는 Lv.3에 열려요'), findsOneWidget);
+    expect(find.text('새로운 카페 방문하기'), findsNothing);
+
+    await pumpList(tester, level: 3);
+    await tester.tap(find.text('주간'));
+    await tester.pumpAndSettle();
+    expect(find.text('새로운 카페 방문하기'), findsOneWidget);
+  });
+
+  testWidgets('협동 퀘스트는 Lv.5부터 열린다', (tester) async {
+    await pumpList(tester, level: 4);
+
+    await tester.tap(find.text('협동'));
+    await tester.pumpAndSettle();
+    expect(find.text('협동 퀘스트는 Lv.5에 열려요'), findsOneWidget);
   });
 }
 
 class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
-  /// 월간은 일부러 비워 둔다 — 빈 주기 탭의 안내 문구를 확인하기 위해서다.
+  /// 협동(서버 MONTHLY)은 일부러 비워 둔다 — 빈 탭 안내를 확인하기 위해서다.
   @override
   Future<TodayQuests> fetchToday() async => const TodayQuests(
     assignedDate: '2026-07-27',
