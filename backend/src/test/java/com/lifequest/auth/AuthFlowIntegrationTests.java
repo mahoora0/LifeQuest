@@ -88,7 +88,11 @@ class AuthFlowIntegrationTests {
         mockMvc.perform(get("/api/users/me/characters")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(4));
+                .andExpect(jsonPath("$.data.length()").value(4))
+                .andExpect(jsonPath("$.data[0].requiredLevel").value(1))
+                .andExpect(jsonPath("$.data[0].unlocked").value(true))
+                .andExpect(jsonPath("$.data[1].requiredLevel").value(5))
+                .andExpect(jsonPath("$.data[1].unlocked").value(false));
 
         mockMvc.perform(patch("/api/users/me/character")
                         .header("Authorization", "Bearer " + accessToken)
@@ -96,8 +100,8 @@ class AuthFlowIntegrationTests {
                         .content("""
                                 {"characterId":2}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.selectedCharacter.name").value("모각"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("CHARACTER_LOCKED"));
 
         mockMvc.perform(get("/api/users/me/titles")
                         .header("Authorization", "Bearer " + accessToken))

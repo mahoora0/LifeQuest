@@ -11,6 +11,7 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
+import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -215,7 +216,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         character: character,
                         selected: character.id == _selectedCharacterId,
                         busy: character.id == _selectingCharacterId,
-                        onTap: () => _selectCharacter(character),
+                        onTap: character.unlocked
+                            ? () => _selectCharacter(character)
+                            : null,
                       );
                     },
                   ),
@@ -267,19 +270,12 @@ class _ProfilePhoto extends StatelessWidget {
             boxShadow: LqShape.cardShadow,
           ),
           child: resolved.isEmpty
-              ? const Icon(
-                  Icons.person_outline_rounded,
-                  size: 54,
-                  color: LqColors.textMuted,
-                )
+              ? const LqImage(LqAssets.charFront, width: 72)
               : Image.network(
                   resolved,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(
-                    Icons.person_outline_rounded,
-                    size: 54,
-                    color: LqColors.textMuted,
-                  ),
+                  errorBuilder: (_, _, _) =>
+                      const LqImage(LqAssets.charFront, width: 72),
                 ),
         ),
         const SizedBox(height: 10),
@@ -309,13 +305,13 @@ class _CharacterChoice extends StatelessWidget {
     required this.character,
     required this.selected,
     required this.busy,
-    required this.onTap,
+    this.onTap,
   });
 
   final AvatarCharacter character;
   final bool selected;
   final bool busy;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -328,18 +324,42 @@ class _CharacterChoice extends StatelessWidget {
           Column(
             children: [
               Expanded(
-                child: Image.asset(
-                  LqAssets.character(character.code),
-                  fit: BoxFit.contain,
+                child: ColorFiltered(
+                  colorFilter: character.unlocked
+                      ? const ColorFilter.mode(
+                          Colors.transparent,
+                          BlendMode.dst,
+                        )
+                      : const ColorFilter.mode(
+                          Colors.grey,
+                          BlendMode.saturation,
+                        ),
+                  child: Opacity(
+                    opacity: character.unlocked ? 1 : 0.45,
+                    child: Image.asset(
+                      LqAssets.character(character.code),
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
               Text(character.name, style: LqText.cardTitle),
+              if (!character.unlocked)
+                Text(
+                  'Lv. ${character.requiredLevel} 해금',
+                  style: LqText.caption,
+                ),
             ],
           ),
           if (selected)
             const Align(
               alignment: Alignment.topRight,
               child: Icon(Icons.check_circle, color: LqColors.primary),
+            ),
+          if (!character.unlocked)
+            const Align(
+              alignment: Alignment.topRight,
+              child: Icon(Icons.lock_rounded, color: LqColors.textMuted),
             ),
           if (busy)
             const Center(child: CircularProgressIndicator(strokeWidth: 2)),
