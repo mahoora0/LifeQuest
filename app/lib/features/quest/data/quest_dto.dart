@@ -24,13 +24,18 @@ enum QuestCompletionType {
 /// 완료 방식([QuestCompletionType])과는 별개의 축이다 — "새로운 카페 방문하기"처럼
 /// 주간이면서 위치 인증인 퀘스트가 있어 한쪽으로 다른 쪽을 유추할 수 없다.
 enum QuestCadence {
-  daily('일간'),
-  weekly('주간'),
-  monthly('월간');
+  daily('일간', 1),
+  weekly('주간', 3),
+  // 서버의 기존 MONTHLY 값은 협동 퀘스트로 전환될 예정이다. API 호환을 위해
+  // enum/wire 값은 유지하고 사용자에게 보이는 이름과 해금 규칙만 먼저 바꾼다.
+  monthly('협동', 5);
 
-  const QuestCadence(this.label);
+  const QuestCadence(this.label, this.unlockLevel);
 
   final String label;
+  final int unlockLevel;
+
+  bool isUnlockedAt(int level) => level >= unlockLevel;
 
   /// 모르는 값과 누락은 [daily]로 본다.
   ///
