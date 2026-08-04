@@ -107,7 +107,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
                 quest.getGrade(),
                 questCompletion.getCompletedAt(),
                 true,
-                request.hasLocation() ?
+                isLocationType(quest) ?
                     new QuestCompletionResponse.Location(questCompletion.getDistanceM(), questCompletion.getAccuracyM()) : null,
                 QuestCompletionResponse.noGrowth(user.getTotalExp(), user.getLevel()),
                 QuestCompletionResponse.nothingCollected());
@@ -178,7 +178,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             quest.getGrade(),
             now,
             false,
-            quest.getCompletionType() == CompletionType.LOCATION ?
+            isLocationType(quest) ?
                 new QuestCompletionResponse.Location(distanceM, accuracyM) : null,
             new QuestCompletionResponse.Growth(
                 growthResult.expGained(),
@@ -234,5 +234,9 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
 
         // 거리(미터)
         return EARTH_RADIUS_M * centralAngleRad;
+    }
+
+    private boolean isLocationType(Quest quest) {
+        return quest.getCompletionType() == CompletionType.LOCATION;
     }
 }
