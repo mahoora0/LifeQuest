@@ -3,6 +3,7 @@ package com.lifequest.social;
 import com.lifequest.common.response.ApiResponse;
 import com.lifequest.social.dto.DeleteFriendResponse;
 import com.lifequest.social.dto.FriendPageResponse;
+import com.lifequest.social.dto.FriendProfileResponse;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestRequest;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
@@ -70,6 +71,14 @@ public class FriendController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long friendId) {
         return ApiResponse.success(friendService.deleteFriend(userId(jwt), friendId));
+    }
+
+    // 친구 공개 프로필과 활동 요약 조회
+    @GetMapping("/{friendId}/profile")
+    public ApiResponse<FriendProfileResponse> friendProfile(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long friendId) {
+        return ApiResponse.success(friendService.getFriendProfile(userId(jwt), friendId));
     }
 
     // 친구 요청 수락 또는 거절

@@ -5,6 +5,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface QuestCompletionRepository extends JpaRepository<QuestCompletion, Long> {
 
@@ -17,4 +19,17 @@ public interface QuestCompletionRepository extends JpaRepository<QuestCompletion
      * 보장되지 않아 한 건이 두 페이지에 중복되고 다른 건이 누락된다.
      */
     Page<QuestCompletion> findByUserIdOrderByCompletedAtDescIdDesc(Long userId, Pageable pageable);
+
+    long countByUserId(Long userId);
+
+    /** 위치 좌표나 방문 시각은 노출하지 않고, 완료한 서로 다른 장소 수만 집계한다. */
+    @Query(value = """
+            SELECT COUNT(DISTINCT q.place_name)
+            FROM quest_completions qc
+            JOIN quests q ON q.id = qc.quest_id
+            WHERE qc.user_id = :userId
+              AND q.place_name IS NOT NULL
+              AND TRIM(q.place_name) <> ''
+            """, nativeQuery = true)
+    long countDistinctVisitedPlacesByUserId(@Param("userId") Long userId);
 }

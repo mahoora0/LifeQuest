@@ -170,12 +170,14 @@
 | `PATCH /friends/requests/{requestId}` | `action`: `ACCEPT` / `REJECT` | `requestId`, `status`, `respondedAt` | `RESOURCE_NOT_FOUND`, `FORBIDDEN`, `CONFLICT` |
 | `GET /friends` | `page`, `size` | 친구 공개 프로필 `content[]` | `UNAUTHORIZED` |
 | `DELETE /friends/{userId}` | path `userId` | `deleted: true` | `FRIENDSHIP_NOT_FOUND` |
-| `GET /friends/{userId}/profile` | path `userId` | 레벨·EXP·도감 진행률·업적·방문 지역 수 | `FRIENDSHIP_NOT_FOUND` |
+| `GET /friends/{userId}/profile` | path `userId` | 공개 프로필, 본인·친구의 레벨·EXP·완료 퀘스트 수·방문 장소 수 | `FRIENDSHIP_NOT_FOUND` |
 | `GET /rankings/global` | `page`, `size` | EXP 기준 순위 `content[]` | `UNAUTHORIZED` |
 | `GET /rankings/friends` | `page`, `size` | 본인과 친구의 EXP 기준 순위 `content[]` | `UNAUTHORIZED` |
 | `POST /admin/quests` | 퀘스트 필드(LOCATION이면 장소·좌표·반경 필수) | 생성된 퀘스트 | `FORBIDDEN`, `VALIDATION_FAILED` |
 | `PATCH /admin/quests/{questId}` | 변경할 퀘스트 필드 | 변경된 퀘스트 | `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED` |
 | `DELETE /admin/quests/{questId}` | path `questId` | `deactivated: true` | `FORBIDDEN`, `RESOURCE_NOT_FOUND` |
+
+> 친구 프로필의 도감 진행률·업적 수는 collection 도메인의 실제 테이블과 API가 구현된 뒤 응답에 확장한다. 구현 전에는 0으로 꾸며 반환하지 않는다.
 
 ## 4. 핵심 API 상세 — 퀘스트 완료
 

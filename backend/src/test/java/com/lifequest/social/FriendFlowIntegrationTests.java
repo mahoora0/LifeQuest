@@ -10,6 +10,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lifequest.quest.domain.CompletionType;
+import com.lifequest.quest.domain.Quest;
+import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCompletion;
+import com.lifequest.quest.domain.QuestCreator;
+import com.lifequest.quest.domain.QuestGrade;
+import com.lifequest.quest.domain.UserDailyQuest;
+import com.lifequest.quest.repository.QuestCompletionRepository;
+import com.lifequest.quest.repository.QuestRepository;
+import com.lifequest.quest.repository.UserDailyQuestRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +49,15 @@ class FriendFlowIntegrationTests {
 
         @Autowired
         private FriendshipRepository friendshipRepository;
+
+        @Autowired
+        private QuestRepository questRepository;
+
+        @Autowired
+        private UserDailyQuestRepository userDailyQuestRepository;
+
+        @Autowired
+        private QuestCompletionRepository questCompletionRepository;
 
         // 요청 전송 및 목록 테스트
         @Test
@@ -154,6 +176,39 @@ class FriendFlowIntegrationTests {
                                 .andExpect(jsonPath("$.error.code").value("FRIENDSHIP_NOT_FOUND"));
         }
 
+        // 친구 공개 프로필과 활동 요약 조회 테스트
+        @Test
+        void friendProfileComparesPublicActivityWithoutExposingPrivateData() throws Exception {
+                TestUser owner = createUser("프로필사용자");
+                TestUser friend = createUser("프로필친구");
+                TestUser outsider = createUser("프로필외부인");
+                acceptRequest(friend, sendRequest(owner, friend.id()));
+
+                completeQuest(friend.id(), "같은 공원", 0);
+                completeQuest(friend.id(), "같은 공원", 1);
+                completeQuest(friend.id(), null, 2);
+
+                mockMvc.perform(get("/api/friends/{friendId}/profile", friend.id())
+                                .header("Authorization", bearer(owner.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.userId").value(friend.id()))
+                                .andExpect(jsonPath("$.data.nickname").value(friend.nickname()))
+                                .andExpect(jsonPath("$.data.me.level").value(1))
+                                .andExpect(jsonPath("$.data.me.completedQuestCount").value(0))
+                                .andExpect(jsonPath("$.data.me.visitedPlaceCount").value(0))
+                                .andExpect(jsonPath("$.data.friend.level").value(1))
+                                .andExpect(jsonPath("$.data.friend.completedQuestCount").value(3))
+                                .andExpect(jsonPath("$.data.friend.visitedPlaceCount").value(1))
+                                .andExpect(jsonPath("$.data.email").doesNotExist())
+                                .andExpect(jsonPath("$.data.friend.email").doesNotExist())
+                                .andExpect(jsonPath("$.data.friend.verifiedLatitude").doesNotExist());
+
+                mockMvc.perform(get("/api/friends/{friendId}/profile", friend.id())
+                                .header("Authorization", bearer(outsider.token())))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.error.code").value("FRIENDSHIP_NOT_FOUND"));
+        }
+
         // 요청 거절 테스트
         @Test
         void rejectingRequestChangesStatusWithoutCreatingFriendship() throws Exception {
@@ -255,6 +310,39 @@ class FriendFlowIntegrationTests {
                                                 {"action":"ACCEPT"}
                                                 """))
                                 .andExpect(status().isOk());
+        }
+
+        // 공개 활동 집계용 완료 기록 생성 헬퍼
+        private void completeQuest(long userId, String placeName, int dayOffset) {
+                boolean locationBased = placeName != null;
+                Quest quest = questRepository.save(new Quest(
+                                "프로필 집계 퀘스트 " + SEQUENCE.incrementAndGet(),
+                                "친구 프로필 테스트",
+                                QuestGrade.NORMAL,
+                                QuestCadence.DAILY,
+                                locationBased ? CompletionType.LOCATION : CompletionType.SELF_REPORT,
+                                10,
+                                placeName,
+                                locationBased ? new BigDecimal("37.5665000") : null,
+                                locationBased ? new BigDecimal("126.9780000") : null,
+                                locationBased ? 100 : null,
+                                null,
+                                QuestCreator.ADMIN,
+                                true));
+                LocalDate assignedDate = LocalDate.now().plusDays(dayOffset);
+                UserDailyQuest assignment = userDailyQuestRepository.save(new UserDailyQuest(
+                                userId,
+                                quest.getId(),
+                                assignedDate,
+                                assignedDate.plusDays(1).atStartOfDay()));
+                assignment.markCompleted();
+                questCompletionRepository.save(new QuestCompletion(
+                                assignment,
+                                null,
+                                null,
+                                null,
+                                null,
+                                LocalDateTime.now().plusDays(dayOffset)));
         }
 
         // 테스트용 사용자 생성 헬퍼

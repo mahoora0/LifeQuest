@@ -2,8 +2,11 @@ package com.lifequest.social;
 
 import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
+import com.lifequest.quest.repository.QuestCompletionRepository;
 import com.lifequest.social.dto.DeleteFriendResponse;
+import com.lifequest.social.dto.FriendActivitySummary;
 import com.lifequest.social.dto.FriendPageResponse;
+import com.lifequest.social.dto.FriendProfileResponse;
 import com.lifequest.social.dto.FriendRequestAction;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
@@ -22,14 +25,17 @@ public class FriendService {
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
     private final FriendshipRepository friendshipRepository;
+    private final QuestCompletionRepository questCompletionRepository;
 
     public FriendService(
             UserRepository userRepository,
             FriendRequestRepository friendRequestRepository,
-            FriendshipRepository friendshipRepository) {
+            FriendshipRepository friendshipRepository,
+            QuestCompletionRepository questCompletionRepository) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
         this.friendshipRepository = friendshipRepository;
+        this.questCompletionRepository = questCompletionRepository;
     }
 
     // 친구 요청 전송
@@ -92,6 +98,21 @@ public class FriendService {
         return DeleteFriendResponse.success();
     }
 
+    // 친구 공개 프로필과 활동 요약 조회
+    @Transactional(readOnly = true)
+    public FriendProfileResponse getFriendProfile(Long currentUserId, Long friendId) {
+        if (!friendshipRepository.existsByUserIdAndFriendId(currentUserId, friendId)) {
+            throw new BusinessException(ErrorCode.FRIENDSHIP_NOT_FOUND);
+        }
+
+        User currentUser = getUser(currentUserId);
+        User friend = getUser(friendId);
+        return FriendProfileResponse.of(
+                friend,
+                activitySummary(currentUser),
+                activitySummary(friend));
+    }
+
     // 친구 요청 수락 또는 거절
     @Transactional
     public RespondFriendRequestResponse respondToRequest(
@@ -146,6 +167,13 @@ public class FriendService {
     private User getUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private FriendActivitySummary activitySummary(User user) {
+        return FriendActivitySummary.of(
+                user,
+                questCompletionRepository.countByUserId(user.getId()),
+                questCompletionRepository.countDistinctVisitedPlacesByUserId(user.getId()));
     }
 
     // 페이지 번호와 페이지 크기를 검증, 유효하지 않으면 예외 발생
