@@ -474,6 +474,8 @@ class _MenuCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
+          _MenuRow(label: '내 그룹', onTap: () => context.push('/groups')),
+          const LqDashedDivider(),
           _MenuRow(label: '프로필 수정', onTap: () => context.push('/profile/edit')),
           // "칭호 선택" 행은 제거했다. 칭호 변경은 업적 화면의 칭호 탭에서 한다.
           const LqDashedDivider(),

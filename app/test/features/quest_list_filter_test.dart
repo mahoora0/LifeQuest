@@ -7,18 +7,32 @@ import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
+import 'package:life_quest/features/user/data/user_dto.dart';
 
-/// 퀘스트 목록(S-08)의 조회 필터는 유형이 아니라 주기(일간·주간·월간) 기준이다.
+/// 퀘스트 목록(S-08)은 일간·주간·협동으로 나뉘며 레벨 해금 정책을 따른다.
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  Future<void> pumpList(WidgetTester tester) async {
+  Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          levelStatusProvider.overrideWith(
+            (ref) async => LevelStatus(
+              level: level,
+              totalExp: 0,
+              currentLevelExp: 0,
+              nextLevelRequiredExp: 100,
+              unlocks: QuestUnlocks(
+                weekly: QuestUnlock(level >= 3, 3),
+                coop: QuestUnlock(level >= 5, 5),
+              ),
+            ),
+          ),
         ],
         child: const MaterialApp(home: QuestListScreen()),
       ),
@@ -30,10 +44,10 @@ void main() {
     await pumpList(tester);
 
     // 일간은 칩 하나와 보이는 두 행의 주기 뱃지로 세 번 잡힌다.
-    // 주간·월간은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
+    // 주간·협동은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
     expect(find.text('일간'), findsNWidgets(3));
     expect(find.text('주간'), findsOneWidget);
-    expect(find.text('월간'), findsOneWidget);
+    expect(find.text('협동'), findsOneWidget);
     // "전체"가 없으므로 기본 선택이 반드시 하나 있어야 한다.
     expect(find.text('전체'), findsNothing);
 
@@ -66,21 +80,20 @@ void main() {
     expect(find.text('위치'), findsOneWidget);
   });
 
-  testWidgets('그 주기에 배정이 없으면 주기를 짚어 안내한다', (tester) async {
-    await pumpList(tester);
+  testWidgets('해금 전 주간 탭은 필요한 레벨을 안내한다', (tester) async {
+    await pumpList(tester, level: 1);
 
-    await tester.tap(find.text('월간'));
+    await tester.tap(find.text('주간'));
     await tester.pumpAndSettle();
 
-    expect(find.text('월간 퀘스트 · 0개'), findsOneWidget);
-    expect(find.text('오늘 배정된 월간 퀘스트가 없어요'), findsOneWidget);
+    expect(find.text('Lv. 3에 열려요'), findsOneWidget);
+    expect(find.text('현재 Lv. 1'), findsOneWidget);
   });
 }
 
 class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
-  /// 월간은 일부러 비워 둔다 — 빈 주기 탭의 안내 문구를 확인하기 위해서다.
   @override
   Future<TodayQuests> fetchToday() async => const TodayQuests(
     assignedDate: '2026-07-27',
