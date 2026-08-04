@@ -92,14 +92,13 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
 
-        User user = userRepository.findById(requestUserId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
         Quest quest = questRepository.findById(userDailyQuest.getQuestId())
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         Optional<QuestCompletion> checkQuestCompletion = questCompletionRepository.findByUserDailyQuestId(userDailyQuest.getId());
         if (checkQuestCompletion.isPresent()) {
+            User user = userRepository.findById(requestUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
             QuestCompletion questCompletion = checkQuestCompletion.get();
             return new QuestCompletionResponse(
                 questCompletion.getId(),
