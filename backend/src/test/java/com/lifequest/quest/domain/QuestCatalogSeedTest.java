@@ -63,7 +63,7 @@ class QuestCatalogSeedTest {
     }
 
     /**
-     * V12가 37·38을 비활성으로 내리기 전까지 이 테스트는 "시드는 전부 배정 풀에 들어간다"였다.
+     * V15가 37·38을 비활성으로 내리기 전까지 이 테스트는 "시드는 전부 배정 풀에 들어간다"였다.
      * 이제 예외가 둘 생겼으므로 단언을 느슨하게 풀면 실수로 비활성된 퀘스트를 잡지 못한다
      * — 비활성은 조용하다. 그 퀘스트는 예외도 로그도 없이 배정 후보에서 사라질 뿐이다.
      *
@@ -80,7 +80,7 @@ class QuestCatalogSeedTest {
                         .map(Quest::getId)
                         .collect(Collectors.toSet()),
                 "비활성 시드는 37(한 달 예산 점검)·38(건강검진)뿐이어야 한다 — "
-                        + "월간 폐지로 주 단위 반복이 어색해진 둘만 내렸다(V12)");
+                        + "월간 폐지로 주 단위 반복이 어색해진 둘만 내렸다(V15)");
 
         for (Quest quest : seededQuests()) {
             assertEquals(quest.isActive(), pool.contains(quest),
@@ -121,7 +121,7 @@ class QuestCatalogSeedTest {
      * <p>후보 존재 여부만 검사하면 분포가 통째로 달라져도 통과하므로 실제 건수를 고정한다.
      * 시드를 늘리거나 등급을 바꾸면 이 테스트가 먼저 실패해 머리말 수치를 함께 갱신하게 만든다.
      *
-     * <p>등급 분포의 출처는 V6 머리말이고 주기 분포는 V12 머리말이다 — V12가 37~42의 주기를 옮겼고,
+     * <p>등급 분포의 출처는 V6 머리말이고 주기 분포는 V15 머리말이다 — V15가 37~42의 주기를 옮겼고,
      * 이미 적용된 V6는 체크섬 때문에 고칠 수 없어 머리말이 낡은 채 남아 있다.
      * 두 수치 모두 <b>비활성 2건을 포함한</b> id 1~42 전체 기준이다.
      */
@@ -138,7 +138,7 @@ class QuestCatalogSeedTest {
                 Map.of(QuestCadence.DAILY, 24L, QuestCadence.WEEKLY, 18L),
                 seededQuests().stream()
                         .collect(Collectors.groupingBy(Quest::getCadence, Collectors.counting())),
-                "주기 분포가 V12 머리말과 다르다 — 주간 18건은 기존 12건에 재분류된 37~42를 더한 값이다");
+                "주기 분포가 V15 머리말과 다르다 — 주간 18건은 기존 12건에 재분류된 37~42를 더한 값이다");
     }
 
     @Test
