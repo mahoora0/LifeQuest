@@ -98,6 +98,22 @@ public class FriendService {
                         PageRequest.of(page, size)));
     }
 
+    @Transactional
+    public RespondFriendRequestResponse cancelSentRequest(
+            Long currentUserId,
+            Long requestId) {
+        FriendRequest request = friendRequestRepository.findByIdForUpdate(requestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!request.getSender().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        if (request.getStatus() != FriendRequestStatus.PENDING) {
+            throw new BusinessException(ErrorCode.CONFLICT);
+        }
+        request.cancel();
+        return RespondFriendRequestResponse.from(request);
+    }
+
     // 친구 목록 조회
     @Transactional(readOnly = true)
     public FriendPageResponse getFriends(Long currentUserId, int page, int size) {

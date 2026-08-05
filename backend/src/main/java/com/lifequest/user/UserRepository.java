@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByNicknameAndIdNot(String nickname, Long id);
 
+    Optional<User> findByFriendCodeIgnoreCaseAndIdNot(String friendCode, Long id);
+
     // 닉네임을 기준으로 사용자를 검색하는 데이터베이스 조회 기능 추가
     Page<User> findByNicknameContainingIgnoreCaseAndIdNot(
             String nickname,

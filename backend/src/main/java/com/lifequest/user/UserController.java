@@ -10,6 +10,7 @@ import com.lifequest.user.dto.RepresentativeTitleRequest;
 import com.lifequest.user.dto.RewardHistoryResponse;
 import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.UserProfileResponse;
+import com.lifequest.user.dto.FriendCodeResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,11 @@ public class UserController {
     @GetMapping
     public ApiResponse<UserProfileResponse> me(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(userService.getProfile(userId(jwt)));
+    }
+
+    @GetMapping("/friend-code")
+    public ApiResponse<FriendCodeResponse> friendCode(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.success(userService.getFriendCode(userId(jwt)));
     }
 
     @PatchMapping

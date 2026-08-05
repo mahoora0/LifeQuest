@@ -59,6 +59,26 @@ class FriendFlowIntegrationTests {
         @Autowired
         private QuestCompletionRepository questCompletionRepository;
 
+        @Test
+        void friendCodeIsCreatedAndFindsAnotherUser() throws Exception {
+                TestUser owner = createUser("코드주인");
+                TestUser finder = createUser("코드검색");
+
+                MvcResult codeResult = mockMvc.perform(get("/api/users/me/friend-code")
+                                .header("Authorization", bearer(owner.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.friendCode").value(org.hamcrest.Matchers.matchesPattern("LQ-[0-9A-F]{8}")))
+                                .andReturn();
+                String code = JsonPath.read(codeResult.getResponse().getContentAsString(), "$.data.friendCode");
+
+                mockMvc.perform(get("/api/users/search")
+                                .header("Authorization", bearer(finder.token()))
+                                .queryParam("query", code))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content[0].userId").value(owner.id()))
+                                .andExpect(jsonPath("$.data.content[0].nickname").value(owner.nickname()));
+        }
+
         // 요청 전송 및 목록 테스트
         @Test
         void sentRequestAppearsInReceiversPendingRequestList() throws Exception {
@@ -93,6 +113,28 @@ class FriendFlowIntegrationTests {
                                 .andExpect(jsonPath("$.data.content[0].receiverNickname")
                                                 .value(receiver.nickname()))
                                 .andExpect(jsonPath("$.data.content[0].status").value("PENDING"));
+        }
+
+        @Test
+        void senderCanCancelPendingFriendRequest() throws Exception {
+                TestUser sender = createUser("취소발신");
+                TestUser receiver = createUser("취소수신");
+                long requestId = sendRequest(sender, receiver.id());
+
+                mockMvc.perform(delete("/api/friends/requests/{requestId}", requestId)
+                                .header("Authorization", bearer(sender.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.requestId").value(requestId))
+                                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+
+                mockMvc.perform(get("/api/friends/requests/sent")
+                                .header("Authorization", bearer(sender.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(0));
+                mockMvc.perform(get("/api/friends/requests")
+                                .header("Authorization", bearer(receiver.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(0));
         }
 
         // 요청 수락 테스트

@@ -22,7 +22,8 @@ public class UserSearchController {
     @GetMapping("/search")
     public ApiResponse<UserSearchPageResponse> search(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam("nickname") String nickname,
+            @RequestParam(name = "nickname", required = false) String nickname,
+            @RequestParam(name = "query", required = false) String query,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size) {
         // 자기 자신을 검색 결과에서 제외
@@ -31,7 +32,7 @@ public class UserSearchController {
         return ApiResponse.success(
                 userService.searchUsers(
                         currentUserId,
-                        nickname,
+                        query == null ? nickname : query,
                         page,
                         size));
     }

@@ -70,6 +70,10 @@ public class FriendRequest {
         respond(FriendRequestStatus.REJECTED);
     }
 
+    public void cancel() {
+        respond(FriendRequestStatus.CANCELLED);
+    }
+
     private void respond(FriendRequestStatus nextStatus) {
         if (status != FriendRequestStatus.PENDING) {
             throw new IllegalStateException("대기 중인 친구 요청만 처리할 수 있습니다");
