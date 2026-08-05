@@ -140,21 +140,28 @@ class AdventurerSearchResult {
 /// 동료 신청 한 건 (`GET /api/friends/requests`).
 class FriendRequest {
   const FriendRequest({
+    this.requestId = 0,
     required this.userId,
     required this.nickname,
     required this.level,
     this.statusLine,
   });
 
+  final int requestId;
   final int userId;
   final String nickname;
   final int level;
   final String? statusLine;
 
   factory FriendRequest.fromJson(Map<String, dynamic> json) => FriendRequest(
-    userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
-    nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
-    level: asInt(json['level']) ?? 1,
+    requestId: asInt(pick(json, ['requestId', 'id'])) ?? 0,
+    userId: asInt(pick(json, ['userId', 'senderId', 'receiverId'])) ?? 0,
+    nickname:
+        asString(
+          pick(json, ['nickname', 'senderNickname', 'receiverNickname']),
+        ) ??
+        '모험가',
+    level: asInt(pick(json, ['level', 'senderLevel', 'receiverLevel'])) ?? 1,
     statusLine: asString(pick(json, ['statusLine', 'summary'])),
   );
 }

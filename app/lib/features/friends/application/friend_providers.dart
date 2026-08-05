@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/core/network/api_client.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
 
 final friendRepositoryProvider = Provider<FriendRepository>((ref) {
-  return const FriendRepository();
+  return FriendRepository(ref.watch(dioProvider));
 });
 
 /// 친구 목록(S-18). 응원 상태를 화면에서 바꿔야 해서 Notifier로 둔다.
@@ -199,7 +200,7 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
     try {
       await ref
           .read(friendRepositoryProvider)
-          .respondToRequest(userId, accept: accept);
+          .respondToRequest(target.requestId, accept: accept);
       // 수락하면 친구 목록이 한 명 늘어난다. 다시 열었을 때 비어 있지 않도록
       // 목록을 무효화해 다음 조회에서 새로 받게 한다.
       if (accept) ref.invalidate(friendListProvider);
