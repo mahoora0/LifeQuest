@@ -79,6 +79,18 @@ void main() {
     expect(find.text('랭킹은 매주 월요일 0시에 초기화돼요'), findsOneWidget);
   });
 
+  testWidgets('레벨 랭킹으로 전환하면 레벨 값을 보여준다', (tester) async {
+    await pumpFriends(tester);
+
+    await tester.tap(find.text('이번 주 랭킹'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('레벨 랭킹'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lv. 7'), findsOneWidget);
+    expect(find.text('EXP 380'), findsNothing);
+  });
+
   testWidgets('친구가 없어도 코드 카드는 남아 추가 경로를 잃지 않는다', (tester) async {
     await pumpFriends(tester, repository: const _EmptyFriendRepository());
 
@@ -118,12 +130,21 @@ class _FakeFriendRepository extends FriendRepository {
   );
 
   @override
-  Future<WeeklyRanking> fetchWeeklyRanking() async => const WeeklyRanking(
+  Future<WeeklyRanking> fetchWeeklyRanking({
+    RankingType type = RankingType.exp,
+  }) async => const WeeklyRanking(
     rankDelta: 1,
     entries: [
-      RankEntry(rank: 1, userId: 11, nickname: '민서', weeklyExp: 380),
-      RankEntry(rank: 2, userId: 1, nickname: '나', weeklyExp: 305, isMe: true),
-      RankEntry(rank: 3, userId: 12, nickname: '준호', weeklyExp: 260),
+      RankEntry(rank: 1, userId: 11, nickname: '민서', weeklyExp: 380, level: 7),
+      RankEntry(
+        rank: 2,
+        userId: 1,
+        nickname: '나',
+        weeklyExp: 305,
+        level: 6,
+        isMe: true,
+      ),
+      RankEntry(rank: 3, userId: 12, nickname: '준호', weeklyExp: 260, level: 5),
     ],
   );
 }
@@ -140,7 +161,9 @@ class _NoDeltaFriendRepository extends FriendRepository {
   const _NoDeltaFriendRepository();
 
   @override
-  Future<WeeklyRanking> fetchWeeklyRanking() async => const WeeklyRanking(
+  Future<WeeklyRanking> fetchWeeklyRanking({
+    RankingType type = RankingType.exp,
+  }) async => const WeeklyRanking(
     entries: [
       RankEntry(rank: 1, userId: 1, nickname: '나', weeklyExp: 305, isMe: true),
       RankEntry(rank: 2, userId: 12, nickname: '준호', weeklyExp: 260),

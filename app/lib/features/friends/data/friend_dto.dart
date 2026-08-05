@@ -289,12 +289,21 @@ class FriendJourney {
 }
 
 /// 주간 랭킹 한 줄 (`GET /api/rankings/friends`).
+enum RankingType {
+  exp('EXP'),
+  level('LEVEL');
+
+  const RankingType(this.apiValue);
+  final String apiValue;
+}
+
 class RankEntry {
   const RankEntry({
     required this.rank,
     required this.userId,
     required this.nickname,
     required this.weeklyExp,
+    this.level = 1,
     this.isMe = false,
   });
 
@@ -302,6 +311,7 @@ class RankEntry {
   final int userId;
   final String nickname;
   final int weeklyExp;
+  final int level;
   final bool isMe;
 
   factory RankEntry.fromJson(Map<String, dynamic> json) => RankEntry(
@@ -309,6 +319,7 @@ class RankEntry {
     userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
     nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
     weeklyExp: asInt(pick(json, ['weeklyExp', 'exp', 'totalExp'])) ?? 0,
+    level: asInt(json['level']) ?? 1,
     isMe: asBool(pick(json, ['isMe', 'me'])),
   );
 }

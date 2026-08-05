@@ -25,10 +25,12 @@ class FriendRepository {
     return FriendList.fromJson(response.data);
   });
 
-  Future<WeeklyRanking> fetchWeeklyRanking() => _guard(() async {
+  Future<WeeklyRanking> fetchWeeklyRanking({
+    RankingType type = RankingType.exp,
+  }) => _guard(() async {
     final response = await _client.get<dynamic>(
       '/rankings/friends',
-      queryParameters: const {'page': 0, 'size': 100},
+      queryParameters: {'page': 0, 'size': 100, 'type': type.apiValue},
     );
     return WeeklyRanking.fromJson(response.data);
   });

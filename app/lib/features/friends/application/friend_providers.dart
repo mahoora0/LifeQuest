@@ -66,9 +66,11 @@ class FriendListNotifier extends AsyncNotifier<FriendList> {
 }
 
 /// 이번 주 친구 랭킹(S-22).
-final weeklyRankingProvider = FutureProvider<WeeklyRanking>((ref) {
-  return ref.watch(friendRepositoryProvider).fetchWeeklyRanking();
-});
+final weeklyRankingProvider = FutureProvider.family<WeeklyRanking, RankingType>(
+  (ref, type) {
+    return ref.watch(friendRepositoryProvider).fetchWeeklyRanking(type: type);
+  },
+);
 
 /// 내 친구 코드. 동료 찾기는 목록을 불러오지 않고도 코드를 보여야 한다.
 final myFriendCodeProvider = FutureProvider<String?>((ref) {

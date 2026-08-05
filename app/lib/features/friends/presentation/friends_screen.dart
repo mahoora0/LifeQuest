@@ -390,48 +390,70 @@ class _FriendCodeCard extends StatelessWidget {
   }
 }
 
-class _RankingTab extends ConsumerWidget {
+class _RankingTab extends ConsumerStatefulWidget {
   const _RankingTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ranking = ref.watch(weeklyRankingProvider);
+  ConsumerState<_RankingTab> createState() => _RankingTabState();
+}
 
-    return LqAsyncView<WeeklyRanking>(
-      value: ranking,
-      isEmpty: (value) => value.isEmpty,
-      emptyMessage: '아직 이번 주 기록이 없어요',
-      onRetry: () => ref.invalidate(weeklyRankingProvider),
-      notReadyMessage: '이번 주 랭킹은 아직 준비 중이에요',
-      data: (value) => ListView(
-        padding: const EdgeInsets.fromLTRB(
-          LqSpacing.screen,
-          4,
-          LqSpacing.screen,
-          24,
+class _RankingTabState extends ConsumerState<_RankingTab> {
+  RankingType _type = RankingType.exp;
+
+  @override
+  Widget build(BuildContext context) {
+    final ranking = ref.watch(weeklyRankingProvider(_type));
+
+    return Column(
+      children: [
+        LqChipRow(
+          labels: const ['EXP 랭킹', '레벨 랭킹'],
+          selectedIndex: _type.index,
+          onSelected: (index) => setState(() {
+            _type = RankingType.values[index];
+          }),
         ),
-        children: [
-          _RankSummaryCard(ranking: value),
-          const SizedBox(height: LqSpacing.gap),
-          for (final entry in value.entries) ...[
-            _RankRow(
-              entry: entry,
-              // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
-              // 상대가 없으므로 열지 않는다.
-              onOpen: entry.isMe
-                  ? null
-                  : () => context.push('/friends/${entry.userId}'),
+        const SizedBox(height: 4),
+        Expanded(
+          child: LqAsyncView<WeeklyRanking>(
+            value: ranking,
+            isEmpty: (value) => value.isEmpty,
+            emptyMessage: '아직 이번 주 기록이 없어요',
+            onRetry: () => ref.invalidate(weeklyRankingProvider(_type)),
+            notReadyMessage: '이번 주 랭킹은 아직 준비 중이에요',
+            data: (value) => ListView(
+              padding: const EdgeInsets.fromLTRB(
+                LqSpacing.screen,
+                4,
+                LqSpacing.screen,
+                24,
+              ),
+              children: [
+                _RankSummaryCard(ranking: value),
+                const SizedBox(height: LqSpacing.gap),
+                for (final entry in value.entries) ...[
+                  _RankRow(
+                    entry: entry,
+                    type: _type,
+                    // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
+                    // 상대가 없으므로 열지 않는다.
+                    onOpen: entry.isMe
+                        ? null
+                        : () => context.push('/friends/${entry.userId}'),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  '랭킹은 매주 월요일 0시에 초기화돼요',
+                  textAlign: TextAlign.center,
+                  style: LqText.caption,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-          ],
-          const SizedBox(height: 4),
-          Text(
-            '랭킹은 매주 월요일 0시에 초기화돼요',
-            textAlign: TextAlign.center,
-            style: LqText.caption,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -519,9 +541,10 @@ class _DeltaPill extends StatelessWidget {
 }
 
 class _RankRow extends StatelessWidget {
-  const _RankRow({required this.entry, this.onOpen});
+  const _RankRow({required this.entry, required this.type, this.onOpen});
 
   final RankEntry entry;
+  final RankingType type;
   final VoidCallback? onOpen;
 
   Color get _medalColor => switch (entry.rank) {
@@ -579,7 +602,9 @@ class _RankRow extends StatelessWidget {
               borderRadius: LqShape.pillRadius,
             ),
             child: Text(
-              'EXP ${_thousands(entry.weeklyExp)}',
+              type == RankingType.exp
+                  ? 'EXP ${_thousands(entry.weeklyExp)}'
+                  : 'Lv. ${entry.level}',
               style: LqText.badge.copyWith(
                 fontSize: 12.5,
                 color: LqColors.onDark,
