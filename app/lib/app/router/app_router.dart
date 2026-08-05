@@ -27,17 +27,18 @@ import 'package:life_quest/features/quest/presentation/quest_verify_screen.dart'
 import 'package:life_quest/features/reward/presentation/reward_screen.dart';
 import 'package:life_quest/shared/presentation/feature_placeholder_screen.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-
 /// 탭 구성은 시안 확정안을 따른다: 홈 · 퀘스트 · 지도 · 친구 · 마이.
 ///
 /// LifeDex 도감(S-13)과 업적·칭호(S-15)는 탭에서 빠지고 마이페이지 "나의 기록" 카드에서
 /// push로 연다. 탭 밖 라우트라 하단 탭바가 가려지고 좌상단 ←로 돌아온다.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
+  // 인증 상태 변경으로 GoRouter가 다시 생성될 때 이전 Router와 같은 전역
+  // NavigatorKey를 공유하면 한 프레임 안에서 키가 중복 예약될 수 있다.
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     redirect: (context, state) {
       final location = state.matchedLocation;
