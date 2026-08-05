@@ -92,6 +92,16 @@ void main() {
       expect(find.text('수락'), findsNothing);
     });
 
+    testWidgets('보낸 요청 탭에서 대기 중인 상대를 확인한다', (tester) async {
+      await pump(tester, const FriendRequestsScreen());
+
+      await tester.tap(find.text('보낸 요청 1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('초록수풀'), findsOneWidget);
+      expect(find.text('수락 대기'), findsOneWidget);
+    });
+
     testWidgets('처리한 요청은 목록에서 걷힌다', (tester) async {
       await pump(tester, const FriendRequestsScreen());
 

@@ -39,6 +39,8 @@ void main() {
     expect(find.text('친구'), findsOneWidget);
     expect(find.text('친구 목록'), findsOneWidget);
     expect(find.text('이번 주 랭킹'), findsOneWidget);
+    expect(find.text('친구 요청 관리'), findsOneWidget);
+    expect(find.text('보낸 요청 0건 확인'), findsOneWidget);
 
     expect(find.text('친구 2명이 오늘도 모험 중!\n응원하면 서로 EXP 5!'), findsOneWidget);
     expect(find.text('민서'), findsOneWidget);

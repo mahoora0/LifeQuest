@@ -40,7 +40,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         bottom: false,
         child: Column(
           children: [
-            const LqHeader(title: '받은 요청'),
+            const LqHeader(title: '친구 요청'),
             LqChipRow(
               labels: [
                 '받은 요청 ${box?.received.length ?? 0}',
@@ -158,7 +158,7 @@ class _SentTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const LqStatePill(label: '대기'),
+                const LqStatePill(label: '수락 대기'),
               ],
             ),
           ),

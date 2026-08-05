@@ -282,7 +282,7 @@ void main() {
 
       expect(find.text('친구 목록은 아직 준비 중이에요'), findsOneWidget);
       // /friends/requests로 가는 유일한 문이다.
-      expect(find.text('동료 신청이 2건 도착했어요'), findsOneWidget);
+      expect(find.text('친구 요청이 2건 도착했어요'), findsOneWidget);
     });
   });
 
