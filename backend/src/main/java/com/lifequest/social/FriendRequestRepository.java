@@ -24,6 +24,12 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequest, Lo
                         FriendRequestStatus status,
                         Pageable pageable);
 
+        @EntityGraph(attributePaths = "receiver")
+        Page<FriendRequest> findAllBySenderIdAndStatusOrderByCreatedAtDescIdDesc(
+                        Long senderId,
+                        FriendRequestStatus status,
+                        Pageable pageable);
+
         Optional<FriendRequest> findByIdAndReceiverId(Long requestId, Long receiverId);
 
         // 같은 친구 요청을 두 요청이 동시에 처리하지 못하도록 잠금

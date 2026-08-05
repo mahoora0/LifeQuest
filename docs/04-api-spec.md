@@ -110,6 +110,7 @@
 | GET | /api/users/search | 닉네임으로 사용자 검색 | 필요 |
 | POST | /api/friends/requests | 친구 요청 보내기 | 필요 |
 | GET | /api/friends/requests | 받은 친구 요청 목록 | 필요 |
+| GET | /api/friends/requests/sent | 보낸 친구 요청 목록 | 필요 |
 | PATCH | /api/friends/requests/{requestId} | 요청 수락·거절 | 필요 |
 | GET | /api/friends | 친구 목록 | 필요 |
 | DELETE | /api/friends/{userId} | 친구 삭제 | 필요 |

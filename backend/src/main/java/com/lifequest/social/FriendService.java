@@ -11,6 +11,7 @@ import com.lifequest.social.dto.FriendRequestAction;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
 import com.lifequest.social.dto.SendFriendRequestResponse;
+import com.lifequest.social.dto.SentFriendRequestPageResponse;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import java.util.List;
@@ -72,6 +73,19 @@ public class FriendService {
                         FriendRequestStatus.PENDING,
                         PageRequest.of(page, size));
         return FriendRequestPageResponse.from(requests);
+    }
+
+    @Transactional(readOnly = true)
+    public SentFriendRequestPageResponse getSentRequests(
+            Long currentUserId,
+            int page,
+            int size) {
+        validatePage(page, size);
+        return SentFriendRequestPageResponse.from(friendRequestRepository
+                .findAllBySenderIdAndStatusOrderByCreatedAtDescIdDesc(
+                        currentUserId,
+                        FriendRequestStatus.PENDING,
+                        PageRequest.of(page, size)));
     }
 
     // 친구 목록 조회

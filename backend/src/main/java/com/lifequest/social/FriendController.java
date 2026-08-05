@@ -9,6 +9,7 @@ import com.lifequest.social.dto.RespondFriendRequestRequest;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
 import com.lifequest.social.dto.SendFriendRequestRequest;
 import com.lifequest.social.dto.SendFriendRequestResponse;
+import com.lifequest.social.dto.SentFriendRequestPageResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,14 @@ public class FriendController {
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.success(
                 friendService.getReceivedRequests(userId(jwt), page, size));
+    }
+
+    @GetMapping("/requests/sent")
+    public ApiResponse<SentFriendRequestPageResponse> sentRequests(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.success(friendService.getSentRequests(userId(jwt), page, size));
     }
 
     // 친구 목록 조회
