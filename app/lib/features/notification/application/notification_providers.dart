@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/core/network/api_client.dart';
 import 'package:life_quest/core/storage/local_preferences.dart';
 import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  return const NotificationRepository();
+  return NotificationRepository(ref.watch(dioProvider));
 });
 
 /// 알림 목록. 읽음 상태를 화면에서 바꿔야 해서 Notifier로 둔다.

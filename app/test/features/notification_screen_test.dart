@@ -18,6 +18,27 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  test('백엔드 알림 목록과 친구 수락 종류를 해석한다', () {
+    final feed = LqNotificationFeed.fromJson({
+      'content': [
+        {
+          'id': 42,
+          'kind': 'FRIEND_ACCEPTED',
+          'title': '친구 요청을 수락했어요',
+          'timeLabel': '방금',
+          'read': false,
+          'route': '/friends',
+        },
+      ],
+      'unreadCount': 1,
+    });
+
+    expect(feed.items, hasLength(1));
+    expect(feed.items.single.kind, LqNotificationKind.friendAccepted);
+    expect(feed.items.single.route, '/friends');
+    expect(feed.unreadCount, 1);
+  });
+
   Future<void> pumpNotifications(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(

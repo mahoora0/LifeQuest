@@ -16,6 +16,7 @@ const _kindTints = <LqNotificationKind, Color>{
   LqNotificationKind.achievement: LqColors.goldBg,
   LqNotificationKind.cheer: Color(0xFFDCE8C6),
   LqNotificationKind.friendRequest: Color(0xFFCFE3EC),
+  LqNotificationKind.friendAccepted: Color(0xFFCFE3EC),
   LqNotificationKind.questAssigned: LqColors.successBg,
   LqNotificationKind.levelUp: Color(0xFFEADFF3),
 };
@@ -238,7 +239,8 @@ class _Leading extends StatelessWidget {
     final tint = _kindTints[item.kind] ?? LqColors.surfaceTile;
     final isAvatar =
         item.kind == LqNotificationKind.cheer ||
-        item.kind == LqNotificationKind.friendRequest;
+        item.kind == LqNotificationKind.friendRequest ||
+        item.kind == LqNotificationKind.friendAccepted;
 
     return Container(
       width: 34,
