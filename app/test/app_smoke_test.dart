@@ -211,6 +211,8 @@ void main() {
     expect(find.text('캐릭터 꾸미기'), findsOneWidget);
     expect(find.text('루키'), findsOneWidget);
     expect(find.text('모각'), findsOneWidget);
+    expect(find.text('액세서리'), findsOneWidget);
+    expect(find.text('앞치마'), findsOneWidget);
     // 잠금 캐릭터가 비분리 ColorFilter 합성 레이어를 만들면 Android에서
     // 본문 전체가 회색으로 덮일 수 있다.
     expect(find.byType(ColorFiltered), findsNothing);
@@ -222,6 +224,11 @@ void main() {
       find.byKey(const ValueKey('character-image-1')),
     );
     expect(imageCenter.dx, closeTo(cardCenter.dx, 0.1));
+
+    await tester.tap(find.text('앞치마'));
+    await tester.pumpAndSettle();
+    expect(find.text('루키 착용 미리보기'), findsOneWidget);
+    expect(find.text('착용하기'), findsOneWidget);
   });
 }
 
@@ -281,6 +288,22 @@ class _FakeUserRepository extends UserRepository {
       unlocked: false,
     ),
   ];
+
+  @override
+  Future<AccessoryCollection> fetchAccessories() async =>
+      const AccessoryCollection(
+        selectedAccessoryId: null,
+        accessories: [
+          AvatarAccessory(id: 4, code: 'APRON', name: '앞치마', requiredLevel: 2),
+          AvatarAccessory(
+            id: 5,
+            code: 'EXPLORER_HAT',
+            name: '탐험가 모자',
+            requiredLevel: 3,
+            unlocked: false,
+          ),
+        ],
+      );
 
   @override
   Future<BadgeCollection> fetchBadges() async => const BadgeCollection(

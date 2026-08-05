@@ -143,7 +143,10 @@ class _ProfileHeader extends ConsumerWidget {
                       child: LqImage(
                         character == null
                             ? LqAssets.charFront
-                            : LqAssets.character(character.code),
+                            : LqAssets.characterWithAccessory(
+                                character.code,
+                                profile.selectedAccessory?.code,
+                              ),
                         width: 128,
                         height: 128,
                       ),

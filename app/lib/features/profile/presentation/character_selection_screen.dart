@@ -6,6 +6,7 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
+import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -22,6 +23,10 @@ class _CharacterSelectionScreenState
     extends ConsumerState<CharacterSelectionScreen> {
   int? _selectedId;
   int? _busyId;
+  int? _selectedAccessoryId;
+  bool _accessoryChanged = false;
+  bool _accessoryBusy = false;
+  int? _pendingAccessoryId;
 
   Future<void> _select(AvatarCharacter character) async {
     if (_busyId != null || _selectedId == character.id) return;
@@ -44,10 +49,63 @@ class _CharacterSelectionScreenState
     }
   }
 
+  Future<void> _selectAccessory(AvatarAccessory? accessory) async {
+    final nextId = accessory?.id;
+    if (_accessoryBusy ||
+        (_accessoryChanged && _selectedAccessoryId == nextId)) {
+      return;
+    }
+    setState(() {
+      _accessoryBusy = true;
+      _pendingAccessoryId = nextId;
+    });
+    try {
+      final updated = await ref
+          .read(userRepositoryProvider)
+          .selectAccessory(nextId);
+      if (!mounted) return;
+      setState(() {
+        _selectedAccessoryId = updated.selectedAccessory?.id;
+        _accessoryChanged = true;
+        _accessoryBusy = false;
+        _pendingAccessoryId = null;
+      });
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(accessoryCollectionProvider);
+      showLqSnack(
+        context,
+        accessory == null ? '액세서리를 해제했어요.' : '${accessory.name}을(를) 착용했어요.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _accessoryBusy = false;
+        _pendingAccessoryId = null;
+      });
+      showLqError(context, error);
+    }
+  }
+
+  Future<void> _previewAccessory(AvatarAccessory accessory) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: LqColors.ink.withValues(alpha: 0.45),
+      builder: (dialogContext) => _AccessoryPreviewDialog(
+        accessory: accessory,
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _selectAccessory(accessory);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(myProfileProvider);
     final characters = ref.watch(characterCollectionProvider);
+    final accessories = ref.watch(accessoryCollectionProvider);
     final selectedId = _selectedId ?? profile.value?.selectedCharacter?.id;
 
     return Scaffold(
@@ -66,27 +124,93 @@ class _CharacterSelectionScreenState
         child: LqAsyncView<List<AvatarCharacter>>(
           value: characters,
           onRetry: () => ref.invalidate(characterCollectionProvider),
-          data: (items) => GridView.builder(
-            padding: const EdgeInsets.fromLTRB(
-              LqSpacing.screen,
-              16,
-              LqSpacing.screen,
-              32,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final character = items[index];
-              return _CharacterChoice(
-                character: character,
-                selected: character.id == selectedId,
-                busy: character.id == _busyId,
-                onTap: character.unlocked ? () => _select(character) : null,
+          data: (characterItems) => LqAsyncView<AccessoryCollection>(
+            value: accessories,
+            onRetry: () => ref.invalidate(accessoryCollectionProvider),
+            data: (collection) {
+              final selectedAccessoryId = _accessoryChanged
+                  ? _selectedAccessoryId
+                  : collection.selectedAccessoryId;
+              final selectedAccessory = collection.accessories
+                  .where((item) => item.id == selectedAccessoryId)
+                  .firstOrNull;
+              return CustomScrollView(
+                slivers: [
+                  const _SectionHeader(title: '캐릭터'),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      LqSpacing.screen,
+                      0,
+                      LqSpacing.screen,
+                      18,
+                    ),
+                    sliver: SliverGrid.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 1,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                      itemCount: characterItems.length,
+                      itemBuilder: (context, index) {
+                        final character = characterItems[index];
+                        return _CharacterChoice(
+                          character: character,
+                          accessoryCode: character.id == selectedId
+                              ? selectedAccessory?.code
+                              : null,
+                          selected: character.id == selectedId,
+                          busy: character.id == _busyId,
+                          onTap: character.unlocked
+                              ? () => _select(character)
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
+                  const _SectionHeader(
+                    title: '액세서리',
+                    hint: '레벨이 오를 때마다 새로운 액세서리가 열려요.',
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      LqSpacing.screen,
+                      0,
+                      LqSpacing.screen,
+                      32,
+                    ),
+                    sliver: SliverGrid.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 0.82,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                      itemCount: collection.accessories.length + 1,
+                      itemBuilder: (context, index) {
+                        final accessory = index == 0
+                            ? null
+                            : collection.accessories[index - 1];
+                        final unlocked = accessory?.unlocked ?? true;
+                        final accessoryId = accessory?.id;
+                        return _AccessoryChoice(
+                          accessory: accessory,
+                          selected: accessoryId == selectedAccessoryId,
+                          busy:
+                              _accessoryBusy &&
+                              _pendingAccessoryId == accessoryId,
+                          onTap: unlocked
+                              ? accessory == null
+                                    ? () => _selectAccessory(null)
+                                    : () => _previewAccessory(accessory)
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -99,12 +223,14 @@ class _CharacterSelectionScreenState
 class _CharacterChoice extends StatelessWidget {
   const _CharacterChoice({
     required this.character,
+    this.accessoryCode,
     required this.selected,
     required this.busy,
     this.onTap,
   });
 
   final AvatarCharacter character;
+  final String? accessoryCode;
   final bool selected;
   final bool busy;
   final VoidCallback? onTap;
@@ -132,7 +258,10 @@ class _CharacterChoice extends StatelessWidget {
                     child: Opacity(
                       opacity: character.unlocked ? 1 : 0.45,
                       child: LqImage(
-                        LqAssets.character(character.code),
+                        LqAssets.characterWithAccessory(
+                          character.code,
+                          accessoryCode,
+                        ),
                         width: 104,
                         height: 104,
                       ),
@@ -166,6 +295,189 @@ class _CharacterChoice extends StatelessWidget {
           if (busy)
             const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.hint});
+
+  final String title;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LqSpacing.screen,
+          14,
+          LqSpacing.screen,
+          10,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: LqText.sectionTitle),
+            if (hint != null) ...[
+              const SizedBox(height: 3),
+              Text(hint!, style: LqText.caption),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccessoryChoice extends StatelessWidget {
+  const _AccessoryChoice({
+    required this.accessory,
+    required this.selected,
+    required this.busy,
+    this.onTap,
+  });
+
+  final AvatarAccessory? accessory;
+  final bool selected;
+  final bool busy;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked = accessory?.unlocked ?? true;
+    return LqCard(
+      key: ValueKey('accessory-card-${accessory?.id ?? 'none'}'),
+      onTap: onTap,
+      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
+      padding: const EdgeInsets.all(8),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: accessory == null
+                        ? const Icon(
+                            Icons.block_rounded,
+                            size: 42,
+                            color: LqColors.textMuted,
+                          )
+                        : Opacity(
+                            opacity: unlocked ? 1 : 0.42,
+                            child: LqImage(
+                              LqAssets.accessory(accessory!.code),
+                              width: 64,
+                              height: 64,
+                            ),
+                          ),
+                  ),
+                ),
+                Text(
+                  accessory?.name ?? '착용 안 함',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LqText.cardTitle.copyWith(fontSize: 13),
+                ),
+                if (!unlocked)
+                  Text(
+                    accessory!.requiredLevel == null
+                        ? '보상 설정 예정'
+                        : 'Lv. ${accessory!.requiredLevel} 해금',
+                    textAlign: TextAlign.center,
+                    style: LqText.caption,
+                  ),
+              ],
+            ),
+          ),
+          if (selected)
+            const Align(
+              alignment: Alignment.topRight,
+              child: Icon(Icons.check_circle, color: LqColors.primary),
+            ),
+          if (!unlocked)
+            const Align(
+              alignment: Alignment.topRight,
+              child: Icon(Icons.lock_rounded, color: LqColors.textMuted),
+            ),
+          if (busy)
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccessoryPreviewDialog extends StatelessWidget {
+  const _AccessoryPreviewDialog({
+    required this.accessory,
+    required this.onCancel,
+    required this.onConfirm,
+  });
+
+  final AvatarAccessory accessory;
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: LqCard(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(accessory.name, style: LqText.sectionTitle),
+            const SizedBox(height: 8),
+            Container(
+              width: 220,
+              height: 220,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: LqColors.surfaceTint,
+                borderRadius: LqShape.tileRadius,
+                border: Border.all(color: LqColors.borderMuted, width: 1.6),
+              ),
+              child: LqImage(
+                LqAssets.characterWithAccessory('ROOKIE', accessory.code),
+                width: 204,
+                height: 204,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('루키 착용 미리보기', style: LqText.caption),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: LqButton(
+                    label: '취소',
+                    height: 46,
+                    background: LqColors.surfaceRaised,
+                    foreground: LqColors.textPrimary,
+                    shadow: false,
+                    onPressed: onCancel,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: LqButton(
+                    label: '착용하기',
+                    height: 46,
+                    onPressed: onConfirm,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
