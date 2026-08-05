@@ -59,6 +59,26 @@ class FriendFlowIntegrationTests {
         @Autowired
         private QuestCompletionRepository questCompletionRepository;
 
+        @Test
+        void friendCodeIsCreatedAndFindsAnotherUser() throws Exception {
+                TestUser owner = createUser("코드주인");
+                TestUser finder = createUser("코드검색");
+
+                MvcResult codeResult = mockMvc.perform(get("/api/users/me/friend-code")
+                                .header("Authorization", bearer(owner.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.friendCode").value(org.hamcrest.Matchers.matchesPattern("LQ-[0-9A-F]{8}")))
+                                .andReturn();
+                String code = JsonPath.read(codeResult.getResponse().getContentAsString(), "$.data.friendCode");
+
+                mockMvc.perform(get("/api/users/search")
+                                .header("Authorization", bearer(finder.token()))
+                                .queryParam("query", code))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content[0].userId").value(owner.id()))
+                                .andExpect(jsonPath("$.data.content[0].nickname").value(owner.nickname()));
+        }
+
         // 요청 전송 및 목록 테스트
         @Test
         void sentRequestAppearsInReceiversPendingRequestList() throws Exception {

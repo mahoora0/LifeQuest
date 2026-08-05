@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import com.lifequest.user.dto.UserSearchPageResponse;
 import com.lifequest.user.dto.UserSearchResponse;
+import com.lifequest.user.dto.FriendCodeResponse;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -214,13 +216,37 @@ public class UserService {
                 Sort.by(Sort.Direction.ASC, "nickname")
                         .and(Sort.by(Sort.Direction.ASC, "id")));
 
-        Page<UserSearchResponse> result = userRepository
-                .findByNicknameContainingIgnoreCaseAndIdNot(
-                        keyword,
-                        currentUserId,
-                        pageable)
-                .map(UserSearchResponse::from);
+        Page<UserSearchResponse> result;
+        if (keyword.regionMatches(true, 0, "LQ-", 0, 3)) {
+            List<UserSearchResponse> matches = userRepository
+                    .findByFriendCodeIgnoreCaseAndIdNot(keyword, currentUserId)
+                    .map(UserSearchResponse::from)
+                    .map(List::of)
+                    .orElseGet(List::of);
+            result = new PageImpl<>(matches, pageable, matches.size());
+        } else {
+            result = userRepository
+                    .findByNicknameContainingIgnoreCaseAndIdNot(
+                            keyword,
+                            currentUserId,
+                            pageable)
+                    .map(UserSearchResponse::from);
+        }
 
         return UserSearchPageResponse.from(result);
     }
+
+    @Transactional
+    public FriendCodeResponse getFriendCode(Long userId) {
+        User user = getUser(userId);
+        if (user.getFriendCode() == null) {
+            user.assignFriendCode(friendCodeFor(user.getId()));
+        }
+        return new FriendCodeResponse(user.getFriendCode());
+    }
+
+    private String friendCodeFor(Long userId) {
+        return "LQ-" + String.format("%08X", userId);
+    }
+
 }

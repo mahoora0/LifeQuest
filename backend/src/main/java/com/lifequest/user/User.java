@@ -35,6 +35,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
+    @Column(name = "friend_code", unique = true, length = 16)
+    private String friendCode;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role = UserRole.USER;
@@ -136,6 +139,16 @@ public class User {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getFriendCode() {
+        return friendCode;
+    }
+
+    public void assignFriendCode(String friendCode) {
+        if (this.friendCode == null) {
+            this.friendCode = friendCode;
+        }
     }
 
     public UserRole getRole() {
