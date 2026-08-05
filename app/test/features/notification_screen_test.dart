@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/notification/application/notification_providers.dart';
 import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
@@ -69,6 +70,51 @@ void main() {
     expect(find.text('비밀 업적 "야행성 탐험가" 해금!'), findsOneWidget);
     expect(find.text('방금'), findsOneWidget);
     expect(unreadRows(tester), 2);
+  });
+
+  testWidgets('오늘의 퀘스트 알림은 중복 페이지 없이 퀘스트 탭으로 이동한다', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/notifications',
+      routes: [
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, shell) => Scaffold(body: shell),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/quests',
+                  builder: (context, state) => const Text('퀘스트 목록'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationScreen(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          notificationRepositoryProvider.overrideWithValue(
+            const _QuestNotificationRepository(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('오늘의 퀘스트가 도착했어요'));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/quests');
+    expect(find.text('퀘스트 목록'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('모두 읽음을 누르면 읽지 않은 행이 남지 않는다', (tester) async {
@@ -155,6 +201,23 @@ class _FakeNotificationRepository extends NotificationRepository {
         title: '오늘의 퀘스트 3개가 도착했어요',
         timeLabel: '어제 · 오전 7:00',
         read: true,
+      ),
+    ],
+  );
+}
+
+class _QuestNotificationRepository extends NotificationRepository {
+  const _QuestNotificationRepository();
+
+  @override
+  Future<LqNotificationFeed> fetchFeed() async => const LqNotificationFeed(
+    items: [
+      LqNotification(
+        id: 100,
+        kind: LqNotificationKind.questAssigned,
+        title: '오늘의 퀘스트가 도착했어요',
+        timeLabel: '방금',
+        route: '/quests',
       ),
     ],
   );
