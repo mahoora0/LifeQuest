@@ -1,0 +1,14 @@
+-- 배정 목록 조회용 인덱스 (담당: 팀원 2 — 퀘스트 배정·완료·GPS 인증).
+-- 조회 기준 근거: docs/05-business-rules.md §1-2
+--
+-- 배정 목록 조회는 assigned_date = 오늘이 아니라 expires_at이 아직 지나지 않은 건을 기준으로 한다.
+-- assigned_date에는 주기 시작일이 들어가므로 트랙마다 값이 다르기 때문이다 — 화요일에 조회하면
+-- 일간 배정은 assigned_date가 화요일이고 주간 배정은 그 주 월요일이라, 날짜 하나로는 두 트랙을
+-- 함께 읽을 수 없다. 만료 시각을 기준으로 삼으면 트랙과 무관하게 "지금 유효한 배정"이 한 번에 잡힌다.
+--
+-- V4의 idx_udq_user_date(user_id, assigned_date)는 이 조회를 돕지 못한다. 선두 컬럼은 맞지만
+-- 두 번째 컬럼이 조건에 쓰이지 않아 user_id로 걸러진 전 기간의 배정 행을 모두 훑고 만료를 비교하게 된다.
+-- 사용자당 행은 하루 6건씩 쌓이므로 시간이 갈수록 나빠진다.
+--
+-- 기존 인덱스는 남긴다. findByUserIdAndAssignedDate(주기 단위 중복 확인)가 여전히 그 형태로 조회한다.
+CREATE INDEX idx_udq_user_expires ON user_daily_quests (user_id, expires_at);
