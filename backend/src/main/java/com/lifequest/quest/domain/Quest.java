@@ -196,4 +196,32 @@ public class Quest {
     public void deactivate() {
         this.active = false;
     }
+
+    public void update(
+            String title,
+            String description,
+            QuestGrade grade,
+            QuestCadence cadence,
+            CompletionType completionType,
+            int expReward,
+            String placeName,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            Integer radiusM,
+            Long lifedexItemId,
+            boolean active) {
+        requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
+        this.title = title;
+        this.description = description;
+        this.grade = grade;
+        this.cadence = cadence;
+        this.completionType = completionType;
+        this.expReward = expReward;
+        this.placeName = placeName;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.radiusM = radiusM;
+        this.lifedexItemId = lifedexItemId;
+        this.active = active;
+    }
 }

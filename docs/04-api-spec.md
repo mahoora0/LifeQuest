@@ -117,6 +117,7 @@
 | GET | /api/friends/{userId}/profile | 친구 프로필·기록 비교 | 필요 |
 | GET | /api/rankings/global | 전체 랭킹 조회 | 필요 |
 | GET | /api/rankings/friends | 친구 랭킹 조회 | 필요 |
+| GET | /api/admin/quests | 관리자 퀘스트 목록(비활성 포함) | 필요(관리자) |
 | POST | /api/admin/quests | 퀘스트 등록(관리자) | 필요(관리자) |
 | PATCH | /api/admin/quests/{questId} | 퀘스트 수정(관리자) | 필요(관리자) |
 | DELETE | /api/admin/quests/{questId} | 퀘스트 소프트 삭제(`is_active=false`, 관리자) | 필요(관리자) |
