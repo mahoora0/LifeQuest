@@ -58,12 +58,16 @@ class AvatarCharacter {
     required this.code,
     required this.name,
     required this.assetKey,
+    this.requiredLevel = 1,
+    this.unlocked = true,
   });
 
   final int id;
   final String code;
   final String name;
   final String assetKey;
+  final int requiredLevel;
+  final bool unlocked;
 
   factory AvatarCharacter.fromJson(Map<String, dynamic> json) =>
       AvatarCharacter(
@@ -71,6 +75,8 @@ class AvatarCharacter {
         code: asString(json['code']) ?? 'ROOKIE',
         name: asString(json['name']) ?? '캐릭터',
         assetKey: asString(json['assetKey']) ?? 'rookie.png',
+        requiredLevel: asInt(json['requiredLevel']) ?? 1,
+        unlocked: json['unlocked'] as bool? ?? true,
       );
 }
 
@@ -81,12 +87,14 @@ class LevelStatus {
     required this.totalExp,
     required this.currentLevelExp,
     required this.nextLevelRequiredExp,
+    this.unlocks = const QuestUnlocks(),
   });
 
   final int level;
   final int totalExp;
   final int currentLevelExp;
   final int nextLevelRequiredExp;
+  final QuestUnlocks unlocks;
 
   int get remainingExp =>
       (nextLevelRequiredExp - currentLevelExp).clamp(0, nextLevelRequiredExp);
@@ -98,6 +106,37 @@ class LevelStatus {
       totalExp: asInt(json['totalExp']) ?? 0,
       currentLevelExp: asInt(json['currentLevelExp']) ?? 0,
       nextLevelRequiredExp: asInt(json['nextLevelRequiredExp']) ?? 0,
+      unlocks: QuestUnlocks.fromJson(json['unlocks']),
+    );
+  }
+}
+
+class QuestUnlocks {
+  const QuestUnlocks({
+    this.daily = const QuestUnlock(true, 1),
+    this.weekly = const QuestUnlock(false, 3),
+    this.coop = const QuestUnlock(false, 5),
+  });
+  final QuestUnlock daily, weekly, coop;
+  factory QuestUnlocks.fromJson(Object? body) {
+    final j = asMap(body);
+    return QuestUnlocks(
+      daily: QuestUnlock.fromJson(j['daily'], 1, true),
+      weekly: QuestUnlock.fromJson(j['weekly'], 3, false),
+      coop: QuestUnlock.fromJson(j['coop'], 5, false),
+    );
+  }
+}
+
+class QuestUnlock {
+  const QuestUnlock(this.unlocked, this.requiredLevel);
+  final bool unlocked;
+  final int requiredLevel;
+  factory QuestUnlock.fromJson(Object? body, int level, bool fallback) {
+    final j = asMap(body);
+    return QuestUnlock(
+      asBool(j['unlocked'], orElse: fallback),
+      asInt(j['requiredLevel']) ?? level,
     );
   }
 }

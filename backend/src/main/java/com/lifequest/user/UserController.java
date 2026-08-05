@@ -62,14 +62,14 @@ public class UserController {
     }
 
     @GetMapping("/level")
-    public ApiResponse<Map<String, Integer>> level(@AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<Map<String, Object>> level(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success(userService.getLevel(userId(jwt)));
     }
 
     @GetMapping("/characters")
     public ApiResponse<List<CharacterResponse>> characters(
             @AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success(userService.getCharacters());
+        return ApiResponse.success(userService.getCharacters(userId(jwt)));
     }
 
     @PatchMapping("/character")

@@ -19,3 +19,13 @@ app:
     client-id: ""
   upload:
     directory: build/test-uploads
+  llm:
+    provider: ""
+    request-timeout-seconds: 1
+    daily-request-limit: 10
+    openai:
+      api-key: ""
+      model: ""
+    gemini:
+      api-key: ""
+      model: ""

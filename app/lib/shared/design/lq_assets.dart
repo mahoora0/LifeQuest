@@ -28,13 +28,28 @@ abstract final class LqAssets {
   static const charPlainSit = '${_dir}char-plain-sit.png';
 
   /// 깃발 아이콘(GPS 레이더 중앙 목표 지점).
-  static const iconFlag = '${_dir}icon-flag.png';
+  static const iconFlag = '${_dir}accessory/icon-flag.png';
 
   /// 지도 아이콘.
-  static const iconMap = '${_dir}icon-map.png';
+  static const iconMap = '${_dir}accessory/icon-map.png';
 
   /// 가방 아이콘(LifeDex).
-  static const iconBackpack = '${_dir}icon-backpack.png';
+  static const iconBackpack = '${_dir}accessory/icon-backpack.png';
+
+  /// 나의 기록 도감 아이콘.
+  static const book = '${_dir}accessory/Book.png';
+
+  /// 나의 기록 업적·칭호 아이콘.
+  static const trophyCup = '${_dir}accessory/Trophy Cup.png';
+
+  /// 깃털 뱃지 아이콘.
+  static const featherBadge = '${_dir}accessory/Feather Badge.png';
+
+  /// 필드 수첩 아이콘.
+  static const fieldNotebook = '${_dir}accessory/Field Notebook.png';
+
+  /// 퀘스트 티켓 아이콘.
+  static const questTicket = '${_dir}accessory/Quest Ticket.png';
 
   static String character(String code) =>
       '${_dir}characters/${code.toLowerCase()}.png';

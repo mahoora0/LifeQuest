@@ -11,9 +11,11 @@
 | `char-walk.png` | 완료 결과 · 로딩 상태 |
 | `char-map.png` | 퀘스트 상세(위치) · LifeDex 안내 · 인증 성공 모달 |
 | `char-front.png` | 지도 현재 위치 · 프로필 기본 아바타 · GPS 레이더 내 위치 |
-| `icon-flag.png` | GPS 레이더 중앙 목표 지점 |
-| `icon-map.png` | 지도 관련 아이콘 |
-| `icon-backpack.png` | LifeDex 타이틀 · 신규 수집 안내 |
+| `accessory/icon-flag.png` | GPS 레이더 중앙 목표 지점 |
+| `accessory/icon-map.png` | 지도 관련 아이콘 |
+| `accessory/icon-backpack.png` | LifeDex 타이틀 · 신규 수집 안내 |
+| `accessory/Book.png` | 나의 기록 도감 아이콘 |
+| `accessory/Trophy Cup.png` | 나의 기록 업적·칭호 아이콘 |
 
 ## 파일이 아직 없어도 앱은 동작한다
 

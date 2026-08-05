@@ -6,29 +6,31 @@ import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/widgets/quest_rows.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 
-/// 퀘스트 목록 필터 — 주기(일간·주간·월간) 기준.
+/// 퀘스트 목록 필터 — 일간·주간·협동 기준.
 ///
 /// "전체" 칩은 두지 않는다. 진입 시 [daily]가 선택되고 항상 하나의 주기만 켜져 있다.
 /// 위치 인증 여부는 필터가 아니라 카드 우측의 보조 뱃지로 남는다 — 주기와 완료 방식은
 /// 별개의 축이라 한 축으로 다른 축을 대신할 수 없다.
 enum _QuestFilter {
-  daily(QuestCadence.daily),
-  weekly(QuestCadence.weekly),
-  monthly(QuestCadence.monthly);
+  daily(QuestCadence.daily, '일간', 1),
+  weekly(QuestCadence.weekly, '주간', 3),
+  coop(null, '협동', 5);
 
-  const _QuestFilter(this.cadence);
+  const _QuestFilter(this.cadence, this.label, this.requiredLevel);
 
-  final QuestCadence cadence;
+  final QuestCadence? cadence;
+  final String label;
+  final int requiredLevel;
 
-  String get label => cadence.label;
-
-  bool matches(DailyQuest quest) => quest.quest.cadence == cadence;
+  bool matches(DailyQuest quest) =>
+      cadence != null && quest.quest.cadence == cadence;
 }
 
 /// S-08 퀘스트 목록. 홈과 동일한 `todayQuestsProvider`를 재사용한다.
@@ -46,9 +48,16 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayQuestsProvider);
+    final level = ref.watch(levelStatusProvider);
+    final levelValue = level.value;
+    final unlocked = switch (_filter) {
+      _QuestFilter.daily => true,
+      _QuestFilter.weekly => levelValue?.unlocks.weekly.unlocked ?? false,
+      _QuestFilter.coop => levelValue?.unlocks.coop.unlocked ?? false,
+    };
     // 조회 전에는 개수를 모르므로 레이블에서 개수만 뺀다. 0개로 보이면 오해를 부른다.
     final loaded = today.value;
-    final countLabel = loaded == null
+    final countLabel = loaded == null || !unlocked
         ? '${_filter.label} 퀘스트'
         : '${_filter.label} 퀘스트 · ${loaded.quests.where(_filter.matches).length}개';
 
@@ -61,7 +70,15 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
             // 헤더에 검색을 두지 않는다. 목록이 3~8개인 화면에 검색이 있으면
             // 데이터가 더 많아 보이는 오해를 주고, 이번 범위에 검색 기능이
             // 없어 눌러도 아무 일이 없는 컨트롤이 된다.
-            const LqHeader(title: '퀘스트 목록', showBack: false),
+            LqHeader(
+              title: '퀘스트 목록',
+              showBack: false,
+              trailing: LqIconButton(
+                icon: Icons.auto_awesome,
+                semanticLabel: 'AI 퀘스트 추천',
+                onTap: () => context.push('/quest-recommendations'),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(LqSpacing.screen, 0, 0, 6),
               child: Align(
@@ -77,22 +94,34 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
             ),
             const SizedBox(height: 4),
             Expanded(
-              child: LqAsyncView<TodayQuests>(
-                value: today,
-                isEmpty: (value) => value.isEmpty,
-                emptyMessage: '오늘 배정된 퀘스트가 없어요',
-                // 홈과 같은 배정 API를 쓴다. 준비 중에는 재시도 버튼을 붙이지 않는다.
-                notReadyMessage: '퀘스트 목록은 아직 준비 중이에요',
-                notReadyHint: '배정이 열리면 주기별로 나눠 보여드려요.',
-                onRetry: () => ref.read(todayQuestsProvider.notifier).refresh(),
-                data: (value) => _QuestList(
-                  quests: value.quests.where(_filter.matches).toList(),
-                  emptyMessage: '오늘 배정된 ${_filter.label} 퀘스트가 없어요',
-                  onTap: _openDetail,
-                  onRefresh: () =>
-                      ref.read(todayQuestsProvider.notifier).refresh(),
-                ),
-              ),
+              child: !unlocked && _filter != _QuestFilter.daily
+                  ? _QuestLockedView(
+                      requiredLevel: _filter.requiredLevel,
+                      currentLevel: levelValue?.level,
+                      levelLoadFailed: level.hasError,
+                    )
+                  : _filter == _QuestFilter.coop
+                  ? const LqEmptyView(
+                      message: '협동 퀘스트 목록은 아직 준비 중이에요',
+                      hint: 'Lv. 5 해금 정보는 적용됐고, 퀘스트 담당 API 연결을 기다리고 있어요.',
+                    )
+                  : LqAsyncView<TodayQuests>(
+                      value: today,
+                      isEmpty: (value) => value.isEmpty,
+                      emptyMessage: '오늘 배정된 퀘스트가 없어요',
+                      // 홈과 같은 배정 API를 쓴다. 준비 중에는 재시도 버튼을 붙이지 않는다.
+                      notReadyMessage: '퀘스트 목록은 아직 준비 중이에요',
+                      notReadyHint: '배정이 열리면 주기별로 나눠 보여드려요.',
+                      onRetry: () =>
+                          ref.read(todayQuestsProvider.notifier).refresh(),
+                      data: (value) => _QuestList(
+                        quests: value.quests.where(_filter.matches).toList(),
+                        emptyMessage: '오늘 배정된 ${_filter.label} 퀘스트가 없어요',
+                        onTap: _openDetail,
+                        onRefresh: () =>
+                            ref.read(todayQuestsProvider.notifier).refresh(),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -117,6 +146,43 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
       ),
     );
   }
+}
+
+class _QuestLockedView extends StatelessWidget {
+  const _QuestLockedView({
+    required this.requiredLevel,
+    this.currentLevel,
+    required this.levelLoadFailed,
+  });
+  final int requiredLevel;
+  final int? currentLevel;
+  final bool levelLoadFailed;
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: LqCard(
+        locked: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline, color: LqColors.textMuted, size: 36),
+            const SizedBox(height: 12),
+            Text('Lv. $requiredLevel에 열려요', style: LqText.cardTitle),
+            const SizedBox(height: 6),
+            Text(
+              levelLoadFailed
+                  ? '레벨 정보를 불러오지 못했어요'
+                  : currentLevel == null
+                  ? '레벨 확인 중이에요'
+                  : '현재 Lv. $currentLevel',
+              style: LqText.caption,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _QuestList extends StatelessWidget {

@@ -11,6 +11,8 @@ import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.TitleResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.growth.GrowthService;
+import com.lifequest.quest.domain.QuestFeature;
+import com.lifequest.quest.service.QuestUnlockPolicy;
 import com.lifequest.profile.AvatarCharacter;
 import com.lifequest.profile.AvatarCharacterRepository;
 import com.lifequest.profile.ProfileItem;
@@ -38,18 +40,21 @@ public class UserService {
     private final UserTitleRepository userTitleRepository;
     private final UserProfileItemRepository userProfileItemRepository;
     private final ProfileImageStorage profileImageStorage;
+    private final QuestUnlockPolicy questUnlockPolicy;
 
     public UserService(
             UserRepository userRepository,
             AvatarCharacterRepository characterRepository,
             UserTitleRepository userTitleRepository,
             UserProfileItemRepository userProfileItemRepository,
-            ProfileImageStorage profileImageStorage) {
+            ProfileImageStorage profileImageStorage,
+            QuestUnlockPolicy questUnlockPolicy) {
         this.userRepository = userRepository;
         this.characterRepository = characterRepository;
         this.userTitleRepository = userTitleRepository;
         this.userProfileItemRepository = userProfileItemRepository;
         this.profileImageStorage = profileImageStorage;
+        this.questUnlockPolicy = questUnlockPolicy;
     }
 
     @Transactional(readOnly = true)
@@ -71,7 +76,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Integer> getLevel(Long userId) {
+    public Map<String, Object> getLevel(Long userId) {
         User user = getUser(userId);
         int levelStartExp = GrowthService.cumulativeExpForLevel(user.getLevel());
         int requiredExp = GrowthService.requiredExpForNextLevel(user.getLevel());
@@ -79,13 +84,27 @@ public class UserService {
                 "level", user.getLevel(),
                 "totalExp", user.getTotalExp(),
                 "currentLevelExp", user.getTotalExp() - levelStartExp,
-                "nextLevelRequiredExp", requiredExp);
+                "nextLevelRequiredExp", requiredExp,
+                "unlocks", Map.of(
+                        "daily", unlock(user.getLevel(), QuestFeature.DAILY),
+                        "weekly", unlock(user.getLevel(), QuestFeature.WEEKLY),
+                        "coop", unlock(user.getLevel(), QuestFeature.COOP)));
+    }
+
+    private Map<String, Object> unlock(int level, QuestFeature feature) {
+        return Map.of(
+                "unlocked", questUnlockPolicy.isUnlocked(level, feature),
+                "requiredLevel", questUnlockPolicy.requiredLevel(feature));
     }
 
     @Transactional(readOnly = true)
-    public List<CharacterResponse> getCharacters() {
-        return characterRepository.findAllByActiveTrueOrderById().stream()
-                .map(CharacterResponse::from)
+    public List<CharacterResponse> getCharacters(Long userId) {
+        User user = getUser(userId);
+        List<AvatarCharacter> characters =
+                characterRepository.findAllByActiveTrueOrderById();
+        return java.util.stream.IntStream.range(0, characters.size())
+                .mapToObj(index -> CharacterResponse.from(
+                        characters.get(index), requiredLevel(index), user.getLevel()))
                 .toList();
     }
 
@@ -95,6 +114,12 @@ public class UserService {
         AvatarCharacter character = characterRepository.findById(characterId)
                 .filter(AvatarCharacter::isActive)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        List<AvatarCharacter> characters =
+                characterRepository.findAllByActiveTrueOrderById();
+        int index = characters.indexOf(character);
+        if (index < 0 || user.getLevel() < requiredLevel(index)) {
+            throw new BusinessException(ErrorCode.CHARACTER_LOCKED);
+        }
         user.selectCharacter(character);
         return UserProfileResponse.from(user);
     }
@@ -222,5 +247,9 @@ public class UserService {
                 .map(UserSearchResponse::from);
 
         return UserSearchPageResponse.from(result);
+    }
+
+    private int requiredLevel(int characterIndex) {
+        return characterIndex == 0 ? 1 : characterIndex * 5;
     }
 }

@@ -12,6 +12,16 @@ import 'package:life_quest/features/friends/presentation/friend_requests_screen.
 import 'package:life_quest/features/friends/presentation/friend_search_screen.dart';
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
 import 'package:life_quest/features/home/presentation/home_screen.dart';
+import 'package:life_quest/features/group/presentation/group_chat_screen.dart';
+import 'package:life_quest/features/group/presentation/group_detail_screen.dart';
+import 'package:life_quest/features/group/presentation/group_form_screen.dart';
+import 'package:life_quest/features/group/presentation/group_invitations_screen.dart';
+import 'package:life_quest/features/group/presentation/group_join_requests_screen.dart';
+import 'package:life_quest/features/group/presentation/group_list_screen.dart';
+import 'package:life_quest/features/group/presentation/group_members_screen.dart';
+import 'package:life_quest/features/group/presentation/group_quest_detail_screen.dart';
+import 'package:life_quest/features/group/presentation/group_quest_form_screen.dart';
+import 'package:life_quest/features/group/presentation/group_search_screen.dart';
 import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 import 'package:life_quest/features/location/presentation/location_consent_screen.dart';
 import 'package:life_quest/features/notification/presentation/notification_screen.dart';
@@ -25,6 +35,11 @@ import 'package:life_quest/features/quest/presentation/quest_result_screen.dart'
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/quest_verify_screen.dart';
 import 'package:life_quest/features/reward/presentation/reward_screen.dart';
+import 'package:life_quest/features/recommendation/data/quest_recommendation_dto.dart';
+import 'package:life_quest/features/recommendation/presentation/place_recommendation_form_screen.dart';
+import 'package:life_quest/features/recommendation/presentation/recommendation_result_screen.dart';
+import 'package:life_quest/features/recommendation/presentation/recommendation_type_screen.dart';
+import 'package:life_quest/features/recommendation/presentation/travel_recommendation_form_screen.dart';
 import 'package:life_quest/shared/presentation/feature_placeholder_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -209,6 +224,95 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/notifications',
         redirect: (context, state) => '/notifications',
+      ),
+      GoRoute(
+        path: '/groups',
+        builder: (context, state) => const GroupListScreen(),
+      ),
+      GoRoute(
+        path: '/groups/search',
+        builder: (context, state) => const GroupSearchScreen(),
+      ),
+      GoRoute(
+        path: '/groups/create',
+        builder: (context, state) => const GroupFormScreen(),
+      ),
+      GoRoute(
+        path: '/groups/invitations',
+        builder: (context, state) => const GroupInvitationsScreen(),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/edit',
+        builder: (context, state) => GroupFormScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/members',
+        builder: (context, state) => GroupMembersScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/join-requests',
+        builder: (context, state) => GroupJoinRequestsScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/chat',
+        builder: (context, state) => GroupChatScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/quests/create',
+        builder: (context, state) => GroupQuestFormScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/quests/:questId/edit',
+        builder: (context, state) => GroupQuestFormScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+          questId: int.tryParse(state.pathParameters['questId'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/quests/:questId',
+        builder: (context, state) => GroupQuestDetailScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+          questId: int.tryParse(state.pathParameters['questId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/groups/:groupId',
+        builder: (context, state) => GroupDetailScreen(
+          groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/quest-recommendations',
+        builder: (context, state) => const RecommendationTypeScreen(),
+      ),
+      GoRoute(
+        path: '/quest-recommendations/place',
+        builder: (context, state) => const PlaceRecommendationFormScreen(),
+      ),
+      GoRoute(
+        path: '/quest-recommendations/travel',
+        builder: (context, state) => const TravelRecommendationFormScreen(),
+      ),
+      GoRoute(
+        path: '/quest-recommendations/result',
+        builder: (context, state) => state.extra is QuestRecommendationResult
+            ? RecommendationResultScreen(
+                result: state.extra! as QuestRecommendationResult,
+              )
+            : const FeaturePlaceholderScreen(
+                title: '추천 결과',
+                message: '추천 결과를 불러오지 못했어요',
+              ),
       ),
     ],
   );

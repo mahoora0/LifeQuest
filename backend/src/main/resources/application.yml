@@ -43,3 +43,13 @@ app:
   upload:
     directory: ${UPLOAD_DIRECTORY:uploads}
     max-profile-image-bytes: 5242880
+  llm:
+    provider: ${LLM_PROVIDER:}
+    request-timeout-seconds: ${LLM_REQUEST_TIMEOUT_SECONDS:30}
+    daily-request-limit: ${LLM_DAILY_REQUEST_LIMIT:10}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:}
