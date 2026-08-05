@@ -11,6 +11,17 @@ import 'package:life_quest/features/friends/presentation/friend_search_screen.da
 
 /// 친구 확장 3화면(S-18 · S-19 · S-21).
 void main() {
+  test('친구 목록 응답에서 프로필 사진 URL을 파싱한다', () {
+    final friend = Friend.fromJson(const {
+      'userId': 7,
+      'nickname': '하늘',
+      'level': 4,
+      'profileImageUrl': '/uploads/profiles/sky.png',
+    });
+
+    expect(friend.profileImageUrl, '/uploads/profiles/sky.png');
+  });
+
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });

@@ -81,6 +81,17 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text('350'), findsOneWidget);
   });
+
+  testWidgets('상단에 캐릭터와 사용자 정보를 좌우로 표시한다', (tester) async {
+    await pumpProfile(tester);
+
+    expect(find.text('캐릭터 꾸미기'), findsOneWidget);
+    expect(find.bySemanticsLabel('프로필 사진 변경'), findsOneWidget);
+    expect(find.text('모험가'), findsOneWidget);
+    expect(find.text('길잡이'), findsOneWidget);
+    expect(find.text('Lv. 3'), findsOneWidget);
+    expect(find.text('변경'), findsOneWidget);
+  });
 }
 
 /// 매핑된 컨트롤러가 없는 경로에서 오는 응답.

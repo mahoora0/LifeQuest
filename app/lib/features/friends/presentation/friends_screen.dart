@@ -262,7 +262,11 @@ class _FriendRow extends StatelessWidget {
       onTap: onOpen,
       child: Row(
         children: [
-          LqAvatar(nickname: friend.nickname, seed: friend.userId),
+          LqAvatar(
+            nickname: friend.nickname,
+            seed: friend.userId,
+            imageUrl: friend.profileImageUrl,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: LqAdventurerIdentity(

@@ -27,6 +27,7 @@ import 'package:life_quest/features/location/presentation/location_consent_scree
 import 'package:life_quest/features/notification/presentation/notification_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
+import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/map_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_detail_screen.dart';
@@ -203,6 +204,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      GoRoute(
+        path: '/profile/character',
+        builder: (context, state) => const CharacterSelectionScreen(),
       ),
       // 마이페이지의 EXP 바를 눌러 연다. 값이 이미 보이는 자리를 누르는 쪽이
       // "나의 기록"에 행을 하나 더 붙이는 것보다 예측 가능하다.

@@ -106,102 +106,223 @@ class _ProfileHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final level = ref.watch(levelStatusProvider);
-    final imageUrl = AppConfig.resolveMediaUrl(profile.profileImageUrl);
+    final character = profile.selectedCharacter;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 74,
-          height: 74,
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.bottomCenter,
-          decoration: BoxDecoration(
-            color: LqColors.surfaceTint,
-            shape: BoxShape.circle,
-            border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 158),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Semantics(
+            button: true,
+            label: character == null
+                ? '나의 캐릭터, 꾸미기'
+                : '나의 캐릭터 ${character.name}, 꾸미기',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => context.push('/profile/character'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 132,
+                    height: 132,
+                    alignment: Alignment.bottomCenter,
+                    padding: const EdgeInsets.all(2),
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: LqColors.surfaceTint,
+                      borderRadius: LqShape.cardRadius,
+                      border: Border.all(
+                        color: LqColors.ink,
+                        width: LqShape.borderWidth,
+                      ),
+                    ),
+                    child: Transform.scale(
+                      scale: 1.08,
+                      child: LqImage(
+                        character == null
+                            ? LqAssets.charFront
+                            : LqAssets.character(character.code),
+                        width: 128,
+                        height: 128,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '캐릭터 꾸미기',
+                    style: LqText.caption.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          // 사진을 올리기 전 기본 아바타는 시안대로 정면 캐릭터를 쓴다.
-          child: imageUrl.isEmpty
-              ? const LqImage(LqAssets.charFront, width: 52)
-              : Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const LqImage(LqAssets.charFront, width: 52),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HeaderProfilePhoto(
+                      imageUrl: profile.profileImageUrl,
+                      onTap: () => context.push('/profile/edit'),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  profile.nickname,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LqText.sectionTitle.copyWith(
+                                    fontSize: 25,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () => context.push('/profile/edit'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: LqColors.surfaceRaised,
+                                    borderRadius: LqShape.pillRadius,
+                                    border: Border.all(
+                                      color: LqColors.borderMuted,
+                                      width: 1.6,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '변경',
+                                    style: LqText.badge.copyWith(
+                                      fontSize: 14,
+                                      color: LqColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            profile.representativeTitle ?? '대표 칭호 없음',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LqText.bodySm.copyWith(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: profile.representativeTitle == null
+                                  ? LqColors.textMuted
+                                  : LqColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 7),
+                Padding(
+                  padding: const EdgeInsets.only(left: 58),
+                  child: Text(
+                    level.value == null
+                        ? 'Lv. —'
+                        : 'Lv. ${level.requireValue.level}',
+                    style: LqText.levelNumber.copyWith(fontSize: 29),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderProfilePhoto extends StatelessWidget {
+  const _HeaderProfilePhoto({required this.imageUrl, required this.onTap});
+
+  final String? imageUrl;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = AppConfig.resolveMediaUrl(imageUrl);
+    const fallback = Icon(
+      Icons.person_rounded,
+      size: 29,
+      color: LqColors.textMuted,
+    );
+
+    return Semantics(
+      button: true,
+      label: '프로필 사진 변경',
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      profile.nickname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LqText.sectionTitle,
-                    ),
+              Container(
+                width: 46,
+                height: 46,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: LqColors.surfaceRaised,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: LqColors.ink,
+                    width: LqShape.borderWidth,
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => context.push('/profile/edit'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
+                ),
+                child: resolved.isEmpty
+                    ? fallback
+                    : Image.network(
+                        resolved,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => fallback,
                       ),
-                      decoration: BoxDecoration(
-                        color: LqColors.surfaceRaised,
-                        borderRadius: LqShape.pillRadius,
-                        border: Border.all(
-                          color: LqColors.borderMuted,
-                          width: 1.6,
-                        ),
-                      ),
-                      child: Text(
-                        '변경',
-                        style: LqText.badge.copyWith(
-                          fontSize: 12,
-                          color: LqColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      profile.representativeTitle ?? '대표 칭호 없음',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LqText.bodySm.copyWith(
-                        fontSize: 14.5,
-                        color: profile.representativeTitle == null
-                            ? LqColors.textMuted
-                            : LqColors.primary,
-                      ),
-                    ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 19,
+                  height: 19,
+                  decoration: BoxDecoration(
+                    color: LqColors.surfaceRaised,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: LqColors.ink, width: 1.4),
                   ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                level.value == null
-                    ? 'Lv. —'
-                    : 'Lv. ${level.requireValue.level}',
-                style: LqText.levelNumber,
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    size: 11,
+                    color: LqColors.primary,
+                  ),
+                ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
