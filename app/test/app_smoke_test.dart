@@ -17,6 +17,9 @@ import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
+import 'package:life_quest/features/proof/application/proof_providers.dart';
+import 'package:life_quest/features/proof/data/proof_dto.dart';
+import 'package:life_quest/features/proof/data/proof_repository.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -31,6 +34,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -75,6 +79,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -96,6 +101,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FailingQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -117,6 +123,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileScreen()),
       ),
@@ -151,6 +158,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
           lifedexRepositoryProvider.overrideWithValue(_FakeLifedexRepository()),
           achievementRepositoryProvider.overrideWithValue(
             _FakeAchievementRepository(),
@@ -178,6 +186,7 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileEditScreen()),
       ),
@@ -192,10 +201,19 @@ void main() {
   });
 
   testWidgets('캐릭터 꾸미기는 별도 화면에서 제공한다', (tester) async {
+    // 기본 테스트 화면(800×600)에서는 액세서리 섹션이 캐릭터 그리드 아래로 밀려
+    // 화면 밖에 놓인다. CustomScrollView의 슬리버는 화면 밖이면 빌드되지 않으므로
+    // find가 0개를 돌려주고, 섹션이 없어서가 아니라 스크롤 위치 때문에 실패한다.
+    // 이 화면은 원래 스크롤 화면이라 "한 화면에 다 들어온다"는 검증 대상이 아니다.
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: CharacterSelectionScreen()),
       ),
@@ -347,4 +365,17 @@ class _FakeAchievementRepository extends AchievementRepository {
           Achievement(id: 3, name: '???', achieved: false, secret: true),
         ],
       );
+}
+
+/// 홈의 인증 광장 섹션이 쓰는 저장소. 덮어쓰지 않으면 실제 Dio로 요청이 나가고,
+/// 응답이 오지 않는 동안 섹션의 스피너가 계속 돌아 `pumpAndSettle`이 끝나지 않는다.
+class _FakeProofRepository extends ProofRepository {
+  _FakeProofRepository() : super(Dio());
+
+  @override
+  Future<ProofFeedPage> feed({
+    required ProofFeedTab tab,
+    int? cursor,
+    int size = 10,
+  }) async => const ProofFeedPage(items: []);
 }

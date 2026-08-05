@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/widgets/secret_achievement_modal.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
+import 'package:life_quest/features/proof/presentation/proof_form_args.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
@@ -152,9 +153,35 @@ class _QuestResultScreenState extends State<QuestResultScreen> {
                     LqSpacing.screen,
                     16,
                   ),
-                  child: LqButton(
-                    label: '확인',
-                    onPressed: () => context.go('/'),
+                  // 인증 사진을 올릴 마음이 제일 큰 순간이 바로 여기다 — 방금 그 장소에
+                  // 있었고 사진도 방금 찍었다. 홈으로 돌아간 뒤에 다시 들어와 올리는
+                  // 사람은 거의 없으므로 주 버튼을 이쪽에 준다.
+                  //
+                  // 중복 완료(duplicated)는 이미 게시물이 있을 수 있어 권하지 않는다.
+                  child: Column(
+                    children: [
+                      if (!result.duplicated)
+                        LqButton(
+                          label: '인증 사진 올리기',
+                          onPressed: () => context.pushReplacement(
+                            '/proofs/new',
+                            extra: ProofFormArgs(
+                              completionId: result.completionId,
+                              questTitle: result.questTitle,
+                              questGrade: result.grade,
+                            ),
+                          ),
+                        ),
+                      if (!result.duplicated) const SizedBox(height: 8),
+                      LqButton(
+                        label: '확인',
+                        background: LqColors.surfaceRaised,
+                        foreground: LqColors.textPrimary,
+                        borderColor: LqColors.borderMuted,
+                        shadow: result.duplicated,
+                        onPressed: () => context.go('/'),
+                      ),
+                    ],
                   ),
                 ),
               ],

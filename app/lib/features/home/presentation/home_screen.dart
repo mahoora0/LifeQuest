@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/location/application/location_consent_controller.dart';
 import 'package:life_quest/features/location/presentation/widgets/location_consent_prompts.dart';
 import 'package:life_quest/features/notification/application/notification_providers.dart';
+import 'package:life_quest/features/proof/application/proof_providers.dart';
+import 'package:life_quest/features/proof/data/proof_dto.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
@@ -94,6 +96,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onOpen: _openDetail,
                 onCheck: _completeSelfReport,
               ),
+              const SizedBox(height: LqSpacing.gap),
+              const _ProofPlazaCard(),
             ],
           ),
         ),
@@ -403,6 +407,148 @@ class _TodayQuestCard extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 홈의 인증 광장 섹션.
+///
+/// 여기서 무한 스크롤하지 않고 가로 미리보기만 둔다. 홈이 이미 세로 `ListView`라
+/// 안에 세로 스크롤 목록을 중첩하면 어느 쪽이 제스처를 가져갈지 불안정해지고,
+/// `shrinkWrap`으로 막으면 게시물 전체를 한 번에 빌드하게 된다.
+///
+/// 보여주는 것은 최신 게시물이 아니라 **아직 표가 모자란 게시물**이다. 최신순으로 두면
+/// 이미 판정이 끝난 글이 앞을 차지해서, 사용자가 몇 명뿐일 때 정작 표가 필요한 글이
+/// 아무에게도 닿지 않는다.
+class _ProofPlazaCard extends ConsumerWidget {
+  const _ProofPlazaCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final highlights = ref.watch(proofHighlightsProvider);
+    final posts = highlights.value ?? const <ProofPost>[];
+
+    return LqCard(
+      background: LqColors.surfaceCard,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 2,
+                ),
+                decoration: const BoxDecoration(
+                  color: LqColors.primary,
+                  borderRadius: LqShape.pillRadius,
+                ),
+                child: Text(
+                  '인증 광장',
+                  style: LqText.badge.copyWith(
+                    fontSize: 14,
+                    color: LqColors.onDark,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push('/proofs'),
+                child: Text(
+                  '더 보기 ›',
+                  style: LqText.label.copyWith(color: LqColors.primary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            posts.isEmpty
+                ? '다른 모험가의 인증을 확인하고 판정에 참여해 보세요'
+                : '판정을 기다리는 모험 ${posts.length}개',
+            style: LqText.bodySm,
+          ),
+          const SizedBox(height: 10),
+          if (highlights.isLoading && posts.isEmpty)
+            const SizedBox(
+              height: 120,
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: LqColors.primary,
+                  ),
+                ),
+              ),
+            )
+          else if (posts.isEmpty)
+            SizedBox(
+              height: 60,
+              child: Center(
+                child: Text('아직 판정을 기다리는 인증이 없어요', style: LqText.caption),
+              ),
+            )
+          else
+            SizedBox(
+              height: 132,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: posts.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) =>
+                    _ProofPreview(post: posts[index]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProofPreview extends StatelessWidget {
+  const _ProofPreview({required this.post});
+
+  final ProofPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/proofs/${post.postId}'),
+      child: SizedBox(
+        width: 100,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: LqShape.cardRadius,
+              child: SizedBox(
+                width: 100,
+                height: 100,
+                child: post.photoUrls.isEmpty
+                    ? Container(color: LqColors.lockedTile)
+                    : Image.network(
+                        post.photoUrls.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(color: LqColors.lockedTile),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              post.questTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LqText.caption,
+            ),
+          ],
+        ),
       ),
     );
   }
