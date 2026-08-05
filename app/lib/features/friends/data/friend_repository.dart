@@ -18,11 +18,18 @@ class FriendRepository {
       _dio ?? (throw StateError('FriendRepository requires Dio'));
 
   Future<FriendList> fetchFriends() => _guard(() async {
-    final response = await _client.get<dynamic>(
-      '/friends',
-      queryParameters: const {'page': 0, 'size': 100},
+    final responses = await Future.wait([
+      _client.get<dynamic>(
+        '/friends',
+        queryParameters: const {'page': 0, 'size': 100},
+      ),
+      _client.get<dynamic>('/users/me/friend-code'),
+    ]);
+    final friends = FriendList.fromJson(responses[0].data);
+    final code = asString(
+      pick(asMap(responses[1].data), ['friendCode', 'code']),
     );
-    return FriendList.fromJson(response.data);
+    return FriendList(friends: friends.friends, myCode: code);
   });
 
   Future<WeeklyRanking> fetchWeeklyRanking({

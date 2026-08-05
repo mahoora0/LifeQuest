@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
@@ -395,10 +396,26 @@ class _FriendCodeCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, size: 20, color: LqColors.textMuted),
+          if (myCode != null)
+            LqStatePill(
+              label: '복사',
+              tone: LqPillTone.quiet,
+              onTap: () => _copy(context, myCode!),
+            )
+          else
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: LqColors.textMuted,
+            ),
         ],
       ),
     );
+  }
+
+  Future<void> _copy(BuildContext context, String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (context.mounted) showLqSnack(context, '친구 코드를 복사했어요');
   }
 }
 

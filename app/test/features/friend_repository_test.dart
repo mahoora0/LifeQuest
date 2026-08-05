@@ -27,6 +27,24 @@ void main() {
 
     expect(searchQuery, 'LQ-0000002A');
   });
+
+  test('친구 목록에도 내 친구 코드를 함께 담는다', () async {
+    final dio = _dio((options) {
+      if (options.path == '/users/me/friend-code') {
+        return {'friendCode': 'LQ-0000002A'};
+      }
+      return {
+        'content': [
+          {'userId': 7, 'nickname': '친구', 'level': 3},
+        ],
+      };
+    });
+
+    final list = await FriendRepository(dio).fetchFriends();
+
+    expect(list.myCode, 'LQ-0000002A');
+    expect(list.friends.single.nickname, '친구');
+  });
 }
 
 Dio _dio(Map<String, dynamic> Function(RequestOptions) responseFor) {
