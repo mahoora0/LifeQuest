@@ -17,6 +17,9 @@ import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
+import 'package:life_quest/features/proof/application/proof_providers.dart';
+import 'package:life_quest/features/proof/data/proof_dto.dart';
+import 'package:life_quest/features/proof/data/proof_repository.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -31,6 +34,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -75,6 +79,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -96,6 +101,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FailingQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -117,6 +123,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileScreen()),
       ),
@@ -151,6 +158,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
           lifedexRepositoryProvider.overrideWithValue(_FakeLifedexRepository()),
           achievementRepositoryProvider.overrideWithValue(
             _FakeAchievementRepository(),
@@ -178,6 +186,7 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileEditScreen()),
       ),
@@ -196,6 +205,7 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: CharacterSelectionScreen()),
       ),
@@ -347,4 +357,17 @@ class _FakeAchievementRepository extends AchievementRepository {
           Achievement(id: 3, name: '???', achieved: false, secret: true),
         ],
       );
+}
+
+/// 홈의 인증 광장 섹션이 쓰는 저장소. 덮어쓰지 않으면 실제 Dio로 요청이 나가고,
+/// 응답이 오지 않는 동안 섹션의 스피너가 계속 돌아 `pumpAndSettle`이 끝나지 않는다.
+class _FakeProofRepository extends ProofRepository {
+  _FakeProofRepository() : super(Dio());
+
+  @override
+  Future<ProofFeedPage> feed({
+    required ProofFeedTab tab,
+    int? cursor,
+    int size = 10,
+  }) async => const ProofFeedPage(items: []);
 }

@@ -28,6 +28,9 @@ import 'package:life_quest/features/notification/presentation/notification_scree
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
 import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
+import 'package:life_quest/features/proof/presentation/proof_detail_screen.dart';
+import 'package:life_quest/features/proof/presentation/proof_feed_screen.dart';
+import 'package:life_quest/features/proof/presentation/proof_form_screen.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/map_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_detail_screen.dart';
@@ -130,6 +133,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // --- 탭 밖 push 라우트 (하단 탭바 숨김) ---
+
+      // 인증 광장. LifeDex·업적과 같은 이유로 탭에 넣지 않는다 —
+      // 탭 구성은 시안 확정안(홈·퀘스트·지도·친구·마이)이라 늘리지 않고,
+      // 홈의 "인증 광장" 섹션에서 push로 연다.
+      //
+      // `/proofs/new`를 `/proofs/:postId`보다 먼저 선언해야
+      // "new"가 postId로 잡히지 않는다.
+      GoRoute(
+        path: '/proofs',
+        builder: (context, state) => const ProofFeedScreen(),
+      ),
+      GoRoute(
+        path: '/proofs/new',
+        builder: (context, state) => ProofFormScreen(
+          // 퀘스트 완료 결과 화면에서 넘어오면 완료 기록이 이미 정해져 있다.
+          initialCompletionId: state.extra is int ? state.extra! as int : null,
+        ),
+      ),
+      GoRoute(
+        path: '/proofs/:postId',
+        builder: (context, state) => ProofDetailScreen(
+          postId: int.tryParse(state.pathParameters['postId'] ?? '') ?? 0,
+        ),
+      ),
+
       // `/quests/result`를 `/quests/:questId`보다 먼저 선언해야
       // "result"가 questId로 잡히지 않는다.
       GoRoute(
