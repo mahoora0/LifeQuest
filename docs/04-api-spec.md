@@ -121,6 +121,9 @@
 | POST | /api/admin/quests | 퀘스트 등록(관리자) | 필요(관리자) |
 | PATCH | /api/admin/quests/{questId} | 퀘스트 수정(관리자) | 필요(관리자) |
 | DELETE | /api/admin/quests/{questId} | 퀘스트 소프트 삭제(`is_active=false`, 관리자) | 필요(관리자) |
+| GET | /api/notifications | 내 알림 목록과 읽지 않은 개수 | 필요 |
+| PATCH | /api/notifications/{notificationId}/read | 알림 개별 읽음 처리 | 필요 |
+| PATCH | /api/notifications/read | 모든 알림 읽음 처리 | 필요 |
 
 ### 3-5. 엔드포인트별 요청·응답·오류 요약
 
