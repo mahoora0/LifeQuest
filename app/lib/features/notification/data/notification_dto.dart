@@ -11,6 +11,9 @@ enum LqNotificationKind {
   /// 동료 신청 도착.
   friendRequest,
 
+  /// 친구 요청 수락.
+  friendAccepted,
+
   /// 오늘의 퀘스트 배정.
   questAssigned,
 
@@ -21,6 +24,7 @@ enum LqNotificationKind {
     'ACHIEVEMENT' || 'achievement' => achievement,
     'CHEER' || 'cheer' => cheer,
     'FRIEND_REQUEST' || 'friendRequest' => friendRequest,
+    'FRIEND_ACCEPTED' || 'friendAccepted' => friendAccepted,
     'LEVEL_UP' || 'levelUp' => levelUp,
     _ => questAssigned,
   };

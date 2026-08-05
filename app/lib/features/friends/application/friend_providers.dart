@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/core/network/api_client.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
 
 final friendRepositoryProvider = Provider<FriendRepository>((ref) {
-  return const FriendRepository();
+  return FriendRepository(ref.watch(dioProvider));
 });
 
 /// 친구 목록(S-18). 응원 상태를 화면에서 바꿔야 해서 Notifier로 둔다.
@@ -65,9 +66,12 @@ class FriendListNotifier extends AsyncNotifier<FriendList> {
 }
 
 /// 이번 주 친구 랭킹(S-22).
-final weeklyRankingProvider = FutureProvider<WeeklyRanking>((ref) {
-  return ref.watch(friendRepositoryProvider).fetchWeeklyRanking();
-});
+final weeklyRankingProvider =
+    FutureProvider.family<WeeklyRanking, RankingQuery>((ref, query) {
+      return ref
+          .watch(friendRepositoryProvider)
+          .fetchWeeklyRanking(type: query.type, scope: query.scope);
+    });
 
 /// 내 친구 코드. 동료 찾기는 목록을 불러오지 않고도 코드를 보여야 한다.
 final myFriendCodeProvider = FutureProvider<String?>((ref) {
@@ -141,6 +145,8 @@ class AdventurerSearchNotifier extends AsyncNotifier<AdventurerSearchState> {
 
     try {
       await ref.read(friendRepositoryProvider).sendRequest(userId);
+      // 친구 목록의 요청 관리 카드와 보낸 요청 탭이 즉시 최신 건수를 다시 받는다.
+      ref.invalidate(friendRequestsProvider);
     } catch (error, stackTrace) {
       // 그 행만 되돌린다. 스냅샷을 통째로 복원하면 기다리는 동안 끝난 새 검색
       // 결과가 사라지고, 입력창과 목록이 어긋난다. 원본 객체를 그대로 되돌려
@@ -199,7 +205,7 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
     try {
       await ref
           .read(friendRepositoryProvider)
-          .respondToRequest(userId, accept: accept);
+          .respondToRequest(target.requestId, accept: accept);
       // 수락하면 친구 목록이 한 명 늘어난다. 다시 열었을 때 비어 있지 않도록
       // 목록을 무효화해 다음 조회에서 새로 받게 한다.
       if (accept) ref.invalidate(friendListProvider);
@@ -212,6 +218,31 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
           FriendRequestBox(
             received: [target, ...latest.received],
             sent: latest.sent,
+          ),
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> cancelSent(int requestId) async {
+    final current = state.value;
+    if (current == null) return;
+    final target = current.sent
+        .where((item) => item.requestId == requestId)
+        .firstOrNull;
+    if (target == null) return;
+
+    state = AsyncData(current.removeSent(requestId));
+    try {
+      await ref.read(friendRepositoryProvider).cancelSentRequest(requestId);
+    } catch (error, stackTrace) {
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(
+          FriendRequestBox(
+            received: latest.received,
+            sent: [target, ...latest.sent],
           ),
         );
       }
@@ -262,5 +293,7 @@ class FriendJourneyNotifier extends AsyncNotifier<FriendJourney> {
   Future<void> unfriend() async {
     await ref.read(friendRepositoryProvider).unfriend(userId);
     ref.invalidate(friendListProvider);
+    // 친구 범위의 EXP·레벨 랭킹에서 삭제한 사용자가 즉시 빠져야 한다.
+    ref.invalidate(weeklyRankingProvider);
   }
 }

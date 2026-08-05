@@ -16,6 +16,7 @@ const _kindTints = <LqNotificationKind, Color>{
   LqNotificationKind.achievement: LqColors.goldBg,
   LqNotificationKind.cheer: Color(0xFFDCE8C6),
   LqNotificationKind.friendRequest: Color(0xFFCFE3EC),
+  LqNotificationKind.friendAccepted: Color(0xFFCFE3EC),
   LqNotificationKind.questAssigned: LqColors.successBg,
   LqNotificationKind.levelUp: Color(0xFFEADFF3),
 };
@@ -127,9 +128,20 @@ class NotificationScreen extends ConsumerWidget {
         return;
       }
     }
-    if (route != null && context.mounted) context.push(route);
+    if (route != null && context.mounted) {
+      // 하단 탭의 루트 화면을 push하면 StatefulShellRoute 안에 이미 존재하는
+      // 페이지 키와 중복될 수 있다. 탭 화면은 go로 전환하고, 상세 화면만
+      // 기존처럼 push해서 뒤로 가기를 유지한다.
+      if (_shellRootRoutes.contains(route)) {
+        context.go(route);
+      } else {
+        context.push(route);
+      }
+    }
   }
 }
+
+const _shellRootRoutes = {'/', '/quests', '/map', '/friends', '/profile'};
 
 /// "모두 읽음" — 읽지 않은 것이 없으면 비활성으로 남긴다.
 class _MarkAllReadButton extends StatelessWidget {
@@ -238,7 +250,8 @@ class _Leading extends StatelessWidget {
     final tint = _kindTints[item.kind] ?? LqColors.surfaceTile;
     final isAvatar =
         item.kind == LqNotificationKind.cheer ||
-        item.kind == LqNotificationKind.friendRequest;
+        item.kind == LqNotificationKind.friendRequest ||
+        item.kind == LqNotificationKind.friendAccepted;
 
     return Container(
       width: 34,

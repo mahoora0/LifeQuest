@@ -140,21 +140,28 @@ class AdventurerSearchResult {
 /// 동료 신청 한 건 (`GET /api/friends/requests`).
 class FriendRequest {
   const FriendRequest({
+    this.requestId = 0,
     required this.userId,
     required this.nickname,
     required this.level,
     this.statusLine,
   });
 
+  final int requestId;
   final int userId;
   final String nickname;
   final int level;
   final String? statusLine;
 
   factory FriendRequest.fromJson(Map<String, dynamic> json) => FriendRequest(
-    userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
-    nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
-    level: asInt(json['level']) ?? 1,
+    requestId: asInt(pick(json, ['requestId', 'id'])) ?? 0,
+    userId: asInt(pick(json, ['userId', 'senderId', 'receiverId'])) ?? 0,
+    nickname:
+        asString(
+          pick(json, ['nickname', 'senderNickname', 'receiverNickname']),
+        ) ??
+        '모험가',
+    level: asInt(pick(json, ['level', 'senderLevel', 'receiverLevel'])) ?? 1,
     statusLine: asString(pick(json, ['statusLine', 'summary'])),
   );
 }
@@ -178,6 +185,14 @@ class FriendRequestBox {
         if (request.userId != userId) request,
     ],
     sent: sent,
+  );
+
+  FriendRequestBox removeSent(int requestId) => FriendRequestBox(
+    received: received,
+    sent: [
+      for (final request in sent)
+        if (request.requestId != requestId) request,
+    ],
   );
 
   factory FriendRequestBox.fromJson(Object? body) {
@@ -282,12 +297,31 @@ class FriendJourney {
 }
 
 /// 주간 랭킹 한 줄 (`GET /api/rankings/friends`).
+enum RankingType {
+  exp('EXP'),
+  level('LEVEL');
+
+  const RankingType(this.apiValue);
+  final String apiValue;
+}
+
+enum RankingScope {
+  global('/rankings/global'),
+  friends('/rankings/friends');
+
+  const RankingScope(this.path);
+  final String path;
+}
+
+typedef RankingQuery = ({RankingScope scope, RankingType type});
+
 class RankEntry {
   const RankEntry({
     required this.rank,
     required this.userId,
     required this.nickname,
     required this.weeklyExp,
+    this.level = 1,
     this.isMe = false,
   });
 
@@ -295,6 +329,7 @@ class RankEntry {
   final int userId;
   final String nickname;
   final int weeklyExp;
+  final int level;
   final bool isMe;
 
   factory RankEntry.fromJson(Map<String, dynamic> json) => RankEntry(
@@ -302,19 +337,25 @@ class RankEntry {
     userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
     nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
     weeklyExp: asInt(pick(json, ['weeklyExp', 'exp', 'totalExp'])) ?? 0,
+    level: asInt(json['level']) ?? 1,
     isMe: asBool(pick(json, ['isMe', 'me'])),
   );
 }
 
 /// 이번 주 친구 랭킹.
 class WeeklyRanking {
-  const WeeklyRanking({required this.entries, this.rankDelta});
+  const WeeklyRanking({
+    required this.entries,
+    this.rankDelta,
+    this.totalElements,
+  });
 
   final List<RankEntry> entries;
 
   /// 지난주 대비 순위 변동. 서버가 지난주 집계를 주지 않으면 null이고 등락 표시를 감춘다.
   /// 0을 기본값으로 두면 "변동 없음"이라는 없는 사실을 말하게 된다.
   final int? rankDelta;
+  final int? totalElements;
 
   bool get isEmpty => entries.isEmpty;
 
@@ -336,6 +377,7 @@ class WeeklyRanking {
         pick(json, ['rankings', 'content', 'items']),
       ).map(RankEntry.fromJson).toList(),
       rankDelta: asInt(pick(json, ['rankDelta', 'change'])),
+      totalElements: asInt(json['totalElements']),
     );
   }
 }

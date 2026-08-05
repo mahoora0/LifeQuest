@@ -92,6 +92,29 @@ void main() {
       expect(find.text('수락'), findsNothing);
     });
 
+    testWidgets('보낸 요청 탭에서 대기 중인 상대를 확인한다', (tester) async {
+      await pump(tester, const FriendRequestsScreen());
+
+      await tester.tap(find.text('보낸 요청 1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('초록수풀'), findsOneWidget);
+      expect(find.text('요청 수락을 기다리는 중'), findsOneWidget);
+      expect(find.text('요청 취소'), findsOneWidget);
+    });
+
+    testWidgets('보낸 요청을 취소하면 목록에서 제거한다', (tester) async {
+      await pump(tester, const FriendRequestsScreen());
+      await tester.tap(find.text('보낸 요청 1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('요청 취소'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('초록수풀'), findsNothing);
+      expect(find.text('아직 보낸 신청이 없어요'), findsOneWidget);
+    });
+
     testWidgets('처리한 요청은 목록에서 걷힌다', (tester) async {
       await pump(tester, const FriendRequestsScreen());
 

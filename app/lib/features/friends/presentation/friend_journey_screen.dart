@@ -98,7 +98,7 @@ class _Body extends ConsumerWidget {
             SizedBox(
               width: 110,
               child: LqButton(
-                label: '동료 해제',
+                label: '친구 삭제',
                 height: 46,
                 fontSize: 16,
                 background: LqColors.surfacePanel,
@@ -123,7 +123,7 @@ class _Body extends ConsumerWidget {
     }
   }
 
-  /// 동료 해제는 되돌릴 수 없으므로 한 번 묻는다.
+  /// 친구 삭제는 되돌릴 수 없으므로 한 번 묻는다.
   Future<void> _confirmUnfriend(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -132,7 +132,7 @@ class _Body extends ConsumerWidget {
         shape: const RoundedRectangleBorder(borderRadius: LqShape.cardRadius),
         title: Text('${journey.nickname}님과 헤어질까요?', style: LqText.cardTitle),
         content: Text(
-          '서로의 여정을 더는 볼 수 없어요.\n다시 함께하려면 동료 신청을 새로 보내야 해요.',
+          '서로의 여정을 더는 볼 수 없어요.\n다시 함께하려면 친구 요청을 새로 보내야 해요.',
           style: LqText.bodySm,
         ),
         actions: [
@@ -149,7 +149,7 @@ class _Body extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              '동료 해제',
+              '친구 삭제',
               style: LqText.bodySm.copyWith(
                 fontWeight: FontWeight.w700,
                 color: LqColors.dangerText,
@@ -164,7 +164,10 @@ class _Body extends ConsumerWidget {
 
     try {
       await ref.read(friendJourneyProvider(userId).notifier).unfriend();
-      if (context.mounted) context.pop();
+      if (context.mounted) {
+        showLqSnack(context, '${journey.nickname}님을 친구에서 삭제했어요');
+        context.pop();
+      }
     } catch (error) {
       if (context.mounted) showLqError(context, error);
     }

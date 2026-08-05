@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
@@ -38,7 +39,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// 0 = 친구 목록, 1 = 이번 주 랭킹.
   int _segment = 0;
 
-  static const _segments = ['친구 목록', '이번 주 랭킹'];
+  static const _segments = ['친구 목록', '랭킹'];
 
   @override
   Widget build(BuildContext context) {
@@ -160,14 +161,16 @@ class _RequestBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 조회에 실패해도 배너만 조용히 사라진다. 목록 자체를 막을 값이 아니다.
-    final count = ref.watch(friendRequestsProvider).value?.receivedCount ?? 0;
-    if (count == 0) return const SizedBox.shrink();
+    final box = ref.watch(friendRequestsProvider).value;
+    final receivedCount = box?.receivedCount ?? 0;
+    final sentCount = box?.sent.length ?? 0;
+    final hasReceived = receivedCount > 0;
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: LqSpacing.gap),
       child: LqCard(
         radius: LqShape.rowRadius,
-        background: LqColors.goldBg,
+        background: hasReceived ? LqColors.goldBg : LqColors.surfaceCard,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         onTap: () => context.push('/friends/requests'),
         child: Row(
@@ -177,34 +180,50 @@ class _RequestBanner extends ConsumerWidget {
               height: 26,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: LqColors.accent,
+                color: hasReceived ? LqColors.accent : LqColors.tileFill,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: LqColors.ink,
                   width: LqShape.borderWidth,
                 ),
               ),
-              child: Text(
-                '$count',
-                style: LqText.badge.copyWith(
-                  fontSize: 13,
-                  color: LqColors.onDark,
-                ),
-              ),
+              child: hasReceived
+                  ? Text(
+                      '$receivedCount',
+                      style: LqText.badge.copyWith(
+                        fontSize: 13,
+                        color: LqColors.onDark,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.outbox_rounded,
+                      size: 15,
+                      color: LqColors.textPrimary,
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                '동료 신청이 $count건 도착했어요',
-                style: LqText.bodySm.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: LqColors.goldText,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasReceived ? '친구 요청이 $receivedCount건 도착했어요' : '친구 요청 관리',
+                    style: LqText.bodySm.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: hasReceived
+                          ? LqColors.goldText
+                          : LqColors.textPrimary,
+                    ),
+                  ),
+                  Text('보낸 요청 $sentCount건 확인', style: LqText.caption),
+                ],
               ),
             ),
             Text(
               '›',
-              style: LqText.cardTitle.copyWith(color: LqColors.goldText),
+              style: LqText.cardTitle.copyWith(
+                color: hasReceived ? LqColors.goldText : LqColors.textPrimary,
+              ),
             ),
           ],
         ),
@@ -383,52 +402,155 @@ class _FriendCodeCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, size: 20, color: LqColors.textMuted),
+          if (myCode != null)
+            LqStatePill(
+              label: '복사',
+              tone: LqPillTone.quiet,
+              onTap: () => _copy(context, myCode!),
+            )
+          else
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: LqColors.textMuted,
+            ),
         ],
       ),
     );
   }
+
+  Future<void> _copy(BuildContext context, String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (context.mounted) showLqSnack(context, '친구 코드를 복사했어요');
+  }
 }
 
-class _RankingTab extends ConsumerWidget {
+class _RankingTab extends ConsumerStatefulWidget {
   const _RankingTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ranking = ref.watch(weeklyRankingProvider);
+  ConsumerState<_RankingTab> createState() => _RankingTabState();
+}
 
-    return LqAsyncView<WeeklyRanking>(
-      value: ranking,
-      isEmpty: (value) => value.isEmpty,
-      emptyMessage: '아직 이번 주 기록이 없어요',
-      onRetry: () => ref.invalidate(weeklyRankingProvider),
-      notReadyMessage: '이번 주 랭킹은 아직 준비 중이에요',
-      data: (value) => ListView(
-        padding: const EdgeInsets.fromLTRB(
-          LqSpacing.screen,
-          4,
-          LqSpacing.screen,
-          24,
+class _RankingTabState extends ConsumerState<_RankingTab> {
+  RankingType _type = RankingType.exp;
+  RankingScope _scope = RankingScope.global;
+
+  @override
+  Widget build(BuildContext context) {
+    final query = (scope: _scope, type: _type);
+    final ranking = ref.watch(weeklyRankingProvider(query));
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
+          child: Row(
+            children: [
+              Text('랭킹 범위', style: LqText.label),
+              const Spacer(),
+              LqStatePill(
+                label: '전체',
+                tone: _scope == RankingScope.global
+                    ? LqPillTone.primary
+                    : LqPillTone.quiet,
+                onTap: () => setState(() => _scope = RankingScope.global),
+              ),
+              const SizedBox(width: 6),
+              LqStatePill(
+                label: '친구',
+                tone: _scope == RankingScope.friends
+                    ? LqPillTone.primary
+                    : LqPillTone.quiet,
+                onTap: () => setState(() => _scope = RankingScope.friends),
+              ),
+            ],
+          ),
         ),
-        children: [
-          _RankSummaryCard(ranking: value),
-          const SizedBox(height: LqSpacing.gap),
-          for (final entry in value.entries) ...[
-            _RankRow(
-              entry: entry,
-              // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
-              // 상대가 없으므로 열지 않는다.
-              onOpen: entry.isMe
-                  ? null
-                  : () => context.push('/friends/${entry.userId}'),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
+          child: _RankingTypeSwitch(
+            selected: _type,
+            onSelected: (type) => setState(() => _type = type),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: LqAsyncView<WeeklyRanking>(
+            value: ranking,
+            isEmpty: (value) => value.isEmpty,
+            emptyMessage: '아직 랭킹 기록이 없어요',
+            onRetry: () => ref.invalidate(weeklyRankingProvider(query)),
+            notReadyMessage: '랭킹은 아직 준비 중이에요',
+            data: (value) => ListView(
+              padding: const EdgeInsets.fromLTRB(
+                LqSpacing.screen,
+                4,
+                LqSpacing.screen,
+                24,
+              ),
+              children: [
+                _RankSummaryCard(ranking: value, scope: _scope, type: _type),
+                const SizedBox(height: LqSpacing.gap),
+                for (final entry in value.entries) ...[
+                  _RankRow(
+                    entry: entry,
+                    type: _type,
+                    // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
+                    // 상대가 없으므로 열지 않는다.
+                    onOpen: entry.isMe || _scope == RankingScope.global
+                        ? null
+                        : () => context.push('/friends/${entry.userId}'),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  _type == RankingType.exp
+                      ? '누적 EXP가 높은 순서로 표시돼요'
+                      : '레벨이 높은 순서로 표시돼요',
+                  textAlign: TextAlign.center,
+                  style: LqText.caption,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-          ],
-          const SizedBox(height: 4),
-          Text(
-            '랭킹은 매주 월요일 0시에 초기화돼요',
-            textAlign: TextAlign.center,
-            style: LqText.caption,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RankingTypeSwitch extends StatelessWidget {
+  const _RankingTypeSwitch({required this.selected, required this.onSelected});
+
+  final RankingType selected;
+  final ValueChanged<RankingType> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: LqColors.surfaceTile,
+        borderRadius: LqShape.rowRadius,
+        border: Border.all(color: LqColors.borderMuted),
+      ),
+      child: Row(
+        children: [
+          _RankingTypeButton(
+            label: 'EXP 랭킹',
+            icon: Icons.bolt_rounded,
+            selected: selected == RankingType.exp,
+            onTap: () => onSelected(RankingType.exp),
+          ),
+          _RankingTypeButton(
+            label: '레벨 랭킹',
+            icon: Icons.military_tech_outlined,
+            selected: selected == RankingType.level,
+            onTap: () => onSelected(RankingType.level),
           ),
         ],
       ),
@@ -436,10 +558,70 @@ class _RankingTab extends ConsumerWidget {
   }
 }
 
+class _RankingTypeButton extends StatelessWidget {
+  const _RankingTypeButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            decoration: BoxDecoration(
+              color: selected ? LqColors.primary : Colors.transparent,
+              borderRadius: LqShape.tileRadius,
+              border: selected ? Border.all(color: LqColors.ink) : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? LqColors.onDark : LqColors.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: LqText.label.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? LqColors.onDark : LqColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RankSummaryCard extends StatelessWidget {
-  const _RankSummaryCard({required this.ranking});
+  const _RankSummaryCard({
+    required this.ranking,
+    required this.scope,
+    required this.type,
+  });
 
   final WeeklyRanking ranking;
+  final RankingScope scope;
+  final RankingType type;
 
   @override
   Widget build(BuildContext context) {
@@ -458,7 +640,7 @@ class _RankSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '이번 주 내 순위',
+                  type == RankingType.exp ? '내 EXP 순위' : '내 레벨 순위',
                   style: LqText.bodySm.copyWith(
                     fontWeight: FontWeight.w700,
                     color: LqColors.textSecondary,
@@ -477,7 +659,9 @@ class _RankSummaryCard extends StatelessWidget {
                           style: LqText.levelNumber.copyWith(fontSize: 23),
                         ),
                         TextSpan(
-                          text: '/ 친구 ${ranking.friendCount}명 중',
+                          text: scope == RankingScope.global
+                              ? '/ 전체 ${ranking.totalElements ?? ranking.entries.length}명 중'
+                              : '/ 친구 ${ranking.friendCount}명 중',
                           style: LqText.caption.copyWith(fontSize: 14),
                         ),
                       ],
@@ -519,9 +703,10 @@ class _DeltaPill extends StatelessWidget {
 }
 
 class _RankRow extends StatelessWidget {
-  const _RankRow({required this.entry, this.onOpen});
+  const _RankRow({required this.entry, required this.type, this.onOpen});
 
   final RankEntry entry;
+  final RankingType type;
   final VoidCallback? onOpen;
 
   Color get _medalColor => switch (entry.rank) {
@@ -579,7 +764,9 @@ class _RankRow extends StatelessWidget {
               borderRadius: LqShape.pillRadius,
             ),
             child: Text(
-              'EXP ${_thousands(entry.weeklyExp)}',
+              type == RankingType.exp
+                  ? 'EXP ${_thousands(entry.weeklyExp)}'
+                  : 'Lv. ${entry.level}',
               style: LqText.badge.copyWith(
                 fontSize: 12.5,
                 color: LqColors.onDark,
