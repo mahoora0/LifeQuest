@@ -22,6 +22,4 @@ public interface QuestProofVoteRepository extends JpaRepository<QuestProofVote, 
      * 아니라 선택지 자체가 필요하다.
      */
     List<QuestProofVote> findByVoter_IdAndPost_IdIn(Long voterId, Collection<Long> postIds);
-
-    void deleteByPost_Id(Long postId);
 }

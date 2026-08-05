@@ -23,14 +23,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
+
+import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
 
 /**
  * 인증 광장. 퀘스트 완료 기록에 사진 게시물을 붙이고, 다른 사용자의 투표로 수행 여부를
@@ -51,6 +57,13 @@ public class QuestProofService {
 
     /** 논리적 일자 경계. 퀘스트 배정·만료와 같은 04:00 기준을 쓴다({@code docs/05} §1-1). */
     private static final int DAY_BOUNDARY_HOUR = 4;
+
+    /** {@code quest_proof_posts.content}의 컬럼 길이. 검증을 DB보다 앞에서 한다. */
+    private static final int MAX_CONTENT_LENGTH = 500;
+
+    /** V13에서 붙인 제약 이름. 무결성 위반의 원인을 좁히는 데 쓴다. */
+    private static final String COMPLETION_UNIQUE_CONSTRAINT = "uk_quest_proof_posts_completion";
+    private static final String VOTER_UNIQUE_CONSTRAINT = "uk_quest_proof_votes_voter";
 
     private final QuestProofPostRepository postRepository;
     private final QuestProofPhotoRepository photoRepository;
@@ -97,9 +110,9 @@ public class QuestProofService {
      * 완료 기록에 인증 게시물을 붙인다.
      *
      * <p>파일 저장이 트랜잭션 밖의 부수효과라는 점이 이 메서드의 유일한 까다로운 부분이다.
-     * 게시물 저장이 실패하면 트랜잭션은 되돌아가지만 이미 쓴 파일은 남는다. 그래서 제약 위반을
-     * 여기서 직접 받아 파일을 지운다 — {@code saveAndFlush}로 INSERT를 앞당기지 않으면 위반이
-     * 커밋 시점에야 터져서 이 catch 밖으로 나간다.
+     * 저장한 파일은 트랜잭션이 되돌아가도 디스크에 남으므로 롤백 콜백으로 지운다. 이 메서드
+     * 안에서 {@code catch}로 지우면 부족하다 — 커밋은 메서드가 끝난 뒤 트랜잭션 프록시에서
+     * 일어나므로, 커밋 단계에서 실패하면 어떤 {@code catch}도 실행되지 않고 파일만 남는다.
      */
     public ProofPostResponse create(
             Long userId, Long completionId, String content, List<MultipartFile> photos) {
@@ -109,6 +122,12 @@ public class QuestProofService {
         }
         if (photos.size() > settings.maxPhotos()) {
             throw new BusinessException(ErrorCode.PROOF_PHOTO_LIMIT_EXCEEDED);
+        }
+        String normalizedContent = normalize(content);
+        // 컬럼 길이(VARCHAR 500)에 기대지 않고 여기서 막는다. DB까지 내려보내면 잘림 오류가
+        // 무결성 예외로 올라와 아래 중복 판정과 섞인다 — 파일을 쓰기 전이라는 점도 중요하다.
+        if (normalizedContent != null && normalizedContent.length() > MAX_CONTENT_LENGTH) {
+            throw new BusinessException(ErrorCode.PROOF_CONTENT_TOO_LONG);
         }
 
         QuestCompletion completion = questCompletionRepository.findById(completionId)
@@ -128,17 +147,20 @@ public class QuestProofService {
 
         LocalDateTime now = LocalDateTime.now(clock);
         List<String> storedUrls = imageStorage.storeAll(photos);
+        deleteFilesOnRollback(storedUrls);
+
         try {
-            QuestProofPost post = new QuestProofPost(author, completionId, quest, normalize(content), now);
+            QuestProofPost post =
+                    new QuestProofPost(author, completionId, quest, normalizedContent, now);
             storedUrls.forEach(post::addPhoto);
             postRepository.saveAndFlush(post);
             return toResponse(post, userId, storedUrls, null);
         } catch (DataIntegrityViolationException exception) {
-            // 같은 완료 기록으로 동시에 두 요청이 들어온 경우. UNIQUE 제약이 최종 방어선이다.
-            imageStorage.deleteAll(storedUrls);
-            throw new BusinessException(ErrorCode.PROOF_ALREADY_POSTED);
-        } catch (RuntimeException exception) {
-            imageStorage.deleteAll(storedUrls);
+            // 같은 완료 기록으로 동시에 두 요청이 들어온 경우에만 중복으로 바꾼다. 어떤 무결성
+            // 위반이든 "이미 게시했습니다"로 덮으면 진짜 원인이 응답에서도 로그에서도 사라진다.
+            if (violates(exception, COMPLETION_UNIQUE_CONSTRAINT)) {
+                throw new BusinessException(ErrorCode.PROOF_ALREADY_POSTED);
+            }
             throw exception;
         }
     }
@@ -176,14 +198,25 @@ public class QuestProofService {
     /**
      * 투표한다. 같은 트랜잭션에서 표를 더하고, 판정을 다시 계산하고, EXP를 지급한다.
      *
-     * <p>맨 앞의 사용자 행 잠금이 하루 EXP 한도를 지킨다. 한도 검사는 지급 이력을 세는 방식이라,
-     * 같은 사용자의 투표 두 건이 동시에 들어오면 둘 다 검사를 통과한 뒤 각자 지급해 한도를
-     * 넘길 수 있다. {@code GrowthService.grantExp}가 어차피 잡을 잠금을 앞당겨 잡으면 같은
-     * 사용자의 투표가 직렬화되어 그 창이 사라진다.
+     * <p>잠금을 두 개 잡고, <b>순서가 규칙</b>이다 — 사용자 행이 먼저, 게시물 행이 나중.
+     *
+     * <p>사용자 행이 첫 DB 접근이어야 하는 이유는 격리 수준 때문이다. 하루 EXP 한도는 지급
+     * 이력을 세어 판정하는데, MySQL의 기본 REPEATABLE READ에서는 트랜잭션의 <b>첫 평범한
+     * SELECT</b>가 만든 스냅샷을 이후의 평범한 조회가 계속 쓴다. 잠금을 잡기 전에 아무 조회나
+     * 먼저 하면, 잠금을 얻은 뒤에 세는 이력에서 앞선 트랜잭션이 방금 넣은 지급 기록이 보이지
+     * 않아 한도를 넘길 수 있다. 이 메서드를 READ_COMMITTED로 두는 것으로도 막히지만, 잠금을
+     * 앞으로 옮기면 격리 수준에 기대지 않아도 된다 — 둘 다 한다.
+     *
+     * <p>게시물 행을 잠그는 이유는 표 카운터가 엔티티 필드 증가로 갱신되기 때문이다. 잠그지
+     * 않으면 동시 투표 두 건이 같은 값을 읽고 같은 값을 써서 한 표가 사라진다.
      */
+    @Transactional(isolation = READ_COMMITTED)
     public ProofVoteResponse vote(Long userId, Long postId, ProofVoteChoice choice) {
-        QuestProofPost post = postRepository.findDetailById(postId)
+        User voter = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        QuestProofPost post = postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROOF_POST_NOT_FOUND));
+
         if (post.isAuthor(userId)) {
             throw new BusinessException(ErrorCode.CANNOT_VOTE_OWN_PROOF);
         }
@@ -191,14 +224,14 @@ public class QuestProofService {
             throw new BusinessException(ErrorCode.PROOF_ALREADY_VOTED);
         }
 
-        User voter = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
         LocalDateTime now = LocalDateTime.now(clock);
         try {
             voteRepository.saveAndFlush(new QuestProofVote(post, voter, choice, now));
         } catch (DataIntegrityViolationException exception) {
-            throw new BusinessException(ErrorCode.PROOF_ALREADY_VOTED);
+            if (violates(exception, VOTER_UNIQUE_CONSTRAINT)) {
+                throw new BusinessException(ErrorCode.PROOF_ALREADY_VOTED);
+            }
+            throw exception;
         }
 
         post.applyVote(choice, settings, now);
@@ -210,7 +243,8 @@ public class QuestProofService {
 
     @Transactional(readOnly = true)
     public List<ProofCommentResponse> comments(Long userId, Long postId) {
-        if (!postRepository.existsById(postId)) {
+        // existsById로는 부족하다 — 삭제된 게시물의 행은 남아 있으므로 참을 돌려준다.
+        if (postRepository.findDetailById(postId).isEmpty()) {
             throw new BusinessException(ErrorCode.PROOF_POST_NOT_FOUND);
         }
         return commentRepository.findByPostId(postId).stream()
@@ -223,8 +257,9 @@ public class QuestProofService {
                 .toList();
     }
 
+    /** 댓글 수도 엔티티 필드 증가라 {@link #vote}와 같은 이유로 게시물 행을 잠근다. */
     public ProofCommentResponse addComment(Long userId, Long postId, String content) {
-        QuestProofPost post = postRepository.findById(postId)
+        QuestProofPost post = postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROOF_POST_NOT_FOUND));
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -239,28 +274,24 @@ public class QuestProofService {
     }
 
     /**
-     * 게시물을 지운다. 투표·댓글도 함께 사라지므로 이미 지급된 투표 EXP는 회수하지 않는다 —
-     * 회수하면 남이 글을 지웠다는 이유로 내 레벨이 내려간다.
+     * 게시물을 지운다. 행은 남기고 삭제 표시만 한다 — 지워 버리면
+     * {@code UNIQUE(quest_completion_id)}가 함께 사라져 같은 완료 기록으로 다시 올릴 수 있고,
+     * 그 경로로 투표 EXP를 반복해서 받을 수 있다(V14 주석).
+     *
+     * <p>이미 지급된 투표 EXP는 회수하지 않는다 — 회수하면 남이 글을 지웠다는 이유로 내
+     * 레벨이 내려간다. 투표·댓글 행도 남긴다. 게시물 행이 남아 있어 참조가 깨지지 않고,
+     * 지워 봐야 되돌릴 수 없는 판정 이력만 잃는다.
      */
     public void delete(Long userId, Long postId) {
-        QuestProofPost post = postRepository.findById(postId)
+        QuestProofPost post = postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROOF_POST_NOT_FOUND));
         if (!post.isAuthor(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        List<String> imageUrls = post.getPhotos().stream()
-                .map(QuestProofPhoto::getImageUrl)
-                .toList();
-
-        commentRepository.deleteByPost_Id(postId);
-        voteRepository.deleteByPost_Id(postId);
-        postRepository.delete(post);
-        postRepository.flush();
-
-        // DB에서 지워진 것이 확정된 뒤에 파일을 지운다. 순서를 뒤집으면 삭제가 실패해
-        // 롤백됐을 때 게시물은 남고 사진만 사라진다.
-        imageStorage.deleteAll(imageUrls);
+        // 파일 정리는 커밋 이후로 미룬다. flush는 커밋이 아니라서, 여기서 지우면 이후 커밋이
+        // 실패했을 때 게시물은 되살아나고 사진만 사라진다.
+        deleteFilesAfterCommit(post.markDeleted(LocalDateTime.now(clock)));
     }
 
     private int grantVoteExp(Long userId, Long postId, LocalDateTime now) {
@@ -343,6 +374,68 @@ public class QuestProofService {
 
     private static ProofAuthor toAuthor(User user) {
         return new ProofAuthor(user.getId(), user.getNickname(), user.getProfileImageUrl());
+    }
+
+    /**
+     * 트랜잭션이 커밋된 뒤에 파일을 지운다. 커밋 전에 지우면 이후 커밋 실패나 바깥
+     * 트랜잭션의 롤백으로 DB 상태만 되살아나고 사진은 사라진다.
+     */
+    private void deleteFilesAfterCommit(List<String> imageUrls) {
+        if (imageUrls.isEmpty()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            imageStorage.deleteAll(imageUrls);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                imageStorage.deleteAll(imageUrls);
+            }
+        });
+    }
+
+    /**
+     * 트랜잭션이 되돌아가면 저장했던 파일을 지운다. {@code catch}로는 부족하다 — 커밋은 이
+     * 서비스 메서드가 끝난 뒤 트랜잭션 프록시에서 일어나므로, 커밋 단계에서 실패하면 메서드
+     * 안의 어떤 {@code catch}도 실행되지 않는다.
+     */
+    private void deleteFilesOnRollback(List<String> imageUrls) {
+        if (imageUrls.isEmpty() || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    imageStorage.deleteAll(imageUrls);
+                }
+            }
+        });
+    }
+
+    /**
+     * 무결성 위반이 지목된 제약에서 났는지 본다.
+     *
+     * <p>제약 이름으로 판별하는 이유는, 위반이 난 뒤에는 영속성 컨텍스트가 롤백 대상으로
+     * 표시되어 확인용 질의를 다시 던질 수 없기 때문이다. 이름이 비어 오는 드라이버가 있어
+     * 메시지 본문까지 함께 본다.
+     */
+    private static boolean violates(DataIntegrityViolationException exception, String constraint) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation) {
+                String name = violation.getConstraintName();
+                if (name != null && name.toLowerCase(Locale.ROOT).contains(constraint)) {
+                    return true;
+                }
+            }
+            String message = cause.getMessage();
+            if (message != null && message.toLowerCase(Locale.ROOT).contains(constraint)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Java 17 대상이라 {@code Math.clamp}(21)를 쓸 수 없다. */

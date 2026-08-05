@@ -14,7 +14,4 @@ public interface QuestProofCommentRepository extends JpaRepository<QuestProofCom
             ORDER BY c.id ASC
             """)
     List<QuestProofComment> findByPostId(@Param("postId") Long postId);
-
-    /** 밑줄 표기 이유는 {@link QuestProofVoteRepository} 주석 참조. */
-    void deleteByPost_Id(Long postId);
 }

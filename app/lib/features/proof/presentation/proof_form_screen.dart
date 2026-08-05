@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_quest/features/proof/application/proof_providers.dart';
 import 'package:life_quest/features/proof/data/proof_dto.dart';
+import 'package:life_quest/features/proof/presentation/proof_form_args.dart';
 import 'package:life_quest/features/proof/presentation/widgets/proof_widgets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
@@ -16,13 +17,13 @@ import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 /// 인증 게시물 작성.
 ///
-/// [initialCompletionId]가 있으면 퀘스트 선택 단계를 건너뛴다. 퀘스트 완료 결과 화면에서
-/// 바로 넘어오는 경로가 그렇다 — 사진을 올릴 마음이 제일 큰 순간이라 선택지를 한 번 더
-/// 보여줄 이유가 없다.
+/// [args]가 있으면 퀘스트 선택 단계를 건너뛰고 읽기 전용으로 고정한다. 퀘스트 완료 결과
+/// 화면에서 바로 넘어오는 경로가 그렇다 — 방금 끝낸 그 퀘스트를 인증하러 온 것이므로
+/// 다른 완료 기록을 고를 수 있게 두면 잘못 고를 여지만 만든다.
 class ProofFormScreen extends ConsumerStatefulWidget {
-  const ProofFormScreen({super.key, this.initialCompletionId});
+  const ProofFormScreen({super.key, this.args});
 
-  final int? initialCompletionId;
+  final ProofFormArgs? args;
 
   @override
   ConsumerState<ProofFormScreen> createState() => _ProofFormScreenState();
@@ -38,10 +39,13 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
   int? _completionId;
   bool _submitting = false;
 
+  /// 완료 결과 화면에서 넘어왔는지. 참이면 퀘스트를 바꿀 수 없다.
+  bool get _questLocked => widget.args != null;
+
   @override
   void initState() {
     super.initState();
-    _completionId = widget.initialCompletionId;
+    _completionId = widget.args?.completionId;
   }
 
   @override
@@ -81,8 +85,7 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
             content: _contentController.text,
           );
 
-      ref.invalidate(proofCandidatesProvider);
-      ref.invalidate(proofHighlightsProvider);
+      invalidateProofLists(ref);
 
       if (!mounted) return;
       showLqSnack(context, '인증을 올렸어요. 다른 모험가들의 판정을 기다려요');
@@ -107,12 +110,18 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 children: [
-                  Text('어떤 퀘스트인가요?', style: LqText.sectionTitle),
-                  const SizedBox(height: 8),
-                  _QuestPicker(
-                    selectedCompletionId: _completionId,
-                    onSelect: (id) => setState(() => _completionId = id),
+                  Text(
+                    _questLocked ? '인증할 퀘스트' : '어떤 퀘스트인가요?',
+                    style: LqText.sectionTitle,
                   ),
+                  const SizedBox(height: 8),
+                  if (_questLocked)
+                    _FixedQuest(args: widget.args!)
+                  else
+                    _QuestPicker(
+                      selectedCompletionId: _completionId,
+                      onSelect: (id) => setState(() => _completionId = id),
+                    ),
                   const SizedBox(height: 20),
                   Text('인증 사진', style: LqText.sectionTitle),
                   const SizedBox(height: 4),
@@ -154,6 +163,25 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 완료 결과 화면에서 넘어왔을 때 보여주는 읽기 전용 퀘스트 카드.
+class _FixedQuest extends StatelessWidget {
+  const _FixedQuest({required this.args});
+
+  final ProofFormArgs args;
+
+  @override
+  Widget build(BuildContext context) {
+    return LqCard(
+      background: LqColors.successBg,
+      borderColor: LqColors.primary,
+      child: ProofQuestBadge(
+        title: args.questTitle ?? '방금 완료한 퀘스트',
+        grade: args.questGrade,
       ),
     );
   }

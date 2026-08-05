@@ -71,15 +71,15 @@ class ProofQuestBadge extends StatelessWidget {
   final String? grade;
 
   static const _gradeColors = <String, Color>{
-    'NORMAL': LqColors.borderMuted,
-    'RARE': Color(0xFF8FA3AE),
-    'EPIC': LqColors.locBorder,
-    'LEGENDARY': LqColors.goldBorder,
+    'NORMAL': LqColors.gradeNormal,
+    'RARE': LqColors.gradeRare,
+    'EPIC': LqColors.gradeEpic,
+    'LEGENDARY': LqColors.gradeLegendary,
   };
 
   @override
   Widget build(BuildContext context) {
-    final accent = _gradeColors[grade] ?? LqColors.borderMuted;
+    final accent = _gradeColors[grade] ?? LqColors.gradeNormal;
     return Row(
       children: [
         Container(width: 4, height: 16, color: accent),

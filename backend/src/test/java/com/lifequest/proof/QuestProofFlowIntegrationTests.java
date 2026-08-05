@@ -1,6 +1,8 @@
 package com.lifequest.proof;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +23,7 @@ import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -202,6 +205,69 @@ class QuestProofFlowIntegrationTests {
                 .doesNotContain((int) first);
     }
 
+
+    @Test
+    void 삭제한_게시물의_완료_기록은_다시_쓸_수_없다() throws Exception {
+        Account author = signUp("redo@proof.test", "재작성모험가");
+        long completionId = completeQuest(author);
+
+        MvcResult created = createPost(author.token(), completionId)
+                .andExpect(status().isCreated())
+                .andReturn();
+        long postId = ((Number) JsonPath.read(
+                created.getResponse().getContentAsString(), "$.data.postId")).longValue();
+
+        mockMvc.perform(delete("/api/quest-proofs/{postId}", postId)
+                        .header("Authorization", "Bearer " + author.token()))
+                .andExpect(status().isOk());
+
+        // 지웠다 다시 올릴 수 있으면 같은 완료 기록으로 투표 EXP를 반복 수확할 수 있다.
+        createPost(author.token(), completionId)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("PROOF_ALREADY_POSTED"));
+
+        // 후보 목록에도 돌아오지 않는다.
+        MvcResult candidates = mockMvc.perform(get("/api/quest-proofs/candidates")
+                        .header("Authorization", "Bearer " + author.token()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThat(JsonPath.<List<Integer>>read(
+                candidates.getResponse().getContentAsString(), "$.data[*].completionId"))
+                .doesNotContain((int) completionId);
+    }
+
+    @Test
+    void 삭제한_게시물은_조회되지_않는다() throws Exception {
+        Account author = signUp("gone@proof.test", "삭제모험가");
+        long postId = createPostAndGetId(author);
+
+        mockMvc.perform(delete("/api/quest-proofs/{postId}", postId)
+                        .header("Authorization", "Bearer " + author.token()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/quest-proofs/{postId}", postId)
+                        .header("Authorization", "Bearer " + author.token()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("PROOF_POST_NOT_FOUND"));
+    }
+
+    @Test
+    void 설명이_컬럼_길이를_넘으면_400이다() throws Exception {
+        Account author = signUp("long@proof.test", "장문모험가");
+        long completionId = completeQuest(author);
+
+        MockMultipartFile photo = new MockMultipartFile(
+                "photos", "proof.jpg", MediaType.IMAGE_JPEG_VALUE, "fake-image-bytes".getBytes());
+
+        // 검증이 없으면 DB 잘림 오류가 무결성 예외로 올라와 "이미 게시했습니다"(409)로 둔갑한다.
+        mockMvc.perform(multipart("/api/quest-proofs")
+                        .file(photo)
+                        .param("completionId", String.valueOf(completionId))
+                        .param("content", "가".repeat(501))
+                        .header("Authorization", "Bearer " + author.token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("PROOF_CONTENT_TOO_LONG"));
+    }
 
     // --- 픽스처 ---
 

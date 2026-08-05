@@ -61,6 +61,21 @@ class ProofFeedState {
   );
 }
 
+/// 게시물 상태를 바꾼 뒤 다시 읽어야 하는 목록 화면을 한 번에 무효화한다.
+///
+/// 피드를 빠뜨리기 쉬운데, 피드 화면은 상세로 이동해도 내비게이션 스택 아래에 그대로
+/// 살아 있다. 돌아왔을 때 카드가 옛 상태면 이미 투표한 게시물에 투표 버튼이 남아 다시
+/// 누르면 `PROOF_ALREADY_VOTED`가 나고, 지운 게시물이 목록에 남아 누르면
+/// `PROOF_POST_NOT_FOUND`가 난다. 어느 쪽도 사용자가 잘못한 것이 아닌데 오류로 보인다.
+///
+/// 세 목록을 함께 비우는 이유는 하나만 골라 넣다가 빠뜨리는 쪽이 훨씬 흔해서다 —
+/// 목록이 작아 다시 읽는 비용이 그 위험보다 싸다.
+void invalidateProofLists(WidgetRef ref) {
+  ref.invalidate(proofFeedProvider);
+  ref.invalidate(proofHighlightsProvider);
+  ref.invalidate(proofCandidatesProvider);
+}
+
 /// 탭을 바꿔 돌아왔을 때 지난 목록이 그대로 깔려 있지 않도록 autoDispose로 둔다.
 final proofFeedProvider = AsyncNotifierProvider.autoDispose
     .family<ProofFeedNotifier, ProofFeedState, ProofFeedTab>(

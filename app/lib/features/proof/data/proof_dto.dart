@@ -52,7 +52,11 @@ class ProofAuthor {
   factory ProofAuthor.fromJson(Map<String, dynamic> json) => ProofAuthor(
     userId: asInt(json['userId']) ?? 0,
     nickname: asString(json['nickname']) ?? '모험가',
-    profileImageUrl: asString(json['profileImageUrl']),
+    // 서버는 `/uploads/profile/...` 상대 경로를 준다. 그대로 Image.network에 넘기면
+    // 호스트가 없어 항상 실패하고 닉네임 첫 글자만 남는다.
+    profileImageUrl: AppConfig.resolveMediaUrl(
+      asString(json['profileImageUrl']),
+    ),
   );
 }
 

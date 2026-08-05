@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/widgets/secret_achievement_modal.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
+import 'package:life_quest/features/proof/presentation/proof_form_args.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
@@ -164,7 +165,11 @@ class _QuestResultScreenState extends State<QuestResultScreen> {
                           label: '인증 사진 올리기',
                           onPressed: () => context.pushReplacement(
                             '/proofs/new',
-                            extra: result.completionId,
+                            extra: ProofFormArgs(
+                              completionId: result.completionId,
+                              questTitle: result.questTitle,
+                              questGrade: result.grade,
+                            ),
                           ),
                         ),
                       if (!result.duplicated) const SizedBox(height: 8),

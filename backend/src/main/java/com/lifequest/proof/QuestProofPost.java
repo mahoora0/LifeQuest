@@ -75,6 +75,14 @@ public class QuestProofPost {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * 삭제 시각. 행을 남기는 이유는 {@code UNIQUE(quest_completion_id)}가 계속 유효해야 하기
+     * 때문이다 — 실제로 지우면 같은 완료 기록으로 다시 등록해 투표 EXP를 반복해서 받을 수
+     * 있다(V14 주석). 사진은 행과 파일 모두 실제로 지운다.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     /** 사진은 게시물과 수명이 같고 피드 카드에서 항상 함께 쓰인다. */
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
@@ -132,6 +140,22 @@ public class QuestProofPost {
 
     public boolean isAuthor(Long userId) {
         return author.getId().equals(userId);
+    }
+
+    /**
+     * 게시물을 삭제 표시하고 사진을 떼어낸다. 반환값은 지워야 할 이미지 URL 목록으로,
+     * 호출자가 커밋 이후에 파일을 정리하는 데 쓴다.
+     */
+    public List<String> markDeleted(LocalDateTime now) {
+        List<String> imageUrls = photos.stream().map(QuestProofPhoto::getImageUrl).toList();
+        photos.clear();
+        deletedAt = now;
+        updatedAt = now;
+        return imageUrls;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     /** 판정에 쓰인 유효 표 수. UNSURE는 빠져 있어 화면의 "2/3" 표기가 이 값을 쓴다. */

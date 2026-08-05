@@ -70,6 +70,14 @@ abstract final class LqColors {
   static const lockedTile = Color(0xFFEDE4CE);
   static const disabledBg = Color(0xFFE3DCC8);
 
+  // 퀘스트 등급 강조. 인증 광장의 퀘스트명 배지가 등급을 색으로 구분한다.
+  // 네 값을 한자리에 모아 두는 이유는 등급이 화면 여러 곳에 나오기 때문이다 —
+  // 흩어지면 같은 등급이 화면마다 다른 색으로 보인다.
+  static const gradeNormal = borderMuted;
+  static const gradeRare = Color(0xFF8FA3AE);
+  static const gradeEpic = locBorder;
+  static const gradeLegendary = goldBorder;
+
   // 상태 배너
   static const successText = Color(0xFF55663D);
   static const successBg = Color(0xFFE9EFDC);

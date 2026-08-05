@@ -40,7 +40,7 @@ class _ProofDetailScreenState extends ConsumerState<ProofDetailScreen> {
           .read(proofRepositoryProvider)
           .vote(widget.postId, choice);
       ref.invalidate(proofDetailProvider(widget.postId));
-      ref.invalidate(proofHighlightsProvider);
+      invalidateProofLists(ref);
 
       if (!mounted) return;
       showLqSnack(
@@ -68,8 +68,9 @@ class _ProofDetailScreenState extends ConsumerState<ProofDetailScreen> {
           .addComment(widget.postId, content);
       _commentController.clear();
       ref.invalidate(proofCommentsProvider(widget.postId));
-      // 댓글 수가 카드에 표시되므로 게시물도 함께 새로 읽는다.
+      // 댓글 수가 카드에 표시되므로 게시물과 목록도 함께 새로 읽는다.
       ref.invalidate(proofDetailProvider(widget.postId));
+      invalidateProofLists(ref);
     } catch (error) {
       if (!mounted) return;
       showLqError(context, error);
@@ -101,8 +102,7 @@ class _ProofDetailScreenState extends ConsumerState<ProofDetailScreen> {
 
     try {
       await ref.read(proofRepositoryProvider).delete(widget.postId);
-      ref.invalidate(proofHighlightsProvider);
-      ref.invalidate(proofCandidatesProvider);
+      invalidateProofLists(ref);
       if (!mounted) return;
       context.pop();
     } catch (error) {

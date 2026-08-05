@@ -90,10 +90,15 @@ public enum ErrorCode {
             "PROOF_PHOTO_LIMIT_EXCEEDED",
             "인증 사진은 최대 5장까지 올릴 수 있습니다."),
     PROOF_POST_NOT_FOUND(HttpStatus.NOT_FOUND, "PROOF_POST_NOT_FOUND", "인증 게시물을 찾을 수 없습니다."),
+    /** 삭제된 게시물의 완료 기록도 포함한다 — 완료 기록은 한 번 쓰면 다시 쓸 수 없다(V14). */
     PROOF_ALREADY_POSTED(
             HttpStatus.CONFLICT,
             "PROOF_ALREADY_POSTED",
-            "이 퀘스트 완료 기록에는 이미 인증 게시물이 있습니다."),
+            "이 퀘스트 완료 기록은 이미 인증에 사용했습니다."),
+    PROOF_CONTENT_TOO_LONG(
+            HttpStatus.BAD_REQUEST,
+            "PROOF_CONTENT_TOO_LONG",
+            "설명은 500자까지 쓸 수 있습니다."),
     CANNOT_VOTE_OWN_PROOF(
             HttpStatus.BAD_REQUEST,
             "CANNOT_VOTE_OWN_PROOF",
