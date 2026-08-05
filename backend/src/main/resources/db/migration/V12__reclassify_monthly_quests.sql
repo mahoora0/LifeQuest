@@ -1,0 +1,32 @@
+-- 월간 퀘스트 재분류 (담당: 팀원 2 — 퀘스트 배정·완료·GPS 인증).
+-- 결정 근거: personal/LifeQuest/Intent-Decisions/2026-08-04-quest-track-split-and-slot-design ⑧
+--
+-- 팀 논의로 퀘스트 분류가 일간-주간-월간에서 일간-주간-협동으로 바뀌었다. 협동은 시간 주기가 아니라
+-- 참여 형태이므로 cadence 축에 넣지 않는다 — 앱 목록 화면도 협동 탭만 cadence 필터 없이 둔다
+-- (quest_list_screen.dart). 그 결과 cadence에는 DAILY·WEEKLY만 남고 MONTHLY로 적재된 id 37~42가
+-- 갈 곳을 잃는다.
+--
+-- 행은 지우지 않는다. 퀘스트를 내리는 정식 경로가 is_active=false로 이미 정해져 있고
+-- (docs/05-business-rules.md §11), id 1~42 연속성은 시드 계약 테스트가 검사한다.
+-- ACHIEVEMENTS(팀원 3)는 아직 테이블조차 없어 지금은 참조가 존재하지 않지만, 생기면 이 번호를
+-- 가리키게 된다. 대신 cadence를 옮기고, 배정에서 뺄 것은 is_active로 내린다.
+--
+-- 39~42는 주간으로 옮긴다. 넷 다 하루 안에 끝낼 수 있는 활동이라(봉사활동·등산·공원 완주·식물원)
+-- "한 주에 한 번쯤 시간을 내는 활동"이라는 주간 트랙의 성격에 맞는다. 동시에 주간 풀에 EPIC·LEGENDARY를
+-- 공급한다 — 이 넷이 없으면 주간은 RARE 9 / EPIC 3뿐이라 등급 폭이 좁고 트랙별 확률표를 세울 수 없다.
+--
+-- 37·38은 비활성으로 내린다. "한 달 예산 점검"·"건강검진"은 주 단위로 반복하면 뜻이 깨진다.
+-- cadence까지 함께 바꾸는 이유는 분류가 아니라 매핑 때문이다 — QuestCadence에서 MONTHLY가 사라지면
+-- 'MONTHLY'로 남은 행은 비활성이어도 JPA가 읽는 순간(예: 시드 계약 테스트의 findAllById) enum 변환에서
+-- 터진다. 배정 풀에 들어가지 않으므로 값이 무엇이든 동작에는 차이가 없다.
+--
+-- V6 머리말의 "월간(MONTHLY) 6건 — EPIC 4 / LEGENDARY 2"는 낡은 채로 남는다. Flyway는 이미 적용된
+-- 파일이 바뀌면 체크섬 불일치로 부팅을 실패시키므로 고칠 수 없고, 이 파일이 대신 설명한다.
+--
+-- 재분류 후 분포
+--   id 1~42 전체 : DAILY 24 · WEEKLY 18 (비활성 2건 포함)
+--   활성 40건    : 일간 24 — NORMAL 19 / RARE 5
+--                  주간 16 — RARE 9 / EPIC 5 / LEGENDARY 2
+UPDATE quests SET cadence = 'WEEKLY' WHERE id IN (39, 40, 41, 42);
+
+UPDATE quests SET cadence = 'WEEKLY', is_active = FALSE WHERE id IN (37, 38);
