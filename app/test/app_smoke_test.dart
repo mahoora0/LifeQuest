@@ -17,6 +17,7 @@ import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
+import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
@@ -178,7 +179,7 @@ void main() {
     expect(find.text('칭호 선택'), findsNothing);
   });
 
-  testWidgets('프로필 수정은 URL 입력 대신 사진 선택과 캐릭터 목록을 보여준다', (tester) async {
+  testWidgets('프로필 수정은 닉네임과 프로필 사진만 변경한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -191,9 +192,43 @@ void main() {
 
     expect(find.text('프로필 이미지 URL'), findsNothing);
     expect(find.text('사진 선택'), findsOneWidget);
-    expect(find.text('내 캐릭터'), findsOneWidget);
+    expect(find.text('닉네임 저장'), findsOneWidget);
+    expect(find.text('내 캐릭터'), findsNothing);
+    expect(find.text('루키'), findsNothing);
+  });
+
+  testWidgets('캐릭터 꾸미기는 별도 화면에서 제공한다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+        ],
+        child: const MaterialApp(home: CharacterSelectionScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('캐릭터 꾸미기'), findsOneWidget);
     expect(find.text('루키'), findsOneWidget);
     expect(find.text('모각'), findsOneWidget);
+    expect(find.text('액세서리'), findsOneWidget);
+    expect(find.text('앞치마'), findsOneWidget);
+    // 잠금 캐릭터가 비분리 ColorFilter 합성 레이어를 만들면 Android에서
+    // 본문 전체가 회색으로 덮일 수 있다.
+    expect(find.byType(ColorFiltered), findsNothing);
+
+    final cardCenter = tester.getCenter(
+      find.byKey(const ValueKey('character-card-1')),
+    );
+    final imageCenter = tester.getCenter(
+      find.byKey(const ValueKey('character-image-1')),
+    );
+    expect(imageCenter.dx, closeTo(cardCenter.dx, 0.1));
+
+    await tester.tap(find.text('앞치마'));
+    await tester.pumpAndSettle();
+    expect(find.text('루키 착용 미리보기'), findsOneWidget);
+    expect(find.text('착용하기'), findsOneWidget);
   });
 }
 
@@ -244,7 +279,31 @@ class _FakeUserRepository extends UserRepository {
   Future<List<AvatarCharacter>> fetchCharacters() async => const [
     AvatarCharacter(id: 1, code: 'ROOKIE', name: '루키', assetKey: 'rookie.png'),
     AvatarCharacter(id: 2, code: 'MOGAK', name: '모각', assetKey: 'mogak.png'),
+    AvatarCharacter(
+      id: 4,
+      code: 'TOTO',
+      name: '토토',
+      assetKey: 'toto.png',
+      requiredLevel: 15,
+      unlocked: false,
+    ),
   ];
+
+  @override
+  Future<AccessoryCollection> fetchAccessories() async =>
+      const AccessoryCollection(
+        selectedAccessoryId: null,
+        accessories: [
+          AvatarAccessory(id: 4, code: 'APRON', name: '앞치마', requiredLevel: 2),
+          AvatarAccessory(
+            id: 5,
+            code: 'EXPLORER_HAT',
+            name: '탐험가 모자',
+            requiredLevel: 3,
+            unlocked: false,
+          ),
+        ],
+      );
 
   @override
   Future<BadgeCollection> fetchBadges() async => const BadgeCollection(

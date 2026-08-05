@@ -37,10 +37,10 @@ abstract final class LqAssets {
   static const iconBackpack = '${_dir}accessory/icon-backpack.png';
 
   /// 나의 기록 도감 아이콘.
-  static const book = '${_dir}accessory/Book.png';
+  static const book = '${_dir}icons/Book.png';
 
   /// 나의 기록 업적·칭호 아이콘.
-  static const trophyCup = '${_dir}accessory/Trophy Cup.png';
+  static const trophyCup = '${_dir}icons/Trophy Cup.png';
 
   /// 깃털 뱃지 아이콘.
   static const featherBadge = '${_dir}accessory/Feather Badge.png';
@@ -53,6 +53,56 @@ abstract final class LqAssets {
 
   static String character(String code) =>
       '${_dir}characters/${code.toLowerCase()}.png';
+
+  static String characterWithAccessory(
+    String characterCode,
+    String? accessoryCode,
+  ) {
+    if (characterCode.toUpperCase() != 'ROOKIE' || accessoryCode == null) {
+      return character(characterCode);
+    }
+    final fileName = switch (accessoryCode.toUpperCase()) {
+      'APRON' => 'rookie_apron.png',
+      'EXPLORER_HAT' => 'rookie_explorerHat.png',
+      'HERO_CAPE' => 'rookie_heroCape.png',
+      'HOOD' => 'rookie_hood.png',
+      'LEAF_HAT' => 'rookie_leafHat.png',
+      'MAGNIFYING' => 'rookie_magnifying.png',
+      'MAP_SCROLL' => 'rookie_mapScroll.png',
+      'MOON_GLASSES' => 'rookie_moonGlasses.png',
+      'PICNIC_BASKET' => 'rookie_picnicBasket.png',
+      'RAIN_PONCHO' => 'rookie_rainPoncho.png',
+      'RIBBON_BOW' => 'rookie_ribbonBow.png',
+      'ROUND_GLASSES' => 'rookie_roundGlasses.png',
+      'SHOULDER_STRAP_BAG' => 'rookie_shoulderStrapBag.png',
+      'TINY_BACKPACK' => 'rookie_tinyBackpack.png',
+      _ => null,
+    };
+    return fileName == null
+        ? character(characterCode)
+        : '${_dir}characters/rookie_accessory/$fileName';
+  }
+
+  static String accessory(String code) {
+    final fileName = switch (code.toUpperCase()) {
+      'APRON' => 'Apron.png',
+      'EXPLORER_HAT' => 'Explorer Hat.png',
+      'HERO_CAPE' => 'Hero Cape.png',
+      'HOOD' => 'Hood.png',
+      'LEAF_HAT' => 'Leaf Hat.png',
+      'MAGNIFYING' => 'Magnifying.png',
+      'MAP_SCROLL' => 'Map Scroll.png',
+      'MOON_GLASSES' => 'Moon Glasses.png',
+      'PICNIC_BASKET' => 'Picnic Basket.png',
+      'RAIN_PONCHO' => 'Rain Poncho.png',
+      'RIBBON_BOW' => 'Ribbon Bow.png',
+      'ROUND_GLASSES' => 'Round Glasses.png',
+      'SHOULDER_STRAP_BAG' => 'Shoulder Strap Bag.png',
+      'TINY_BACKPACK' => 'Tiny Backpack.png',
+      _ => 'icon-backpack.png',
+    };
+    return '${_dir}accessory/$fileName';
+  }
 }
 
 /// 선 아이콘 SVG 경로 — 24 그리드 · stroke 2.2 · round cap.

@@ -10,7 +10,8 @@ public record UserProfileResponse(
         String role,
         TitleResponse representativeTitle,
         ProfileItemResponse representativeBadge,
-        CharacterResponse selectedCharacter) {
+        CharacterResponse selectedCharacter,
+        AccessoryResponse selectedAccessory) {
 
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -27,6 +28,9 @@ public record UserProfileResponse(
                         : ProfileItemResponse.from(user.getRepresentativeBadge()),
                 user.getSelectedCharacter() == null
                         ? null
-                        : CharacterResponse.from(user.getSelectedCharacter()));
+                        : CharacterResponse.from(user.getSelectedCharacter()),
+                user.getSelectedAccessory() == null
+                        ? null
+                        : AccessoryResponse.selected(user.getSelectedAccessory()));
     }
 }

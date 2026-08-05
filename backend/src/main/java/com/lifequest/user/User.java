@@ -60,6 +60,10 @@ public class User {
     @JoinColumn(name = "representative_badge_id")
     private ProfileItem representativeBadge;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "selected_accessory_id")
+    private ProfileItem selectedAccessory;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -117,6 +121,10 @@ public class User {
         this.representativeBadge = badge;
     }
 
+    public void selectAccessory(ProfileItem accessory) {
+        this.selectedAccessory = accessory;
+    }
+
     public void addExp(int amount, int newLevel) {
         this.totalExp += amount;
         this.level = newLevel;
@@ -164,6 +172,10 @@ public class User {
 
     public ProfileItem getRepresentativeBadge() {
         return representativeBadge;
+    }
+
+    public ProfileItem getSelectedAccessory() {
+        return selectedAccessory;
     }
 
     public Instant getCreatedAt() {

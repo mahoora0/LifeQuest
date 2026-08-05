@@ -13,6 +13,7 @@ class UserProfile {
     this.representativeBadge,
     this.representativeBadgeId,
     this.selectedCharacter,
+    this.selectedAccessory,
   });
 
   final int id;
@@ -25,6 +26,7 @@ class UserProfile {
   final String? representativeBadge;
   final int? representativeBadgeId;
   final AvatarCharacter? selectedCharacter;
+  final AvatarAccessory? selectedAccessory;
 
   factory UserProfile.fromJson(Object? body) {
     final json = asMap(body);
@@ -48,6 +50,54 @@ class UserProfile {
       selectedCharacter: json['selectedCharacter'] is Map
           ? AvatarCharacter.fromJson(asMap(json['selectedCharacter']))
           : null,
+      selectedAccessory: json['selectedAccessory'] is Map
+          ? AvatarAccessory.fromJson(asMap(json['selectedAccessory']))
+          : null,
+    );
+  }
+}
+
+class AvatarAccessory {
+  const AvatarAccessory({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.requiredLevel,
+    this.unlocked = true,
+  });
+
+  final int id;
+  final String code;
+  final String name;
+  final int? requiredLevel;
+  final bool unlocked;
+
+  factory AvatarAccessory.fromJson(Map<String, dynamic> json) =>
+      AvatarAccessory(
+        id: asInt(json['id']) ?? 0,
+        code: asString(json['code']) ?? '',
+        name: asString(json['name']) ?? '액세서리',
+        requiredLevel: asInt(json['requiredLevel']),
+        unlocked: json['unlocked'] as bool? ?? true,
+      );
+}
+
+class AccessoryCollection {
+  const AccessoryCollection({
+    required this.accessories,
+    required this.selectedAccessoryId,
+  });
+
+  final List<AvatarAccessory> accessories;
+  final int? selectedAccessoryId;
+
+  factory AccessoryCollection.fromJson(Object? body) {
+    final json = asMap(body);
+    return AccessoryCollection(
+      accessories: asMapList(
+        json['accessories'],
+      ).map(AvatarAccessory.fromJson).toList(),
+      selectedAccessoryId: asInt(json['selectedAccessoryId']),
     );
   }
 }
