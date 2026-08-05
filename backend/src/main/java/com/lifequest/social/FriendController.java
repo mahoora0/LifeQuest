@@ -65,6 +65,14 @@ public class FriendController {
         return ApiResponse.success(friendService.getSentRequests(userId(jwt), page, size));
     }
 
+    @DeleteMapping("/requests/{requestId}")
+    public ApiResponse<RespondFriendRequestResponse> cancelSentRequest(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long requestId) {
+        return ApiResponse.success(
+                friendService.cancelSentRequest(userId(jwt), requestId));
+    }
+
     // 친구 목록 조회
     @GetMapping
     public ApiResponse<FriendPageResponse> friends(

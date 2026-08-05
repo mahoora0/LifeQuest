@@ -115,6 +115,28 @@ class FriendFlowIntegrationTests {
                                 .andExpect(jsonPath("$.data.content[0].status").value("PENDING"));
         }
 
+        @Test
+        void senderCanCancelPendingFriendRequest() throws Exception {
+                TestUser sender = createUser("취소발신");
+                TestUser receiver = createUser("취소수신");
+                long requestId = sendRequest(sender, receiver.id());
+
+                mockMvc.perform(delete("/api/friends/requests/{requestId}", requestId)
+                                .header("Authorization", bearer(sender.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.requestId").value(requestId))
+                                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+
+                mockMvc.perform(get("/api/friends/requests/sent")
+                                .header("Authorization", bearer(sender.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(0));
+                mockMvc.perform(get("/api/friends/requests")
+                                .header("Authorization", bearer(receiver.token())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(0));
+        }
+
         // 요청 수락 테스트
         @Test
         void acceptingRequestCreatesBothFriendshipDirectionsAndCannotBeRepeated()
