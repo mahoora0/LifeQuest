@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
 import 'package:life_quest/features/achievement/data/achievement_dto.dart';
 import 'package:life_quest/features/achievement/data/achievement_repository.dart';
@@ -20,10 +19,6 @@ import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 /// 표본 상수 자체는 검토용이라 값을 단언하지 않는다 — 값을 박아 두면 시안이 바뀔 때마다
 /// 테스트가 따라다니면서도 사용자가 보는 것은 아무것도 보장하지 못한다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   /// 컨트롤러가 없는 서버를 흉내 낸다.
   ///
   /// 백엔드가 미매핑 경로에 붙이는 응답 모양 그대로다 — 404 + envelope의

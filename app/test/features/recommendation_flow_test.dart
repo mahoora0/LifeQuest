@@ -1,9 +1,8 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/recommendation/application/quest_recommendation_provider.dart';
 import 'package:life_quest/features/recommendation/data/quest_recommendation_dto.dart';
@@ -14,8 +13,6 @@ import 'package:life_quest/features/recommendation/presentation/recommendation_t
 import 'package:life_quest/features/recommendation/presentation/travel_recommendation_form_screen.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   testWidgets('추천 종류에서 장소와 여행 입력 화면으로 이동한다', (tester) async {
     final router = GoRouter(
       initialLocation: '/quest-recommendations',

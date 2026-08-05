@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/lifedex/application/lifedex_providers.dart';
 import 'package:life_quest/features/lifedex/data/lifedex_dto.dart';
 import 'package:life_quest/features/lifedex/data/lifedex_repository.dart';
@@ -16,10 +15,6 @@ import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 ///
 /// 눌러도 아무 일이 없는 요소는 "고장"으로 읽힌다. 연결하거나 지운 결과를 고정한다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   testWidgets('퀘스트 목록 헤더에 검색을 두지 않는다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
