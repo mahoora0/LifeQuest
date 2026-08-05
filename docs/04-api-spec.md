@@ -124,6 +124,11 @@
 | GET | /api/notifications | 내 알림 목록과 읽지 않은 개수 | 필요 |
 | PATCH | /api/notifications/{notificationId}/read | 알림 개별 읽음 처리 | 필요 |
 | PATCH | /api/notifications/read | 모든 알림 읽음 처리 | 필요 |
+| GET | /api/admin/level-rewards | 레벨별 보상 설정 목록 | 필요(관리자) |
+| GET | /api/admin/level-rewards/catalog | 설정 가능한 칭호·프로필 아이템 목록 | 필요(관리자) |
+| POST | /api/admin/level-rewards | 레벨 보상 설정 등록 | 필요(관리자) |
+| PATCH | /api/admin/level-rewards/{rewardId} | 레벨 보상 설정 수정 | 필요(관리자) |
+| DELETE | /api/admin/level-rewards/{rewardId} | 레벨 보상 설정 삭제 | 필요(관리자) |
 
 ### 3-5. 엔드포인트별 요청·응답·오류 요약
 
