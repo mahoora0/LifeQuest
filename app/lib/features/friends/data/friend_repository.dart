@@ -36,13 +36,16 @@ class FriendRepository {
   });
 
   /// 현재 백엔드에는 친구 코드 개념이 없다. 화면은 null이면 코드 영역을 숨긴다.
-  Future<String?> fetchMyCode() async => null;
+  Future<String?> fetchMyCode() => _guard(() async {
+    final response = await _client.get<dynamic>('/users/me/friend-code');
+    return asString(pick(asMap(response.data), ['friendCode', 'code']));
+  });
 
   Future<List<AdventurerSearchResult>> searchAdventurers(String query) =>
       _guard(() async {
         final response = await _client.get<dynamic>(
           '/users/search',
-          queryParameters: {'nickname': query, 'page': 0, 'size': 100},
+          queryParameters: {'query': query, 'page': 0, 'size': 100},
         );
         final body = asMap(response.data);
         final results = asMapList(

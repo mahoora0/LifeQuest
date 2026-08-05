@@ -36,7 +36,7 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final search = ref.watch(adventurerSearchProvider);
-    final myCode = ref.watch(myFriendCodeProvider).value;
+    final myCodeState = ref.watch(myFriendCodeProvider);
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
@@ -60,7 +60,11 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
                     onCleared: _clear,
                   ),
                   const SizedBox(height: LqSpacing.gap),
-                  _MyCodeCard(code: myCode),
+                  _MyCodeCard(
+                    code: myCodeState.value,
+                    failed: myCodeState.hasError,
+                    onRetry: () => ref.invalidate(myFriendCodeProvider),
+                  ),
                 ],
               ),
             ),
@@ -195,9 +199,15 @@ class _ClearButton extends StatelessWidget {
 
 /// 내 친구 코드. 친구가 없을수록 이 카드가 필요하다.
 class _MyCodeCard extends StatelessWidget {
-  const _MyCodeCard({required this.code});
+  const _MyCodeCard({
+    required this.code,
+    required this.failed,
+    required this.onRetry,
+  });
 
   final String? code;
+  final bool failed;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +242,11 @@ class _MyCodeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  code == null ? '내 코드를 불러오는 중이에요' : '내 코드 · $code',
+                  code != null
+                      ? '내 코드 · $code'
+                      : failed
+                      ? '내 코드를 불러오지 못했어요'
+                      : '내 코드를 불러오는 중이에요',
                   style: LqText.bodySm.copyWith(
                     fontWeight: FontWeight.w700,
                     color: LqColors.textBody,
@@ -250,6 +264,9 @@ class _MyCodeCard extends StatelessWidget {
               tone: LqPillTone.quiet,
               onTap: () => _copy(context, code!),
             ),
+          ] else if (failed) ...[
+            const SizedBox(width: 8),
+            LqStatePill(label: '재시도', tone: LqPillTone.quiet, onTap: onRetry),
           ],
         ],
       ),
