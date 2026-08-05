@@ -72,6 +72,7 @@ flowchart LR
 - 브랜치 네이밍: `feature/{담당자}-{기능}` (예: `feature/member2-quest-complete`)
 - 커밋 컨벤션: `feat:` 신규 기능 · `fix:` 버그 수정 · `docs:` 문서 · `refactor:` 리팩터링 · `test:` 테스트 · `chore:` 기타
 - PR 규칙: 최소 1인 리뷰 승인 후 병합, 셀프 머지 지양
+- 마이그레이션 번호: `V번호__*.sql`의 번호는 모든 브랜치를 가로질러 전역 유일해야 한다. 파일명이 다르면 git은 충돌 없이 병합하고, 실행 시점에 `Found more than one migration with version N`으로 애플리케이션이 뜨지 않는다(SQL은 한 줄도 실행되지 않으므로 스택트레이스에 SQL이 보이지 않는다). 새 마이그레이션은 **작성 직전과 병합 직전 두 번** `git fetch origin && git ls-tree -r --name-only origin/main -- backend/src/main/resources/db/migration`으로 현재 최대 번호를 확인하고 그다음 번호를 쓴다. 한 번만 확인하면 확인 시점과 병합 시점 사이에 다른 브랜치가 같은 번호를 채울 수 있다. 이미 병합된 마이그레이션은 내용 수정도 이름 변경도 하지 않는다 — 둘 다 검증 단계에서 부팅을 막으므로, 되돌릴 일이 생기면 새 번호를 추가한다.
 - 코드 리뷰 체크리스트(예시): API 명세와 일치하는가 / 예외 처리가 되어 있는가 / 공통 응답 포맷을 따르는가
 
 ## 7. 일정
