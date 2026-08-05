@@ -38,7 +38,7 @@ void main() {
 
     expect(find.text('친구'), findsOneWidget);
     expect(find.text('친구 목록'), findsOneWidget);
-    expect(find.text('이번 주 랭킹'), findsOneWidget);
+    expect(find.text('랭킹'), findsOneWidget);
     expect(find.text('친구 요청 관리'), findsOneWidget);
     expect(find.text('보낸 요청 0건 확인'), findsOneWidget);
 
@@ -71,20 +71,20 @@ void main() {
   testWidgets('랭킹 세그먼트는 내 순위와 등락을 보여준다', (tester) async {
     await pumpFriends(tester);
 
-    await tester.tap(find.text('이번 주 랭킹'));
+    await tester.tap(find.text('랭킹'));
     await tester.pumpAndSettle();
 
-    expect(find.text('이번 주 내 순위'), findsOneWidget);
-    expect(findComposedText('2위 / 친구 2명 중'), findsOneWidget);
+    expect(find.text('내 EXP 순위'), findsOneWidget);
+    expect(findComposedText('2위 / 전체 3명 중'), findsOneWidget);
     expect(find.text('↑ 1'), findsOneWidget);
     expect(find.text('EXP 305'), findsOneWidget);
-    expect(find.text('랭킹은 매주 월요일 0시에 초기화돼요'), findsOneWidget);
+    expect(find.text('누적 EXP가 높은 순서로 표시돼요'), findsOneWidget);
   });
 
   testWidgets('레벨 랭킹으로 전환하면 레벨 값을 보여준다', (tester) async {
     await pumpFriends(tester);
 
-    await tester.tap(find.text('이번 주 랭킹'));
+    await tester.tap(find.text('랭킹'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('레벨 랭킹'));
     await tester.pumpAndSettle();
@@ -105,7 +105,9 @@ void main() {
   testWidgets('지난주 집계가 없으면 등락을 만들어내지 않는다', (tester) async {
     await pumpFriends(tester, repository: const _NoDeltaFriendRepository());
 
-    await tester.tap(find.text('이번 주 랭킹'));
+    await tester.tap(find.text('랭킹'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('친구').last);
     await tester.pumpAndSettle();
 
     expect(findComposedText('1위 / 친구 1명 중'), findsOneWidget);
@@ -134,6 +136,7 @@ class _FakeFriendRepository extends FriendRepository {
   @override
   Future<WeeklyRanking> fetchWeeklyRanking({
     RankingType type = RankingType.exp,
+    RankingScope scope = RankingScope.friends,
   }) async => const WeeklyRanking(
     rankDelta: 1,
     entries: [
@@ -165,6 +168,7 @@ class _NoDeltaFriendRepository extends FriendRepository {
   @override
   Future<WeeklyRanking> fetchWeeklyRanking({
     RankingType type = RankingType.exp,
+    RankingScope scope = RankingScope.friends,
   }) async => const WeeklyRanking(
     entries: [
       RankEntry(rank: 1, userId: 1, nickname: '나', weeklyExp: 305, isMe: true),

@@ -39,7 +39,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// 0 = 친구 목록, 1 = 이번 주 랭킹.
   int _segment = 0;
 
-  static const _segments = ['친구 목록', '이번 주 랭킹'];
+  static const _segments = ['친구 목록', '랭킹'];
 
   @override
   Widget build(BuildContext context) {
@@ -428,13 +428,40 @@ class _RankingTab extends ConsumerStatefulWidget {
 
 class _RankingTabState extends ConsumerState<_RankingTab> {
   RankingType _type = RankingType.exp;
+  RankingScope _scope = RankingScope.global;
 
   @override
   Widget build(BuildContext context) {
-    final ranking = ref.watch(weeklyRankingProvider(_type));
+    final query = (scope: _scope, type: _type);
+    final ranking = ref.watch(weeklyRankingProvider(query));
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
+          child: Row(
+            children: [
+              Text('랭킹 범위', style: LqText.label),
+              const Spacer(),
+              LqStatePill(
+                label: '전체',
+                tone: _scope == RankingScope.global
+                    ? LqPillTone.primary
+                    : LqPillTone.quiet,
+                onTap: () => setState(() => _scope = RankingScope.global),
+              ),
+              const SizedBox(width: 6),
+              LqStatePill(
+                label: '친구',
+                tone: _scope == RankingScope.friends
+                    ? LqPillTone.primary
+                    : LqPillTone.quiet,
+                onTap: () => setState(() => _scope = RankingScope.friends),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
           child: _RankingTypeSwitch(
@@ -447,9 +474,9 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
           child: LqAsyncView<WeeklyRanking>(
             value: ranking,
             isEmpty: (value) => value.isEmpty,
-            emptyMessage: '아직 이번 주 기록이 없어요',
-            onRetry: () => ref.invalidate(weeklyRankingProvider(_type)),
-            notReadyMessage: '이번 주 랭킹은 아직 준비 중이에요',
+            emptyMessage: '아직 랭킹 기록이 없어요',
+            onRetry: () => ref.invalidate(weeklyRankingProvider(query)),
+            notReadyMessage: '랭킹은 아직 준비 중이에요',
             data: (value) => ListView(
               padding: const EdgeInsets.fromLTRB(
                 LqSpacing.screen,
@@ -458,7 +485,7 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
                 24,
               ),
               children: [
-                _RankSummaryCard(ranking: value),
+                _RankSummaryCard(ranking: value, scope: _scope, type: _type),
                 const SizedBox(height: LqSpacing.gap),
                 for (final entry in value.entries) ...[
                   _RankRow(
@@ -466,7 +493,7 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
                     type: _type,
                     // 랭킹 행도 친구 행과 같은 화면으로 보낸다. 본인 행은 비교할
                     // 상대가 없으므로 열지 않는다.
-                    onOpen: entry.isMe
+                    onOpen: entry.isMe || _scope == RankingScope.global
                         ? null
                         : () => context.push('/friends/${entry.userId}'),
                   ),
@@ -474,7 +501,9 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  '랭킹은 매주 월요일 0시에 초기화돼요',
+                  _type == RankingType.exp
+                      ? '누적 EXP가 높은 순서로 표시돼요'
+                      : '레벨이 높은 순서로 표시돼요',
                   textAlign: TextAlign.center,
                   style: LqText.caption,
                 ),
@@ -578,9 +607,15 @@ class _RankingTypeButton extends StatelessWidget {
 }
 
 class _RankSummaryCard extends StatelessWidget {
-  const _RankSummaryCard({required this.ranking});
+  const _RankSummaryCard({
+    required this.ranking,
+    required this.scope,
+    required this.type,
+  });
 
   final WeeklyRanking ranking;
+  final RankingScope scope;
+  final RankingType type;
 
   @override
   Widget build(BuildContext context) {
@@ -599,7 +634,7 @@ class _RankSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '이번 주 내 순위',
+                  type == RankingType.exp ? '내 EXP 순위' : '내 레벨 순위',
                   style: LqText.bodySm.copyWith(
                     fontWeight: FontWeight.w700,
                     color: LqColors.textSecondary,
@@ -618,7 +653,9 @@ class _RankSummaryCard extends StatelessWidget {
                           style: LqText.levelNumber.copyWith(fontSize: 23),
                         ),
                         TextSpan(
-                          text: '/ 친구 ${ranking.friendCount}명 중',
+                          text: scope == RankingScope.global
+                              ? '/ 전체 ${ranking.totalElements ?? ranking.entries.length}명 중'
+                              : '/ 친구 ${ranking.friendCount}명 중',
                           style: LqText.caption.copyWith(fontSize: 14),
                         ),
                       ],

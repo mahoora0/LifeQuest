@@ -34,9 +34,10 @@ class FriendRepository {
 
   Future<WeeklyRanking> fetchWeeklyRanking({
     RankingType type = RankingType.exp,
+    RankingScope scope = RankingScope.friends,
   }) => _guard(() async {
     final response = await _client.get<dynamic>(
-      '/rankings/friends',
+      scope.path,
       queryParameters: {'page': 0, 'size': 100, 'type': type.apiValue},
     );
     return WeeklyRanking.fromJson(response.data);

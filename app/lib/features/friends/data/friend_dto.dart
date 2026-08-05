@@ -305,6 +305,16 @@ enum RankingType {
   final String apiValue;
 }
 
+enum RankingScope {
+  global('/rankings/global'),
+  friends('/rankings/friends');
+
+  const RankingScope(this.path);
+  final String path;
+}
+
+typedef RankingQuery = ({RankingScope scope, RankingType type});
+
 class RankEntry {
   const RankEntry({
     required this.rank,
@@ -334,13 +344,18 @@ class RankEntry {
 
 /// 이번 주 친구 랭킹.
 class WeeklyRanking {
-  const WeeklyRanking({required this.entries, this.rankDelta});
+  const WeeklyRanking({
+    required this.entries,
+    this.rankDelta,
+    this.totalElements,
+  });
 
   final List<RankEntry> entries;
 
   /// 지난주 대비 순위 변동. 서버가 지난주 집계를 주지 않으면 null이고 등락 표시를 감춘다.
   /// 0을 기본값으로 두면 "변동 없음"이라는 없는 사실을 말하게 된다.
   final int? rankDelta;
+  final int? totalElements;
 
   bool get isEmpty => entries.isEmpty;
 
@@ -362,6 +377,7 @@ class WeeklyRanking {
         pick(json, ['rankings', 'content', 'items']),
       ).map(RankEntry.fromJson).toList(),
       rankDelta: asInt(pick(json, ['rankDelta', 'change'])),
+      totalElements: asInt(json['totalElements']),
     );
   }
 }

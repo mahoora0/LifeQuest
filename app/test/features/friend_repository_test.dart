@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
 
 void main() {
@@ -44,6 +45,23 @@ void main() {
 
     expect(list.myCode, 'LQ-0000002A');
     expect(list.friends.single.nickname, '친구');
+  });
+
+  test('전체 레벨 랭킹 경로와 기준을 전달한다', () async {
+    String? path;
+    String? type;
+    final dio = _dio((options) {
+      path = options.path;
+      type = options.queryParameters['type'] as String?;
+      return {'content': <Object>[]};
+    });
+
+    await FriendRepository(
+      dio,
+    ).fetchWeeklyRanking(scope: RankingScope.global, type: RankingType.level);
+
+    expect(path, '/rankings/global');
+    expect(type, 'LEVEL');
   });
 }
 
