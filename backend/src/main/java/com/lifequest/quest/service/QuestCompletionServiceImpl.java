@@ -162,12 +162,10 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
 
         GrowthSnapshot growthSnapshot = growthService.getGrowthById(requestUserId);
 
-        // TODO(팀원3 연동): CollectionOutcome은 도감·업적 "해금 여부"만 나른다. 업적 단계 보상
-        // (ACHIEVEMENT_STEPS.reward_title_id 등 TITLE 보상)은 지금 이 응답의 growth.rewards에
-        // 실을 경로가 없다 — growth.rewards는 아래 growthResult.rewards()(레벨업 보상)만 채운다.
-        // 계약(QuestCompletionContractTests 9004)은 업적 해금 시 growth.rewards[0].type=="TITLE"을
-        // 요구하므로, CollectionOutcome에 보상 목록을 추가하고 이 메서드에서 growthResult.rewards()와
-        // 합쳐 넣는 배선이 필요하다. 팀원3 혼자 못 고치는 경계라 여기 남겨둔다.
+        // 이 호출은 완료 트랜잭션 안에 있다 — 구현체가 예외를 던지면 위의 QuestCompletion 기록과
+        // EXP 지급까지 롤백된다(CollectionService javadoc 계약 ①). 아래 growth.rewards는
+        // growthResult.rewards()(레벨업 보상)만 채운다. 업적 단계 보상은 완료 응답에 싣지 않기로
+        // 했으므로 여기서 합치지 않는다(계약 ②) — CollectionOutcome은 해금 여부만 나른다.
         CollectionOutcome collectionOutcome = collectionService.evaluateOnQuestCompletion(
             requestUserId, quest.getId(), quest.getLifedexItemId(), questCompletion.getId());
 
@@ -197,7 +195,8 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
     }
 
     private static QuestCompletionResponse.Entry toEntry(CollectionOutcome.Entry entry) {
-        return new QuestCompletionResponse.Entry(entry.id(), entry.name(), entry.secret());
+        return new QuestCompletionResponse.Entry(
+            entry.id(), entry.name(), entry.secret(), entry.reward());
     }
 
     private double calculateDistance(

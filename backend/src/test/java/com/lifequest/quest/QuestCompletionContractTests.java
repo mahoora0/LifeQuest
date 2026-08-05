@@ -346,10 +346,13 @@ class QuestCompletionContractTests {
 
     @Test
     @Disabled("팀원3 CollectionService 실구현 대기")
-        // TODO(팀원3 착수 전 확인): 지금은 PlaceholderCollectionService가 항상 빈 결과를 반환해
-        // 이 테스트가 픽스처 없이도(9004L 자체가 실 배정이 아니라) status().isOk()에서부터 실패한다.
-        // 실구현을 붙일 때 CollectionService.java의 TODO(보상을 growth.rewards에 실을 경로 없음)를
-        // 먼저 확인할 것 — 안 그러면 이 테스트의 growth.rewards[0] 단언이 또 막힌다.
+        // 활성화 조건 둘. ① PlaceholderCollectionService가 항상 빈 결과라 collection 단언이 통과할 수
+        // 없다 — 팀원3 실구현이 들어와야 한다. ② 9004L은 실제 배정이 아니라 status().isOk()에서부터
+        // 막히므로, 비밀 업적을 해금하는 배정 픽스처를 함께 만들어야 한다.
+        //
+        // 아래 reward 단언은 회수 장치다. Entry.reward는 지급 구현 전까지 null이어도 되는 임시
+        // 상태인데, null이 도감 항목에서는 영구히 정상이라 코드로는 둘을 구분할 수 없다. 이 테스트를
+        // 활성화하려면 보상까지 채워야 하므로 여기가 그 임시 상태를 걷어내는 지점이 된다.
     void 비밀_업적은_해금_표식과_함께_실려_온다() throws Exception {
         String token = signUpAndGetAccessToken("secret@lifequest.test", "비밀모험가");
 
@@ -361,10 +364,11 @@ class QuestCompletionContractTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.collection.newAchievements[0].secret").value(true))
             .andExpect(jsonPath("$.data.growth.levelUp").value(true))
-            // 보상은 이름만이 아니라 종류·코드까지 실린다 — 이름만으로는 앱이
-            // 칭호와 프로필 아이템을 구분하지 못한다.
-            .andExpect(jsonPath("$.data.growth.rewards[0].type").value("TITLE"))
-            .andExpect(jsonPath("$.data.growth.rewards[0].code").isNotEmpty());
+            // 업적 보상은 growth.rewards가 아니라 해당 업적 항목에 실린다 — 어느 업적이 준 보상인지
+            // 대응이 남아야 한다. 종류·코드까지 싣는 이유는 이름만으로는 앱이 칭호와 프로필
+            // 아이템을 구분하지 못하기 때문이다.
+            .andExpect(jsonPath("$.data.collection.newAchievements[0].reward.type").value("TITLE"))
+            .andExpect(jsonPath("$.data.collection.newAchievements[0].reward.code").isNotEmpty());
     }
 
     private MockHttpServletRequestBuilder complete(
