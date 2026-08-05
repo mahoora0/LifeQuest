@@ -1,19 +1,22 @@
 package com.lifequest.social.dto;
 
 import com.lifequest.user.User;
+import com.lifequest.social.RankingType;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
 // EXP 랭킹 목록과 페이지 정보
 public record RankingPageResponse(
+        RankingType type,
         List<RankingEntryResponse> content,
         int page,
         int size,
         long totalElements,
         int totalPages) {
 
-    public static RankingPageResponse from(Page<User> result, Long currentUserId) {
+    public static RankingPageResponse from(
+            Page<User> result, Long currentUserId, RankingType type) {
         long firstRank = result.getPageable().getOffset() + 1;
         List<RankingEntryResponse> entries = new ArrayList<>(result.getNumberOfElements());
         for (int index = 0; index < result.getNumberOfElements(); index++) {
@@ -23,6 +26,7 @@ public record RankingPageResponse(
                     currentUserId));
         }
         return new RankingPageResponse(
+                type,
                 List.copyOf(entries),
                 result.getNumber(),
                 result.getSize(),

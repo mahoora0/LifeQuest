@@ -110,15 +110,25 @@
 | GET | /api/users/search | 닉네임으로 사용자 검색 | 필요 |
 | POST | /api/friends/requests | 친구 요청 보내기 | 필요 |
 | GET | /api/friends/requests | 받은 친구 요청 목록 | 필요 |
+| GET | /api/friends/requests/sent | 보낸 친구 요청 목록 | 필요 |
 | PATCH | /api/friends/requests/{requestId} | 요청 수락·거절 | 필요 |
 | GET | /api/friends | 친구 목록 | 필요 |
 | DELETE | /api/friends/{userId} | 친구 삭제 | 필요 |
 | GET | /api/friends/{userId}/profile | 친구 프로필·기록 비교 | 필요 |
 | GET | /api/rankings/global | 전체 랭킹 조회 | 필요 |
 | GET | /api/rankings/friends | 친구 랭킹 조회 | 필요 |
+| GET | /api/admin/quests | 관리자 퀘스트 목록(비활성 포함) | 필요(관리자) |
 | POST | /api/admin/quests | 퀘스트 등록(관리자) | 필요(관리자) |
 | PATCH | /api/admin/quests/{questId} | 퀘스트 수정(관리자) | 필요(관리자) |
 | DELETE | /api/admin/quests/{questId} | 퀘스트 소프트 삭제(`is_active=false`, 관리자) | 필요(관리자) |
+| GET | /api/notifications | 내 알림 목록과 읽지 않은 개수 | 필요 |
+| PATCH | /api/notifications/{notificationId}/read | 알림 개별 읽음 처리 | 필요 |
+| PATCH | /api/notifications/read | 모든 알림 읽음 처리 | 필요 |
+| GET | /api/admin/level-rewards | 레벨별 보상 설정 목록 | 필요(관리자) |
+| GET | /api/admin/level-rewards/catalog | 설정 가능한 칭호·프로필 아이템 목록 | 필요(관리자) |
+| POST | /api/admin/level-rewards | 레벨 보상 설정 등록 | 필요(관리자) |
+| PATCH | /api/admin/level-rewards/{rewardId} | 레벨 보상 설정 수정 | 필요(관리자) |
+| DELETE | /api/admin/level-rewards/{rewardId} | 레벨 보상 설정 삭제 | 필요(관리자) |
 
 ### 3-5. 엔드포인트별 요청·응답·오류 요약
 
@@ -171,8 +181,8 @@
 | `GET /friends` | `page`, `size` | 친구 공개 프로필 `content[]` | `UNAUTHORIZED` |
 | `DELETE /friends/{userId}` | path `userId` | `deleted: true` | `FRIENDSHIP_NOT_FOUND` |
 | `GET /friends/{userId}/profile` | path `userId` | 공개 프로필, 본인·친구의 레벨·EXP·완료 퀘스트 수·방문 장소 수 | `FRIENDSHIP_NOT_FOUND` |
-| `GET /rankings/global` | `page`, `size` | 누적 EXP 기준 순위 `content[]`(`rank`, `userId`, `nickname`, `profileImageUrl`, `level`, `totalExp`, `isMe`) | `UNAUTHORIZED`, `VALIDATION_FAILED` |
-| `GET /rankings/friends` | `page`, `size` | 본인과 친구의 누적 EXP 기준 순위 `content[]` | `UNAUTHORIZED`, `VALIDATION_FAILED` |
+| `GET /rankings/global` | `page`, `size`, `type=EXP\|LEVEL`(기본 `EXP`) | 전체 EXP 또는 레벨 순위 `type`, `content[]`(`rank`, `userId`, `nickname`, `profileImageUrl`, `level`, `totalExp`, `isMe`) | `UNAUTHORIZED`, `VALIDATION_FAILED` |
+| `GET /rankings/friends` | `page`, `size`, `type=EXP\|LEVEL`(기본 `EXP`) | 본인과 친구의 EXP 또는 레벨 순위 `type`, `content[]` | `UNAUTHORIZED`, `VALIDATION_FAILED` |
 | `POST /admin/quests` | 퀘스트 필드(LOCATION이면 장소·좌표·반경 필수) | 생성된 퀘스트 | `FORBIDDEN`, `VALIDATION_FAILED` |
 | `PATCH /admin/quests/{questId}` | 변경할 퀘스트 필드 | 변경된 퀘스트 | `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED` |
 | `DELETE /admin/quests/{questId}` | path `questId` | `deactivated: true` | `FORBIDDEN`, `RESOURCE_NOT_FOUND` |

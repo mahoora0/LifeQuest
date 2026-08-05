@@ -81,6 +81,18 @@ class FriendFlowIntegrationTests {
                                 .andExpect(jsonPath("$.data.content[0].status").value("PENDING"))
                                 .andExpect(jsonPath("$.data.page").value(0))
                                 .andExpect(jsonPath("$.data.totalElements").value(1));
+
+                mockMvc.perform(get("/api/friends/requests/sent")
+                                .header("Authorization", bearer(sender.token()))
+                                .queryParam("page", "0")
+                                .queryParam("size", "20"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.content.length()").value(1))
+                                .andExpect(jsonPath("$.data.content[0].requestId").value(requestId))
+                                .andExpect(jsonPath("$.data.content[0].receiverId").value(receiver.id()))
+                                .andExpect(jsonPath("$.data.content[0].receiverNickname")
+                                                .value(receiver.nickname()))
+                                .andExpect(jsonPath("$.data.content[0].status").value("PENDING"));
         }
 
         // 요청 수락 테스트

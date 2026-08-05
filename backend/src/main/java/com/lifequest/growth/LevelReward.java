@@ -37,6 +37,20 @@ public class LevelReward {
     protected LevelReward() {
     }
 
+    public LevelReward(int level, RewardType rewardType, Long rewardRefId, String description) {
+        this.level = level;
+        this.rewardType = rewardType;
+        this.rewardRefId = rewardRefId;
+        this.description = description;
+    }
+
+    public void update(int level, RewardType rewardType, Long rewardRefId, String description) {
+        this.level = level;
+        this.rewardType = rewardType;
+        this.rewardRefId = rewardRefId;
+        this.description = description;
+    }
+
     public Long getId() {
         return id;
     }
@@ -51,5 +65,9 @@ public class LevelReward {
 
     public Long getRewardRefId() {
         return rewardRefId;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

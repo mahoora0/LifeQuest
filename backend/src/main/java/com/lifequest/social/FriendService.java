@@ -3,6 +3,8 @@ package com.lifequest.social;
 import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.quest.repository.QuestCompletionRepository;
+import com.lifequest.notification.NotificationKind;
+import com.lifequest.notification.NotificationService;
 import com.lifequest.social.dto.DeleteFriendResponse;
 import com.lifequest.social.dto.FriendActivitySummary;
 import com.lifequest.social.dto.FriendPageResponse;
@@ -11,6 +13,7 @@ import com.lifequest.social.dto.FriendRequestAction;
 import com.lifequest.social.dto.FriendRequestPageResponse;
 import com.lifequest.social.dto.RespondFriendRequestResponse;
 import com.lifequest.social.dto.SendFriendRequestResponse;
+import com.lifequest.social.dto.SentFriendRequestPageResponse;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import java.util.List;
@@ -26,16 +29,19 @@ public class FriendService {
     private final FriendRequestRepository friendRequestRepository;
     private final FriendshipRepository friendshipRepository;
     private final QuestCompletionRepository questCompletionRepository;
+    private final NotificationService notificationService;
 
     public FriendService(
             UserRepository userRepository,
             FriendRequestRepository friendRequestRepository,
             FriendshipRepository friendshipRepository,
-            QuestCompletionRepository questCompletionRepository) {
+            QuestCompletionRepository questCompletionRepository,
+            NotificationService notificationService) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
         this.friendshipRepository = friendshipRepository;
         this.questCompletionRepository = questCompletionRepository;
+        this.notificationService = notificationService;
     }
 
     // 친구 요청 전송
@@ -55,6 +61,11 @@ public class FriendService {
         }
 
         FriendRequest saved = friendRequestRepository.save(new FriendRequest(sender, receiver));
+        notificationService.create(
+                receiver,
+                NotificationKind.FRIEND_REQUEST,
+                sender.getNickname() + "님이 친구 요청을 보냈어요",
+                "/friends/requests");
         return SendFriendRequestResponse.from(saved);
     }
 
@@ -72,6 +83,19 @@ public class FriendService {
                         FriendRequestStatus.PENDING,
                         PageRequest.of(page, size));
         return FriendRequestPageResponse.from(requests);
+    }
+
+    @Transactional(readOnly = true)
+    public SentFriendRequestPageResponse getSentRequests(
+            Long currentUserId,
+            int page,
+            int size) {
+        validatePage(page, size);
+        return SentFriendRequestPageResponse.from(friendRequestRepository
+                .findAllBySenderIdAndStatusOrderByCreatedAtDescIdDesc(
+                        currentUserId,
+                        FriendRequestStatus.PENDING,
+                        PageRequest.of(page, size)));
     }
 
     // 친구 목록 조회
@@ -133,7 +157,14 @@ public class FriendService {
         }
 
         switch (action) {
-            case ACCEPT -> accept(request);
+            case ACCEPT -> {
+                accept(request);
+                notificationService.create(
+                        request.getSender(),
+                        NotificationKind.FRIEND_ACCEPTED,
+                        request.getReceiver().getNickname() + "님이 친구 요청을 수락했어요",
+                        "/friends");
+            }
             case REJECT -> request.reject();
         }
 
