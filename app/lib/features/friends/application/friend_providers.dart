@@ -293,5 +293,7 @@ class FriendJourneyNotifier extends AsyncNotifier<FriendJourney> {
   Future<void> unfriend() async {
     await ref.read(friendRepositoryProvider).unfriend(userId);
     ref.invalidate(friendListProvider);
+    // 친구 범위의 EXP·레벨 랭킹에서 삭제한 사용자가 즉시 빠져야 한다.
+    ref.invalidate(weeklyRankingProvider);
   }
 }

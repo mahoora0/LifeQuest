@@ -69,16 +69,30 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('동료 해제가 라우트의 상대에게 나간다', () {
+  group('친구 삭제가 라우트의 상대에게 나간다', () {
+    testWidgets('확인 팝업에서 취소하면 삭제하지 않는다', (tester) async {
+      final repository = _SpyFriendRepository();
+      await pumpJourney(tester, repository, userId: 7);
+
+      await tester.tap(find.text('친구 삭제'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('다시 함께하려면 친구 요청을 새로 보내야 해요.'), findsOneWidget);
+
+      await tester.tap(find.text('그대로 둘래요'));
+      await tester.pumpAndSettle();
+
+      expect(repository.unfriended, isEmpty);
+    });
+
     testWidgets('응답에 userId가 없어도 라우트 id로 호출한다', (tester) async {
       // 서버가 userId를 빠뜨리면 FriendJourney.fromJson이 0으로 채운다. 그 값으로
       // 프로바이더를 잡으면 되돌릴 수 없는 동작이 엉뚱한 상대에게 나간다.
       final repository = _SpyFriendRepository(responseUserId: 0);
       await pumpJourney(tester, repository, userId: 7);
 
-      await tester.tap(find.text('동료 해제'));
+      await tester.tap(find.text('친구 삭제'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('동료 해제').last);
+      await tester.tap(find.text('친구 삭제').last);
       await tester.pumpAndSettle();
 
       expect(repository.unfriended, [7]);
