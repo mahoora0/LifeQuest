@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/app/life_quest_app.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
@@ -23,11 +22,6 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
 
 void main() {
-  setUpAll(() {
-    // 테스트에서 폰트를 내려받지 않는다(네트워크 의존 제거).
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   testWidgets('시안 확정 탭 구성을 표시한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

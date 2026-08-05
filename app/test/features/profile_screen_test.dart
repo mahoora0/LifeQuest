@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/core/network/provider_retry.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
@@ -21,10 +20,6 @@ import 'package:life_quest/features/user/data/user_repository.dart';
 /// 마이페이지는 대표 배지 지정 결과가 돌아와 보이는 화면이고, 서버가 아직 없는
 /// 구간(도감·업적)을 오류가 아니라 준비 중으로 알려야 하는 화면이기도 하다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   Future<void> pumpProfile(WidgetTester tester) async {
     // 카드가 많아 기본 600 높이에서는 아래쪽 카드가 build되지 않는다.
     await tester.binding.setSurfaceSize(const Size(420, 2400));

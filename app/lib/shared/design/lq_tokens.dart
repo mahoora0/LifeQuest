@@ -111,7 +111,7 @@ class LqTagPalette {
   );
 }
 
-/// 타이포그래피. 글꼴(Gaegu)은 `ThemeData.textTheme`에서 일괄 적용되므로
+/// 타이포그래피. 글꼴(A2Z)은 `ThemeData.fontFamily`에서 일괄 적용되므로
 /// 여기서는 `fontFamily`를 지정하지 않는다(지정하면 테마 글꼴을 덮어쓴다).
 abstract final class LqText {
   static const displayTitle = TextStyle(
