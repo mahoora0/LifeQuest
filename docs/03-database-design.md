@@ -86,7 +86,7 @@ erDiagram
         bigint id PK
         varchar title
         varchar grade "NORMAL/RARE/EPIC/LEGENDARY"
-        varchar cadence "DAILY/WEEKLY/MONTHLY"
+        varchar cadence "DAILY/WEEKLY"
         varchar completion_type "LOCATION/SELF_REPORT"
         int exp_reward
         decimal latitude
@@ -286,7 +286,7 @@ erDiagram
 | title | VARCHAR(100) | NOT NULL | 퀘스트명 |
 | description | VARCHAR(500) | NULL | 설명 |
 | grade | ENUM | NOT NULL | NORMAL / RARE / EPIC / LEGENDARY |
-| cadence | ENUM | NOT NULL, DEFAULT DAILY | DAILY / WEEKLY / MONTHLY — 퀘스트 목록의 조회 필터 기준 |
+| cadence | ENUM | NOT NULL, DEFAULT DAILY | DAILY / WEEKLY — 배정 트랙을 가르는 기준(`05-business-rules.md` §1). 협동은 참여 형태이므로 이 축에 두지 않는다 |
 | completion_type | ENUM | NOT NULL | LOCATION(위치 인증) / SELF_REPORT(직접 완료) |
 | exp_reward | INT | NOT NULL | 완료 시 지급 EXP(등급별 기준값) |
 | place_name | VARCHAR(100) | NULL | 장소명(LOCATION 타입에만 사용) |
@@ -305,10 +305,23 @@ erDiagram
 | id | BIGINT | PK | ID |
 | user_id | BIGINT | FK → USERS.id | 사용자 |
 | quest_id | BIGINT | FK → QUESTS.id | 배정된 퀘스트 |
-| assigned_date | DATE | NOT NULL | **주기 시작일** — 일간은 논리적 일자 당일, 주간은 그 주 월요일, 월간은 그 달 1일 (`05-business-rules.md` §1-2) |
+| assigned_date | DATE | NOT NULL | **주기 시작일** — 일간은 논리적 일자 당일, 주간은 그 주 월요일 (`05-business-rules.md` §1-2) |
 | status | ENUM | NOT NULL | ASSIGNED / COMPLETED / EXPIRED |
 | expires_at | DATETIME | NOT NULL | 만료 일시 — 다음 주기 시작 04:00 |
 | | | UNIQUE(user_id, quest_id, assigned_date) | 주기 단위 중복 배정 방지 |
+
+**QUEST_ASSIGNMENT_MARKERS** — 배정 생성 마커(트랙·주기당 1행)
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | ID |
+| user_id | BIGINT | NOT NULL | 사용자(크로스도메인 FK 보류) |
+| cadence | ENUM | NOT NULL | DAILY / WEEKLY — 트랙마다 갱신 주기가 달라 키에 포함한다 |
+| period_start | DATE | NOT NULL | 주기 시작일 — `USER_DAILY_QUESTS.assigned_date`와 같은 값 |
+| created_at | DATETIME | NOT NULL | 생성 일시 |
+| | | UNIQUE(user_id, cadence, period_start) | 동시 요청의 중복 생성 차단 |
+
+> 배정은 지연 생성이라 같은 사용자의 동시 요청이 모두 "배정 없음"을 보고 각각 생성을 시도할 수 있다. `UNIQUE(user_id, quest_id, assigned_date)`는 이를 막지 못한다 — 두 요청이 서로 다른 퀘스트를 뽑으면 겹치는 행이 없어 제약에 걸리지 않고, 한 트랙에 6개가 배정되어 슬롯 계약이 깨진다. 생성 트랜잭션이 이 테이블에 행을 **먼저** 넣고 유니크 위반이면 생성을 포기해, 판정이 애플리케이션 조회가 아니라 DB 제약에서 이루어지게 한다.
 
 **QUEST_COMPLETIONS** — 완료·위치 인증 기록
 
@@ -427,7 +440,9 @@ erDiagram
 
 | 대상 | 인덱스 | 목적 |
 |---|---|---|
-| USER_DAILY_QUESTS | UNIQUE(user_id, quest_id, assigned_date) | 주기 단위 중복 배정 방지 — `assigned_date`에 주기 시작일이 들어가므로 주간·월간도 이 제약 하나로 막힌다 |
+| USER_DAILY_QUESTS | UNIQUE(user_id, quest_id, assigned_date) | 주기 단위 중복 배정 방지 — `assigned_date`에 주기 시작일이 들어가므로 주간도 이 제약 하나로 막힌다 |
+| USER_DAILY_QUESTS | INDEX(user_id, expires_at) | 배정 목록 조회 기준이 `assigned_date = 오늘`이 아니라 만료 전 배정 건이다(`05-business-rules.md` §1-2). 트랙마다 `assigned_date`가 달라 기존 `(user_id, assigned_date)` 인덱스로는 한 번에 못 읽는다 |
+| QUEST_ASSIGNMENT_MARKERS | UNIQUE(user_id, cadence, period_start) | 지연 생성의 동시 요청 경합 차단 — 생성 트랜잭션이 이 행을 먼저 넣고, 유니크 위반이면 다른 요청이 이미 만든 것으로 보고 재조회한다 |
 | QUEST_COMPLETIONS | UNIQUE(user_daily_quest_id) | 완료 멱등성 보장(핵심) |
 | EXP_LOGS | UNIQUE(user_id, source_type, source_id) | 동일 근거의 EXP 재지급 방지 |
 | USER_LIFEDEX | UNIQUE(user_id, lifedex_item_id) | 도감 중복 등록 방지 |
