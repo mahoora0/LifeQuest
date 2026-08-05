@@ -187,13 +187,19 @@ class _RequestBanner extends ConsumerWidget {
                   width: LqShape.borderWidth,
                 ),
               ),
-              child: Text(
-                hasReceived ? '$receivedCount' : '↗',
-                style: LqText.badge.copyWith(
-                  fontSize: 13,
-                  color: hasReceived ? LqColors.onDark : LqColors.textPrimary,
-                ),
-              ),
+              child: hasReceived
+                  ? Text(
+                      '$receivedCount',
+                      style: LqText.badge.copyWith(
+                        fontSize: 13,
+                        color: LqColors.onDark,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.outbox_rounded,
+                      size: 15,
+                      color: LqColors.textPrimary,
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(

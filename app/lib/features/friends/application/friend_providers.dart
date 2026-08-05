@@ -145,6 +145,8 @@ class AdventurerSearchNotifier extends AsyncNotifier<AdventurerSearchState> {
 
     try {
       await ref.read(friendRepositoryProvider).sendRequest(userId);
+      // 친구 목록의 요청 관리 카드와 보낸 요청 탭이 즉시 최신 건수를 다시 받는다.
+      ref.invalidate(friendRequestsProvider);
     } catch (error, stackTrace) {
       // 그 행만 되돌린다. 스냅샷을 통째로 복원하면 기다리는 동안 끝난 새 검색
       // 결과가 사라지고, 입력창과 목록이 어긋난다. 원본 객체를 그대로 되돌려
