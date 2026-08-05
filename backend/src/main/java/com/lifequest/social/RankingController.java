@@ -23,18 +23,22 @@ public class RankingController {
     public ApiResponse<RankingPageResponse> globalRanking(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "EXP") String type) {
         return ApiResponse.success(
-                rankingService.getGlobalRanking(userId(jwt), page, size));
+                rankingService.getGlobalRanking(
+                        userId(jwt), page, size, RankingType.parse(type)));
     }
 
     @GetMapping("/friends")
     public ApiResponse<RankingPageResponse> friendRanking(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "EXP") String type) {
         return ApiResponse.success(
-                rankingService.getFriendRanking(userId(jwt), page, size));
+                rankingService.getFriendRanking(
+                        userId(jwt), page, size, RankingType.parse(type)));
     }
 
     private Long userId(Jwt jwt) {

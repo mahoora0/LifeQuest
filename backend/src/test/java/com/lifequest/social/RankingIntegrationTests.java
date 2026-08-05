@@ -96,12 +96,43 @@ class RankingIntegrationTests {
     }
 
     @Test
+    void levelRankingOrdersByLevelThenTotalExpAndSupportsFriendScope() throws Exception {
+        TestUser owner = createUser("레벨본인");
+        TestUser higherLevel = createUser("레벨선두");
+        TestUser sameLevelLowerExp = createUser("레벨동점");
+        TestUser outsider = createUser("레벨외부인");
+        setGrowth(owner.id(), 700, 8);
+        setGrowth(higherLevel.id(), 600, 9);
+        setGrowth(sameLevelLowerExp.id(), 500, 8);
+        setGrowth(outsider.id(), 10_000, 99);
+        makeFriends(owner.id(), higherLevel.id());
+        makeFriends(owner.id(), sameLevelLowerExp.id());
+
+        mockMvc.perform(get("/api/rankings/friends")
+                        .header("Authorization", bearer(owner.token()))
+                        .queryParam("type", "LEVEL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.type").value("LEVEL"))
+                .andExpect(jsonPath("$.data.content.length()").value(3))
+                .andExpect(jsonPath("$.data.content[0].userId").value(higherLevel.id()))
+                .andExpect(jsonPath("$.data.content[0].level").value(9))
+                .andExpect(jsonPath("$.data.content[1].userId").value(owner.id()))
+                .andExpect(jsonPath("$.data.content[2].userId").value(sameLevelLowerExp.id()));
+    }
+
+    @Test
     void rankingRejectsInvalidPagination() throws Exception {
         TestUser user = createUser("랭킹검증");
 
         mockMvc.perform(get("/api/rankings/global")
                         .header("Authorization", bearer(user.token()))
                         .queryParam("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+
+        mockMvc.perform(get("/api/rankings/global")
+                        .header("Authorization", bearer(user.token()))
+                        .queryParam("type", "WEEKLY"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
 
@@ -115,6 +146,12 @@ class RankingIntegrationTests {
     private void addExp(long userId, int amount) {
         User user = userRepository.findById(userId).orElseThrow();
         user.addExp(amount, 100);
+        userRepository.save(user);
+    }
+
+    private void setGrowth(long userId, int totalExp, int level) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.addExp(totalExp, level);
         userRepository.save(user);
     }
 
