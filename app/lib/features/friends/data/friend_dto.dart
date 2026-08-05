@@ -187,6 +187,14 @@ class FriendRequestBox {
     sent: sent,
   );
 
+  FriendRequestBox removeSent(int requestId) => FriendRequestBox(
+    received: received,
+    sent: [
+      for (final request in sent)
+        if (request.requestId != requestId) request,
+    ],
+  );
+
   factory FriendRequestBox.fromJson(Object? body) {
     final json = asMap(body);
     return FriendRequestBox(

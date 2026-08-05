@@ -62,7 +62,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
                         requests: value.received,
                         onRespond: _respond,
                       )
-                    : _SentTab(requests: value.sent),
+                    : _SentTab(requests: value.sent, onCancel: _cancelSent),
               ),
             ),
           ],
@@ -79,6 +79,15 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
       if (!mounted) return;
       // 거절은 조용히 처리한다 — 알림을 띄우면 상대에게 알린 것처럼 읽힌다.
       if (accept) showLqSnack(context, '이제 함께 모험해요!');
+    } catch (error) {
+      if (mounted) showLqError(context, error);
+    }
+  }
+
+  Future<void> _cancelSent(int requestId) async {
+    try {
+      await ref.read(friendRequestsProvider.notifier).cancelSent(requestId);
+      if (mounted) showLqSnack(context, '보낸 친구 요청을 취소했어요');
     } catch (error) {
       if (mounted) showLqError(context, error);
     }
@@ -124,9 +133,10 @@ class _ReceivedTab extends StatelessWidget {
 //  받은 요청과 같은 행을 쓰되 처리 버튼 없이 대기 상태만 보여 둔다. 취소를
 //  허용할지는 결정 필요 — 취소가 상대에게 어떻게 보이는지부터 정해야 한다.
 class _SentTab extends StatelessWidget {
-  const _SentTab({required this.requests});
+  const _SentTab({required this.requests, required this.onCancel});
 
   final List<FriendRequest> requests;
+  final ValueChanged<int> onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -154,11 +164,15 @@ class _SentTab extends StatelessWidget {
                   child: LqAdventurerIdentity(
                     nickname: request.nickname,
                     level: request.level,
-                    statusLine: request.statusLine,
+                    statusLine: request.statusLine ?? '요청 수락을 기다리는 중',
                   ),
                 ),
                 const SizedBox(width: 8),
-                const LqStatePill(label: '수락 대기'),
+                LqStatePill(
+                  label: '요청 취소',
+                  tone: LqPillTone.quiet,
+                  onTap: () => onCancel(request.requestId),
+                ),
               ],
             ),
           ),

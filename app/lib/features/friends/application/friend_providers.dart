@@ -221,6 +221,31 @@ class FriendRequestsNotifier extends AsyncNotifier<FriendRequestBox> {
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
+
+  Future<void> cancelSent(int requestId) async {
+    final current = state.value;
+    if (current == null) return;
+    final target = current.sent
+        .where((item) => item.requestId == requestId)
+        .firstOrNull;
+    if (target == null) return;
+
+    state = AsyncData(current.removeSent(requestId));
+    try {
+      await ref.read(friendRepositoryProvider).cancelSentRequest(requestId);
+    } catch (error, stackTrace) {
+      final latest = state.value;
+      if (latest != null) {
+        state = AsyncData(
+          FriendRequestBox(
+            received: latest.received,
+            sent: [target, ...latest.sent],
+          ),
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
 }
 
 /// S-21 동료 여정 비교. 친구마다 별도 상태를 갖도록 family로 둔다.

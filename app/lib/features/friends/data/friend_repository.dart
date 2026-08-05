@@ -118,6 +118,13 @@ class FriendRepository {
     });
   }
 
+  Future<void> cancelSentRequest(int requestId) async {
+    if (_dio == null) return;
+    await _guard(() async {
+      await _client.delete<dynamic>('/friends/requests/$requestId');
+    });
+  }
+
   /// 업적·도감 비교 API가 완성될 때까지 기존 준비 중 상태를 유지한다.
   Future<FriendJourney> fetchJourney(int userId) async {
     LqSampleData.guard('친구의 여정');
