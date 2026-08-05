@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
@@ -12,10 +11,6 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 
 /// 퀘스트 목록(S-08)은 일간·주간·협동으로 나뉘며 레벨 해금 정책을 따른다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
     await tester.pumpWidget(
       ProviderScope(

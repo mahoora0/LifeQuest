@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
@@ -11,10 +10,6 @@ import 'package:life_quest/features/friends/presentation/friend_search_screen.da
 
 /// 친구 확장 3화면(S-18 · S-19 · S-21).
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   Future<void> pump(WidgetTester tester, Widget screen) async {
     await tester.pumpWidget(
       ProviderScope(

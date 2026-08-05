@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/notification/application/notification_providers.dart';
 import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
@@ -12,10 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 알림 목록 + 설정 (화면맵 2d).
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<void> pumpNotifications(WidgetTester tester) async {
