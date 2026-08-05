@@ -357,18 +357,7 @@ class _ExpCard extends ConsumerWidget {
                 style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
-              // 남은 EXP가 길어져도 ›를 밀어내지 않도록 이쪽이 먼저 줄어든다.
-              Flexible(
-                child: Text(
-                  status == null ? '' : '다음 레벨까지 ${status.remainingExp}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                  style: LqText.caption,
-                ),
-              ),
               // 누를 수 있다는 표식. 없으면 카드가 눌리는지 알 수 없다.
-              const SizedBox(width: 6),
               Text(
                 '›',
                 style: LqText.cardTitle.copyWith(color: LqColors.textSecondary),
@@ -380,6 +369,18 @@ class _ExpCard extends ConsumerWidget {
             value: status?.currentLevelExp ?? 0,
             max: status?.nextLevelRequiredExp ?? 0,
           ),
+          // 남은 EXP는 진행바 아래 제 줄을 쓴다. 첫 줄에 같이 두면 시안 폭
+          // 360에서 자리가 54px 모자라 말줄임되고, 레벨이 오를수록 더 나빠진다.
+          if (status != null) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '다음 레벨까지 ${status.remainingExp}',
+                style: LqText.caption,
+              ),
+            ),
+          ],
         ],
       ),
     );
