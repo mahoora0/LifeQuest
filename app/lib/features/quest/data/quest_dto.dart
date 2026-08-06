@@ -19,14 +19,16 @@ enum QuestCompletionType {
       isLocation ? LqTagPalette.location : LqTagPalette.selfReport;
 }
 
-/// 반복 주기 (`QUESTS.cadence`). 퀘스트 목록의 조회 필터 기준이다.
+/// 반복 주기 (`QUESTS.cadence`). 배정 트랙을 가르는 기준이다.
 ///
 /// 완료 방식([QuestCompletionType])과는 별개의 축이다 — "새로운 카페 방문하기"처럼
 /// 주간이면서 위치 인증인 퀘스트가 있어 한쪽으로 다른 쪽을 유추할 수 없다.
+///
+/// 협동 탭은 여기 없다. 협동은 시간 주기가 아니라 참여 형태여서 서버도 `cadence`에 담지 않고,
+/// 목록 화면의 협동 필터가 `cadence: null`인 것이 그 반영이다.
 enum QuestCadence {
   daily('일간'),
-  weekly('주간'),
-  monthly('월간');
+  weekly('주간');
 
   const QuestCadence(this.label);
 
@@ -40,7 +42,6 @@ enum QuestCadence {
   static QuestCadence parse(Object? raw) {
     return switch (asString(raw)?.toUpperCase()) {
       'WEEKLY' => QuestCadence.weekly,
-      'MONTHLY' => QuestCadence.monthly,
       _ => QuestCadence.daily,
     };
   }
@@ -48,7 +49,6 @@ enum QuestCadence {
   LqTagPalette get palette => switch (this) {
     QuestCadence.daily => LqTagPalette.daily,
     QuestCadence.weekly => LqTagPalette.weekly,
-    QuestCadence.monthly => LqTagPalette.monthly,
   };
 }
 

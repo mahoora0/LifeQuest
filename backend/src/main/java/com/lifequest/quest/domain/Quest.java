@@ -40,7 +40,7 @@ public class Quest {
     @Column(name = "grade", nullable = false, length = 20)
     private QuestGrade grade;
 
-    /** 반복 주기(일간·주간·월간). 목록 화면의 조회 필터 기준이며 완료 방식과는 별개의 축이다. */
+    /** 반복 주기(일간·주간). 배정 트랙을 가르는 기준이며 완료 방식과는 별개의 축이다. */
     @Enumerated(EnumType.STRING)
     @Column(name = "cadence", nullable = false, length = 20)
     private QuestCadence cadence;

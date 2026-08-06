@@ -78,7 +78,7 @@
 | `LqCard` | `header`를 주면 제목 띠(패딩 5/14, 하단 ink 2px 실선)가 붙고 본문에만 패딩이 적용된다. `headerTrailing`은 "더보기 ›" 같은 보조 요소. `locked`는 점선 + `lockedBg` + 그림자 없음. **좌측 컬러 보더 액센트 금지.** 제목·보조 요소는 모두 축약(ellipsis)되므로 닉네임 같은 사용자 입력을 넣어도 넘치지 않는다 |
 | `LqButton` | 높이 50, 풀폭. 비활성은 `#E3DCC8` 배경 + `textMuted` 글자 + **그림자 없음**. 진행 중에는 스피너로 중복 탭을 막는다. 나란히 놓인 보조·파괴적 액션은 `borderColor: borderMuted` + `shadow: false`로 한 단계 뒤로 물린다 |
 | `LqChip` / `LqChipRow` | 선택 = primary 배경 + ink 테두리 + 흰 글자. 미선택 = raised + borderMuted. 행 높이 44로 터치 타깃을 확보한다 |
-| `LqRewardBadge` | EXP는 `expBadge` 채움, 골드는 `goldBg` + `goldBorder`, 위치는 `locBg` + `locBorder`. 주기 태그(일간·주간·월간)와 위치 뱃지는 **별개의 축**이라 함께 붙는다 |
+| `LqRewardBadge` | EXP는 `expBadge` 채움, 골드는 `goldBg` + `goldBorder`, 위치는 `locBg` + `locBorder`. 주기 태그(일간·주간)와 위치 뱃지는 **별개의 축**이라 함께 붙는다 |
 | `LqProgressBar` | 높이 12, ink 2px, pill. 값이 바뀌면 500ms ease-out로 애니메이션한다. 작은 자리에서는 높이 9 + 테두리 1.6 |
 | `QuestCheckButton` | 원형 27, 완료 시 `expBadge` 배경 + ✓. 44 터치 타깃 안에 넣는다. **위치 퀘스트에는 쓰지 않고** ›로 상세로 보낸다 |
 | `LqStatusBanner` | GPS 인증 상태 표시 전용. tone에 따라 배경·테두리·글자가 한 세트로 바뀐다(테두리 색 = 글자 색) |
