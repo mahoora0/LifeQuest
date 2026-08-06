@@ -259,21 +259,25 @@ class _SideBySideCard extends StatelessWidget {
           const SizedBox(height: 11),
           const LqDashedDivider(color: LqColors.divider),
           const SizedBox(height: 11),
-          // 도감은 각자 전체 대비 몇 개인지가 뜻이라 트랙을 따로 준다.
+          // 서버가 공개하는 누적 EXP를 같은 기준으로 비교한다.
           _CompareHeading(
-            label: '도감 수집',
-            values: '${me.lifedexCollected} · ${friend.lifedexCollected}',
+            label: '누적 EXP',
+            values: '${me.totalExp} · ${friend.totalExp}',
           ),
           const SizedBox(height: 4),
           _TrackBar(
-            value: me.lifedexCollected,
-            total: me.lifedexTotal,
+            value: me.totalExp,
+            total: me.totalExp > friend.totalExp
+                ? me.totalExp
+                : friend.totalExp,
             color: LqColors.expFill,
           ),
           const SizedBox(height: 4),
           _TrackBar(
-            value: friend.lifedexCollected,
-            total: friend.lifedexTotal,
+            value: friend.totalExp,
+            total: me.totalExp > friend.totalExp
+                ? me.totalExp
+                : friend.totalExp,
             color: LqColors.gold,
           ),
           const SizedBox(height: 11),
@@ -377,30 +381,23 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 연속 달성은 서버 판정이 필요해 플래그가 켜질 때까지 감춘다(시안 §8).
-    final showStreak =
-        LqFeatures.streakEnabled &&
-        me.streakDays != null &&
-        friend.streakDays != null;
-
     return IntrinsicHeight(
       child: Row(
         children: [
           Expanded(
             child: _Stat(
-              label: '달성 업적',
-              value: '${me.achievements} · ${friend.achievements}',
+              label: '완료 퀘스트',
+              value:
+                  '${me.completedQuestCount} · ${friend.completedQuestCount}',
             ),
           ),
-          if (showStreak) ...[
-            const LqDashedDivider(axis: Axis.vertical, color: LqColors.divider),
-            Expanded(
-              child: _Stat(
-                label: '연속 달성',
-                value: '${me.streakDays} · ${friend.streakDays}일',
-              ),
+          const LqDashedDivider(axis: Axis.vertical, color: LqColors.divider),
+          Expanded(
+            child: _Stat(
+              label: '방문 장소',
+              value: '${me.visitedPlaceCount} · ${friend.visitedPlaceCount}',
             ),
-          ],
+          ),
         ],
       ),
     );

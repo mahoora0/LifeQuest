@@ -163,10 +163,11 @@ void main() {
       expect(find.text('나 · 하늘'), findsOneWidget);
       expect(find.text('레벨'), findsOneWidget);
       expect(find.text('12 · 14'), findsOneWidget);
-      expect(find.text('도감 수집'), findsOneWidget);
-      expect(find.text('42 · 51'), findsOneWidget);
-      expect(find.text('달성 업적'), findsOneWidget);
+      expect(find.text('누적 EXP'), findsOneWidget);
+      expect(find.text('완료 퀘스트'), findsOneWidget);
       expect(find.text('24 · 31'), findsOneWidget);
+      expect(find.text('방문 장소'), findsOneWidget);
+      expect(find.text('42 · 51'), findsOneWidget);
     });
 
     testWidgets('연속 달성은 서버 판정 전까지 칸째 감춘다', (tester) async {
