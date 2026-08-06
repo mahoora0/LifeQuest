@@ -12,7 +12,12 @@ import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
+import com.lifequest.quest.domain.UserDailyQuest;
 import com.lifequest.quest.repository.QuestRepository;
+import com.lifequest.quest.repository.UserDailyQuestRepository;
+import com.lifequest.quest.service.QuestPeriod;
+import com.lifequest.user.User;
+import com.lifequest.user.UserRepository;
 import java.math.BigDecimal;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -25,9 +30,19 @@ public class AdminQuestService {
             Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 
     private final QuestRepository questRepository;
+    private final UserDailyQuestRepository userDailyQuestRepository;
+    private final UserRepository userRepository;
+    private final QuestPeriod questPeriod;
 
-    public AdminQuestService(QuestRepository questRepository) {
+    public AdminQuestService(
+            QuestRepository questRepository,
+            UserDailyQuestRepository userDailyQuestRepository,
+            UserRepository userRepository,
+            QuestPeriod questPeriod) {
         this.questRepository = questRepository;
+        this.userDailyQuestRepository = userDailyQuestRepository;
+        this.userRepository = userRepository;
+        this.questPeriod = questPeriod;
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +65,11 @@ public class AdminQuestService {
                 values.completionType, values.expReward, values.placeName,
                 values.latitude, values.longitude, values.radiusM, values.lifedexItemId,
                 QuestCreator.ADMIN, values.active);
-        return AdminQuestResponse.from(questRepository.save(quest));
+        Quest saved = questRepository.save(quest);
+        if (saved.isActive()) {
+            assignToCurrentUsers(saved);
+        }
+        return AdminQuestResponse.from(saved);
     }
 
     @Transactional
@@ -75,6 +94,9 @@ public class AdminQuestService {
                 values.completionType, values.expReward, values.placeName,
                 values.latitude, values.longitude, values.radiusM,
                 values.lifedexItemId, values.active);
+        if (quest.isActive()) {
+            assignToCurrentUsers(quest);
+        }
         return AdminQuestResponse.from(quest);
     }
 
@@ -88,6 +110,22 @@ public class AdminQuestService {
     private Quest getQuest(Long questId) {
         return questRepository.findById(questId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    /**
+     * 관리자 화면에서 활성 퀘스트를 만들면 이미 해당 주기의 자동 배정을 받은 사용자도
+     * 앱을 새로고침하는 즉시 볼 수 있도록 현재 주기 배정을 함께 만든다.
+     */
+    private void assignToCurrentUsers(Quest quest) {
+        QuestPeriod.QuestLifePeriod period = questPeriod.create(quest.getCadence());
+        for (User user : userRepository.findAll()) {
+            if (userDailyQuestRepository.existsByUserIdAndQuestIdAndAssignedDate(
+                    user.getId(), quest.getId(), period.getStartAt())) {
+                continue;
+            }
+            userDailyQuestRepository.save(new UserDailyQuest(
+                    user.getId(), quest.getId(), period.getStartAt(), period.getExpiresAt()));
+        }
     }
 
     private QuestValues normalize(
