@@ -63,6 +63,53 @@ void main() {
     expect(path, '/rankings/global');
     expect(type, 'LEVEL');
   });
+
+  test('친구 상세 프로필과 공개 활동을 서버에서 조회한다', () async {
+    final dio = _dio((options) {
+      expect(options.path, '/friends/7/profile');
+      return {
+        'userId': 7,
+        'nickname': '하늘',
+        'representativeTitle': '새벽의 개척자',
+        'representativeBadge': '첫걸음',
+        'me': {
+          'level': 4,
+          'totalExp': 320,
+          'completedQuestCount': 8,
+          'visitedPlaceCount': 2,
+        },
+        'friend': {
+          'level': 6,
+          'totalExp': 580,
+          'completedQuestCount': 14,
+          'visitedPlaceCount': 5,
+        },
+      };
+    });
+
+    final journey = await FriendRepository(dio).fetchJourney(7);
+
+    expect(journey.nickname, '하늘');
+    expect(journey.titleLine, '새벽의 개척자');
+    expect(journey.badges.single.name, '첫걸음');
+    expect(journey.friend.totalExp, 580);
+    expect(journey.friend.completedQuestCount, 14);
+  });
+
+  test('친구 삭제 API를 호출한다', () async {
+    String? method;
+    String? path;
+    final dio = _dio((options) {
+      method = options.method;
+      path = options.path;
+      return {'deleted': true};
+    });
+
+    await FriendRepository(dio).unfriend(7);
+
+    expect(method, 'DELETE');
+    expect(path, '/friends/7');
+  });
 }
 
 Dio _dio(Map<String, dynamic> Function(RequestOptions) responseFor) {

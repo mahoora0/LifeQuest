@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/shared/data/json_reader.dart';
-import 'package:life_quest/shared/data/sample_data.dart';
 
 /// 친구·친구 요청·검색·랭킹 API 접근 계층.
 ///
@@ -126,10 +125,11 @@ class FriendRepository {
     });
   }
 
-  /// 업적·도감 비교 API가 완성될 때까지 기존 준비 중 상태를 유지한다.
   Future<FriendJourney> fetchJourney(int userId) async {
-    LqSampleData.guard('친구의 여정');
-    throw StateError('Friend journey sample is not configured');
+    return _guard(() async {
+      final response = await _client.get<dynamic>('/friends/$userId/profile');
+      return FriendJourney.fromJson(response.data);
+    });
   }
 
   Future<void> unfriend(int userId) => _guard(() async {

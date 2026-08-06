@@ -86,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: LqSpacing.gap),
                 const _MyRecordCard(),
                 const SizedBox(height: LqSpacing.gap),
-                const _MenuCard(),
+                _MenuCard(profile: value),
                 const SizedBox(height: LqSpacing.gap),
                 const _LogoutRow(),
               ],
@@ -590,7 +590,9 @@ class _RecordRow extends StatelessWidget {
 }
 
 class _MenuCard extends StatelessWidget {
-  const _MenuCard();
+  const _MenuCard({required this.profile});
+
+  final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
@@ -599,6 +601,13 @@ class _MenuCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
+          if (profile.role == 'ADMIN') ...[
+            _MenuRow(
+              label: '관리자 퀘스트 관리',
+              onTap: () => context.push('/admin/quests'),
+            ),
+            const LqDashedDivider(),
+          ],
           _MenuRow(label: '내 그룹', onTap: () => context.push('/groups')),
           const LqDashedDivider(),
           _MenuRow(label: '프로필 수정', onTap: () => context.push('/profile/edit')),

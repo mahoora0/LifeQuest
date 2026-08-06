@@ -216,27 +216,26 @@ class FriendRequestBox {
 class JourneySide {
   const JourneySide({
     required this.level,
-    required this.lifedexCollected,
-    required this.achievements,
-    this.lifedexTotal = 100,
-    this.streakDays,
-  });
+    this.totalExp = 0,
+    int? completedQuestCount,
+    int? visitedPlaceCount,
+    int? lifedexCollected,
+    int? achievements,
+    int? streakDays,
+    int lifedexTotal = 100,
+  }) : completedQuestCount = completedQuestCount ?? achievements ?? 0,
+       visitedPlaceCount = visitedPlaceCount ?? lifedexCollected ?? 0;
 
   final int level;
-  final int lifedexCollected;
-  final int achievements;
-  final int lifedexTotal;
-
-  /// 연속 달성 일수. 서버 판정이 필요해 `LqFeatures.streakEnabled`가 켜질 때까지
-  /// 화면에서 감춘다.
-  final int? streakDays;
+  final int totalExp;
+  final int completedQuestCount;
+  final int visitedPlaceCount;
 
   factory JourneySide.fromJson(Map<String, dynamic> json) => JourneySide(
     level: asInt(json['level']) ?? 1,
-    lifedexCollected: asInt(pick(json, ['lifedexCollected', 'collected'])) ?? 0,
-    lifedexTotal: asInt(pick(json, ['lifedexTotal', 'total'])) ?? 100,
-    achievements: asInt(pick(json, ['achievements', 'achievementCount'])) ?? 0,
-    streakDays: asInt(pick(json, ['streakDays', 'streak'])),
+    totalExp: asInt(json['totalExp']) ?? 0,
+    completedQuestCount: asInt(json['completedQuestCount']) ?? 0,
+    visitedPlaceCount: asInt(json['visitedPlaceCount']) ?? 0,
   );
 }
 
@@ -288,11 +287,15 @@ class FriendJourney {
     return FriendJourney(
       userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
       nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
-      titleLine: asString(pick(json, ['titleLine', 'title'])),
+      titleLine: asString(
+        pick(json, ['titleLine', 'title', 'representativeTitle']),
+      ),
       cheered: asBool(pick(json, ['cheered', 'cheeredToday'])),
       me: JourneySide.fromJson(asMap(json['me'])),
       friend: JourneySide.fromJson(asMap(pick(json, ['friend', 'other']))),
       badges: [
+        if (asString(json['representativeBadge']) case final badge?)
+          JourneyBadge(name: badge),
         for (final badge in asMapList(json['badges']))
           JourneyBadge(name: asString(pick(badge, ['name', 'label'])) ?? '배지'),
       ],
