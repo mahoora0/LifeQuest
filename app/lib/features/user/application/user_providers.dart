@@ -26,6 +26,13 @@ final characterCollectionProvider = FutureProvider<List<AvatarCharacter>>((
   return ref.watch(userRepositoryProvider).fetchCharacters();
 });
 
+// 서버 배포 직후 받았던 404를 앱 세션 전체에 남기지 않는다. 꾸미기 화면을
+// 나갔다가 다시 열면 액세서리 목록과 해금 상태를 서버에서 새로 조회한다.
+final accessoryCollectionProvider =
+    FutureProvider.autoDispose<AccessoryCollection>((ref) {
+      return ref.watch(userRepositoryProvider).fetchAccessories();
+    });
+
 /// 보유 칭호 + 대표 칭호 선택.
 final titleCollectionProvider =
     AsyncNotifierProvider<TitleCollectionNotifier, TitleCollection>(

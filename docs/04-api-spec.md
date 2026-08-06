@@ -58,6 +58,13 @@
 | DUPLICATE_FRIEND_REQUEST | 409 | 이미 대기 중인 친구 요청 존재 |
 | SELF_FRIEND_REQUEST_NOT_ALLOWED | 400 | 자기 자신에게 친구 요청 |
 | FRIENDSHIP_NOT_FOUND | 404 | 존재하지 않는 친구 관계 |
+| PROOF_POST_NOT_FOUND | 404 | 존재하지 않는 인증 게시물 |
+| PROOF_ALREADY_POSTED | 409 | 해당 완료 기록에 이미 인증 게시물이 있음 |
+| CANNOT_VOTE_OWN_PROOF | 400 | 자기 인증 게시물에 투표 시도 |
+| PROOF_ALREADY_VOTED | 409 | 이미 투표한 게시물(번복 불가) |
+| PROOF_PHOTO_REQUIRED | 400 | 인증 사진 미첨부 |
+| PROOF_PHOTO_LIMIT_EXCEEDED | 400 | 인증 사진 장수 초과 |
+| INVALID_PROOF_IMAGE | 400 | 허용되지 않는 형식·크기의 인증 사진 |
 
 ## 3. 도메인별 엔드포인트
 
@@ -92,6 +99,25 @@
 | GET | /api/quests/nearby | 오늘 배정된 위치 퀘스트 중 주변 항목 조회(`lat`,`lng`,`radiusKm`) | 필요 |
 | POST | /api/daily-quests/{dailyQuestId}/complete | 배정 건 완료 처리(핵심 API, §4 참조) | 필요 |
 | GET | /api/users/me/quests/history | 완료·인증 기록 조회 | 필요 |
+
+#### 인증 광장 (사용자 참여형 사진 인증)
+
+규칙 원본은 `05-business-rules.md` §4-1. 완료 API와 완료 응답 계약(§4)에는 영향이 없다 —
+게시물은 완료 **이후**에 완료 기록에 붙는 별도 자원이고, 투표 결과가 EXP를 게이트하지 않는다.
+
+| Method | Path | 설명 | 인증 |
+|---|---|---|---|
+| POST | /api/quest-proofs | 인증 게시물 등록(multipart: `completionId`, `content`, `photos[]`) | 필요 |
+| GET | /api/quest-proofs | 피드 조회(`tab`=NEEDS_VOTE\|ALL\|MINE, `cursor`, `size`) | 필요 |
+| GET | /api/quest-proofs/candidates | 아직 인증을 올리지 않은 내 완료 기록 | 필요 |
+| GET | /api/quest-proofs/{postId} | 인증 게시물 상세 | 필요 |
+| DELETE | /api/quest-proofs/{postId} | 인증 게시물 삭제(작성자만) | 필요 |
+| POST | /api/quest-proofs/{postId}/votes | 투표(`choice`=AGREE\|UNSURE\|REJECT) | 필요 |
+| GET | /api/quest-proofs/{postId}/comments | 댓글 목록 | 필요 |
+| POST | /api/quest-proofs/{postId}/comments | 댓글 작성 | 필요 |
+
+`GET /api/quest-proofs`는 커서 페이징이다. 응답의 `nextCursor`가 `null`이면 마지막 페이지다.
+게시물 응답에는 **좌표를 싣지 않는다**(`05-business-rules.md` §3-5).
 
 ### 3-3. LifeDex·업적 (담당: 팀원 3)
 

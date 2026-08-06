@@ -1,8 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/app/life_quest_app.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
@@ -17,16 +16,15 @@ import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/profile/presentation/profile_screen.dart';
 import 'package:life_quest/features/profile/presentation/profile_edit_screen.dart';
+import 'package:life_quest/features/profile/presentation/character_selection_screen.dart';
+import 'package:life_quest/features/proof/application/proof_providers.dart';
+import 'package:life_quest/features/proof/data/proof_dto.dart';
+import 'package:life_quest/features/proof/data/proof_repository.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
 
 void main() {
-  setUpAll(() {
-    // 테스트에서 폰트를 내려받지 않는다(네트워크 의존 제거).
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   testWidgets('시안 확정 탭 구성을 표시한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -36,6 +34,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -80,6 +79,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -101,6 +101,7 @@ void main() {
           ),
           questRepositoryProvider.overrideWithValue(_FailingQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const LifeQuestApp(),
       ),
@@ -122,6 +123,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileScreen()),
       ),
@@ -156,6 +158,7 @@ void main() {
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
           lifedexRepositoryProvider.overrideWithValue(_FakeLifedexRepository()),
           achievementRepositoryProvider.overrideWithValue(
             _FakeAchievementRepository(),
@@ -178,11 +181,12 @@ void main() {
     expect(find.text('칭호 선택'), findsNothing);
   });
 
-  testWidgets('프로필 수정은 URL 입력 대신 사진 선택과 캐릭터 목록을 보여준다', (tester) async {
+  testWidgets('프로필 수정은 닉네임과 프로필 사진만 변경한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
         child: const MaterialApp(home: ProfileEditScreen()),
       ),
@@ -191,9 +195,52 @@ void main() {
 
     expect(find.text('프로필 이미지 URL'), findsNothing);
     expect(find.text('사진 선택'), findsOneWidget);
-    expect(find.text('내 캐릭터'), findsOneWidget);
+    expect(find.text('닉네임 저장'), findsOneWidget);
+    expect(find.text('내 캐릭터'), findsNothing);
+    expect(find.text('루키'), findsNothing);
+  });
+
+  testWidgets('캐릭터 꾸미기는 별도 화면에서 제공한다', (tester) async {
+    // 기본 테스트 화면(800×600)에서는 액세서리 섹션이 캐릭터 그리드 아래로 밀려
+    // 화면 밖에 놓인다. CustomScrollView의 슬리버는 화면 밖이면 빌드되지 않으므로
+    // find가 0개를 돌려주고, 섹션이 없어서가 아니라 스크롤 위치 때문에 실패한다.
+    // 이 화면은 원래 스크롤 화면이라 "한 화면에 다 들어온다"는 검증 대상이 아니다.
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
+        ],
+        child: const MaterialApp(home: CharacterSelectionScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('캐릭터 꾸미기'), findsOneWidget);
     expect(find.text('루키'), findsOneWidget);
     expect(find.text('모각'), findsOneWidget);
+    expect(find.text('액세서리'), findsOneWidget);
+    expect(find.text('앞치마'), findsOneWidget);
+    // 잠금 캐릭터가 비분리 ColorFilter 합성 레이어를 만들면 Android에서
+    // 본문 전체가 회색으로 덮일 수 있다.
+    expect(find.byType(ColorFiltered), findsNothing);
+
+    final cardCenter = tester.getCenter(
+      find.byKey(const ValueKey('character-card-1')),
+    );
+    final imageCenter = tester.getCenter(
+      find.byKey(const ValueKey('character-image-1')),
+    );
+    expect(imageCenter.dx, closeTo(cardCenter.dx, 0.1));
+
+    await tester.tap(find.text('앞치마'));
+    await tester.pumpAndSettle();
+    expect(find.text('루키 착용 미리보기'), findsOneWidget);
+    expect(find.text('착용하기'), findsOneWidget);
   });
 }
 
@@ -244,7 +291,31 @@ class _FakeUserRepository extends UserRepository {
   Future<List<AvatarCharacter>> fetchCharacters() async => const [
     AvatarCharacter(id: 1, code: 'ROOKIE', name: '루키', assetKey: 'rookie.png'),
     AvatarCharacter(id: 2, code: 'MOGAK', name: '모각', assetKey: 'mogak.png'),
+    AvatarCharacter(
+      id: 4,
+      code: 'TOTO',
+      name: '토토',
+      assetKey: 'toto.png',
+      requiredLevel: 15,
+      unlocked: false,
+    ),
   ];
+
+  @override
+  Future<AccessoryCollection> fetchAccessories() async =>
+      const AccessoryCollection(
+        selectedAccessoryId: null,
+        accessories: [
+          AvatarAccessory(id: 4, code: 'APRON', name: '앞치마', requiredLevel: 2),
+          AvatarAccessory(
+            id: 5,
+            code: 'EXPLORER_HAT',
+            name: '탐험가 모자',
+            requiredLevel: 3,
+            unlocked: false,
+          ),
+        ],
+      );
 
   @override
   Future<BadgeCollection> fetchBadges() async => const BadgeCollection(
@@ -294,4 +365,17 @@ class _FakeAchievementRepository extends AchievementRepository {
           Achievement(id: 3, name: '???', achieved: false, secret: true),
         ],
       );
+}
+
+/// 홈의 인증 광장 섹션이 쓰는 저장소. 덮어쓰지 않으면 실제 Dio로 요청이 나가고,
+/// 응답이 오지 않는 동안 섹션의 스피너가 계속 돌아 `pumpAndSettle`이 끝나지 않는다.
+class _FakeProofRepository extends ProofRepository {
+  _FakeProofRepository() : super(Dio());
+
+  @override
+  Future<ProofFeedPage> feed({
+    required ProofFeedTab tab,
+    int? cursor,
+    int size = 10,
+  }) async => const ProofFeedPage(items: []);
 }

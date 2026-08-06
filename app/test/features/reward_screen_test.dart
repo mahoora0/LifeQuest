@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/reward/application/reward_providers.dart';
 import 'package:life_quest/features/reward/data/reward_dto.dart';
@@ -10,10 +9,6 @@ import 'package:life_quest/features/reward/presentation/reward_screen.dart';
 
 /// S-05 레벨 · 보상. 서버가 주지 않는 값을 추측해서 표시하지 않는 것이 이 화면의 규칙이다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   Future<void> pumpRewards(
     WidgetTester tester,
     RewardRepository repository,

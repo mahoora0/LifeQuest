@@ -18,7 +18,9 @@ spring:
   servlet:
     multipart:
       max-file-size: 5MB
-      max-request-size: 6MB
+      # 인증 게시물은 사진을 최대 5장 함께 올린다(app.proof.max-photos).
+      # 요청 한도를 장당 한도에 맞춰 두면 5MB 사진 두 장에서 이미 막힌다.
+      max-request-size: 26MB
 
 server:
   error:
@@ -43,6 +45,15 @@ app:
   upload:
     directory: ${UPLOAD_DIRECTORY:uploads}
     max-profile-image-bytes: 5242880
+    max-proof-image-bytes: 5242880
+  proof:
+    # 사용자가 적은 개발·시연 환경에서는 min-votes를 1로 낮춰야 판정까지 확인할 수 있다.
+    min-votes: ${PROOF_MIN_VOTES:3}
+    agree-threshold: 0.70
+    unclear-floor: 0.40
+    max-photos: 5
+    vote-exp: 1
+    daily-vote-exp-grants: 5
   llm:
     provider: ${LLM_PROVIDER:}
     request-timeout-seconds: ${LLM_REQUEST_TIMEOUT_SECONDS:30}

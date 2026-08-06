@@ -6,12 +6,10 @@ import 'package:life_quest/core/config/app_config.dart';
 import 'package:life_quest/features/auth/presentation/widgets/auth_widgets.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
-import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
-import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -26,9 +24,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _nicknameController = TextEditingController();
   bool _initialized = false;
   bool _busy = false;
-  int? _selectingCharacterId;
   String? _profileImageUrl;
-  int? _selectedCharacterId;
 
   @override
   void dispose() {
@@ -41,7 +37,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _initialized = true;
     _nicknameController.text = profile.nickname;
     _profileImageUrl = profile.profileImageUrl;
-    _selectedCharacterId = profile.selectedCharacter?.id;
   }
 
   Future<void> _pickProfileImage() async {
@@ -83,23 +78,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
-  Future<void> _selectCharacter(AvatarCharacter character) async {
-    if (_selectingCharacterId != null || character.id == _selectedCharacterId) {
-      return;
-    }
-    setState(() => _selectingCharacterId = character.id);
-    try {
-      await ref.read(userRepositoryProvider).selectCharacter(character.id);
-      setState(() => _selectedCharacterId = character.id);
-      ref.invalidate(myProfileProvider);
-      if (mounted) showLqSnack(context, '${character.name}(으)로 변경했어요.');
-    } catch (error) {
-      if (mounted) showLqError(context, error);
-    } finally {
-      if (mounted) setState(() => _selectingCharacterId = null);
-    }
-  }
-
   Future<void> _saveNickname() async {
     if (_busy || !_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
@@ -121,7 +99,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(myProfileProvider);
-    final characters = ref.watch(characterCollectionProvider);
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
@@ -193,45 +170,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: LqSpacing.gap),
-                Text('내 캐릭터', style: LqText.sectionTitle),
-                const SizedBox(height: 4),
-                Text('프로필 사진과 별도로 사용할 게임 캐릭터예요.', style: LqText.caption),
-                const SizedBox(height: 10),
-                characters.when(
-                  data: (items) => GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.88,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final character = items[index];
-                      return _CharacterChoice(
-                        character: character,
-                        selected: character.id == _selectedCharacterId,
-                        busy: character.id == _selectingCharacterId,
-                        onTap: character.unlocked
-                            ? () => _selectCharacter(character)
-                            : null,
-                      );
-                    },
-                  ),
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (error, _) => LqCard(
-                    child: Text('캐릭터 목록을 불러오지 못했어요.', style: LqText.caption),
-                  ),
-                ),
               ],
             );
           },
@@ -270,12 +208,19 @@ class _ProfilePhoto extends StatelessWidget {
             boxShadow: LqShape.cardShadow,
           ),
           child: resolved.isEmpty
-              ? const LqImage(LqAssets.charFront, width: 72)
+              ? const Icon(
+                  Icons.person_rounded,
+                  size: 58,
+                  color: LqColors.textMuted,
+                )
               : Image.network(
                   resolved,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) =>
-                      const LqImage(LqAssets.charFront, width: 72),
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.person_rounded,
+                    size: 58,
+                    color: LqColors.textMuted,
+                  ),
                 ),
         ),
         const SizedBox(height: 10),
@@ -296,75 +241,6 @@ class _ProfilePhoto extends StatelessWidget {
         ),
         Text('JPG, PNG, WebP · 최대 5MB', style: LqText.caption),
       ],
-    );
-  }
-}
-
-class _CharacterChoice extends StatelessWidget {
-  const _CharacterChoice({
-    required this.character,
-    required this.selected,
-    required this.busy,
-    this.onTap,
-  });
-
-  final AvatarCharacter character;
-  final bool selected;
-  final bool busy;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LqCard(
-      onTap: onTap,
-      background: selected ? LqColors.surfaceTint : LqColors.surfaceRaised,
-      padding: const EdgeInsets.all(10),
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ColorFiltered(
-                  colorFilter: character.unlocked
-                      ? const ColorFilter.mode(
-                          Colors.transparent,
-                          BlendMode.dst,
-                        )
-                      : const ColorFilter.mode(
-                          Colors.grey,
-                          BlendMode.saturation,
-                        ),
-                  child: Opacity(
-                    opacity: character.unlocked ? 1 : 0.45,
-                    child: Image.asset(
-                      LqAssets.character(character.code),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ),
-              Text(character.name, style: LqText.cardTitle),
-              if (!character.unlocked)
-                Text(
-                  'Lv. ${character.requiredLevel} 해금',
-                  style: LqText.caption,
-                ),
-            ],
-          ),
-          if (selected)
-            const Align(
-              alignment: Alignment.topRight,
-              child: Icon(Icons.check_circle, color: LqColors.primary),
-            ),
-          if (!character.unlocked)
-            const Align(
-              alignment: Alignment.topRight,
-              child: Icon(Icons.lock_rounded, color: LqColors.textMuted),
-            ),
-          if (busy)
-            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        ],
-      ),
     );
   }
 }

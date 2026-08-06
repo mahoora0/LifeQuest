@@ -52,6 +52,19 @@ class UserRepository {
     return UserProfile.fromJson(response.data);
   });
 
+  Future<AccessoryCollection> fetchAccessories() => _guard(() async {
+    final response = await _dio.get<dynamic>('/users/me/accessories');
+    return AccessoryCollection.fromJson(response.data);
+  });
+
+  Future<UserProfile> selectAccessory(int? accessoryId) => _guard(() async {
+    final response = await _dio.patch<dynamic>(
+      '/users/me/accessory',
+      data: {'accessoryId': accessoryId},
+    );
+    return UserProfile.fromJson(response.data);
+  });
+
   Future<LevelStatus> fetchLevel() => _guard(() async {
     final response = await _dio.get<dynamic>('/users/me/level');
     return LevelStatus.fromJson(response.data);

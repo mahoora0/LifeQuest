@@ -1,9 +1,8 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
@@ -28,10 +27,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 프로브는 한 번 확인하고 사라지므로, 같은 실수가 되돌아오는 것을 막으려면
 /// 여기 남겨야 한다. 각 테스트는 고치기 전 코드에서 실패한다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   /// 시안 기준 프레임. 오버플로는 이 크기에서만 드러난다.
