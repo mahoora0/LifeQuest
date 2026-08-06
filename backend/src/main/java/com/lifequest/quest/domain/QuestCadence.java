@@ -11,7 +11,7 @@ package com.lifequest.quest.domain;
  * 그 축을 따로 다룬다. 두 enum의 값 집합이 어긋나 보이는 것은 의도된 것이며, 협동의 갱신·만료 규칙이
  * 정해질 때 별도 축으로 설계한다.
  *
- * <p>MONTHLY는 V15에서 걷혔다. 월간으로 적재됐던 id 37~42는 주간으로 옮기거나 비활성으로 내렸다.
+ * <p>MONTHLY는 V20에서 걷혔다. 월간으로 적재됐던 id 37~42는 주간으로 옮기거나 비활성으로 내렸다.
  */
 public enum QuestCadence {
     DAILY,

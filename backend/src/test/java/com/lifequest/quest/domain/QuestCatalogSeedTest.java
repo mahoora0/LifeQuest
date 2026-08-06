@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 시드 퀘스트 카탈로그(V6의 id 1~42 + V17의 43~68)가 업무 규칙의 불변식을 지키는지 검증한다.
+ * 시드 퀘스트 카탈로그(V6의 id 1~42 + V22의 43~68)가 업무 규칙의 불변식을 지키는지 검증한다.
  *
  * <p>시드는 SQL 리터럴 수백 개로 이루어져 있어 사람 눈으로는 등급별 EXP 구간 이탈이나 위경도 뒤바뀜 같은
  * 오타가 걸러지지 않는다. 잘못된 행이 들어가도 배정에서만 드러나며, 그것도 특정 퀘스트가
@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>조회 대상을 id 범위로 못박아 다른 테스트가 만든 행에 영향받지 않게 한다.
  *
- * <p><b>EXP 검사는 두 범위로 갈라져 있다.</b> V17 머리말이 §2 등급별 범위를 의도적으로 벗어난
+ * <p><b>EXP 검사는 두 범위로 갈라져 있다.</b> V22 머리말이 §2 등급별 범위를 의도적으로 벗어난
  * 값을 넣었다고 밝히고 있어(일간 EPIC 45~50 · 주간 NORMAL 25~28), 한 기준으로 재면 확장분이
  * 통째로 실패한다. §2가 갱신되면 두 테스트를 합친다.
  */
@@ -42,7 +42,7 @@ class QuestCatalogSeedTest {
     private static final long FIRST_SEED_ID = 1L;
     private static final long BASE_SEED_LAST_ID = 42L;
 
-    /** V17 확장분의 마지막 id. 추가는 계속 뒤에 붙는다(V17 머리말). */
+    /** V22 확장분의 마지막 id. 추가는 계속 뒤에 붙는다(V22 머리말). */
     private static final long LAST_SEED_ID = 68L;
 
     /** docs/05-business-rules.md §2의 등급별 EXP 범위. */
@@ -81,11 +81,11 @@ class QuestCatalogSeedTest {
     void 시드_퀘스트가_id_누락_없이_전부_적재된다() {
         assertEquals(LAST_SEED_ID - FIRST_SEED_ID + 1, seededQuests().size(),
                 "id 1~68이 모두 있어야 한다 — 1~42는 업적의 target_quest_id가 참조하고, "
-                        + "43~68은 슬롯 등급 결손을 메우려고 V17이 넣었다");
+                        + "43~68은 슬롯 등급 결손을 메우려고 V22이 넣었다");
     }
 
     /**
-     * V15가 37·38을 비활성으로 내리기 전까지 이 테스트는 "시드는 전부 배정 풀에 들어간다"였다.
+     * V20가 37·38을 비활성으로 내리기 전까지 이 테스트는 "시드는 전부 배정 풀에 들어간다"였다.
      * 이제 예외가 둘 생겼으므로 단언을 느슨하게 풀면 실수로 비활성된 퀘스트를 잡지 못한다
      * — 비활성은 조용하다. 그 퀘스트는 예외도 로그도 없이 배정 후보에서 사라질 뿐이다.
      *
@@ -102,7 +102,7 @@ class QuestCatalogSeedTest {
                         .map(Quest::getId)
                         .collect(Collectors.toSet()),
                 "비활성 시드는 37(한 달 예산 점검)·38(건강검진)뿐이어야 한다 — "
-                        + "월간 폐지로 주 단위 반복이 어색해진 둘만 내렸다(V15)");
+                        + "월간 폐지로 주 단위 반복이 어색해진 둘만 내렸다(V20)");
 
         for (Quest quest : seededQuests()) {
             assertEquals(quest.isActive(), pool.contains(quest),
@@ -116,7 +116,7 @@ class QuestCatalogSeedTest {
     }
 
     /**
-     * 확장분(43~68)은 §2의 등급별 구간을 쓰지 않는다. V17이
+     * 확장분(43~68)은 §2의 등급별 구간을 쓰지 않는다. V22이
      * <b>"트랙이 보상 대역을 정하고 등급이 그 대역 안에서 위치를 정한다"</b>는 방향을 머리말에
      * 명시했고, 실제로 일간 LEGENDARY는 55~60이고 주간 LEGENDARY는 200~220이다.
      *
@@ -197,7 +197,7 @@ class QuestCatalogSeedTest {
      * <p>후보 존재 여부만 검사하면 분포가 통째로 달라져도 통과하므로 실제 건수를 고정한다.
      * 시드를 늘리거나 등급을 바꾸면 이 테스트가 먼저 실패해 머리말 수치를 함께 갱신하게 만든다.
      *
-     * <p>등급 분포의 출처는 V6 머리말이고 주기 분포는 V15 머리말이다 — V15가 37~42의 주기를 옮겼고,
+     * <p>등급 분포의 출처는 V6 머리말이고 주기 분포는 V20 머리말이다 — V20가 37~42의 주기를 옮겼고,
      * 이미 적용된 V6는 체크섬 때문에 고칠 수 없어 머리말이 낡은 채 남아 있다.
      * 두 수치 모두 <b>비활성 2건을 포함한</b> id 1~42 전체 기준이다.
      */
@@ -214,11 +214,11 @@ class QuestCatalogSeedTest {
                 Map.of(QuestCadence.DAILY, 24L, QuestCadence.WEEKLY, 18L),
                 baseSeededQuests().stream()
                         .collect(Collectors.groupingBy(Quest::getCadence, Collectors.counting())),
-                "주기 분포가 V15 머리말과 다르다 — 주간 18건은 기존 12건에 재분류된 37~42를 더한 값이다");
+                "주기 분포가 V20 머리말과 다르다 — 주간 18건은 기존 12건에 재분류된 37~42를 더한 값이다");
     }
 
     /**
-     * 확장분의 분포. V17은 슬롯 등급 결손(일간 SELF_REPORT의 EPIC·LEGENDARY 0건, 주간
+     * 확장분의 분포. V22은 슬롯 등급 결손(일간 SELF_REPORT의 EPIC·LEGENDARY 0건, 주간
      * SELF_REPORT의 NORMAL·EPIC 0건)을 메우려고 넣은 것이므로, <b>상위 등급이 많은 것이 의도</b>다.
      * 이 분포가 무너지면 결손이 되살아나 해당 슬롯에서 그 등급이 영영 안 나온다.
      */
@@ -229,17 +229,17 @@ class QuestCatalogSeedTest {
                         QuestGrade.EPIC, 9L, QuestGrade.LEGENDARY, 6L),
                 extendedSeededQuests().stream()
                         .collect(Collectors.groupingBy(Quest::getGrade, Collectors.counting())),
-                "등급 분포가 V17 의도와 다르다 — 상위 등급을 줄이면 슬롯 등급 결손이 되살아난다");
+                "등급 분포가 V22 의도와 다르다 — 상위 등급을 줄이면 슬롯 등급 결손이 되살아난다");
 
         assertEquals(
                 Map.of(QuestCadence.DAILY, 13L, QuestCadence.WEEKLY, 13L),
                 extendedSeededQuests().stream()
                         .collect(Collectors.groupingBy(Quest::getCadence, Collectors.counting())),
-                "주기 분포가 V17과 다르다 — 두 트랙에 고르게 넣어 양쪽 결손을 함께 메웠다");
+                "주기 분포가 V22과 다르다 — 두 트랙에 고르게 넣어 양쪽 결손을 함께 메웠다");
     }
 
     /**
-     * V17 확장분은 전부 {@code SELF_REPORT}다. LOCATION 결손(일간 LOCATION이 RARE뿐)은
+     * V22 확장분은 전부 {@code SELF_REPORT}다. LOCATION 결손(일간 LOCATION이 RARE뿐)은
      * 좌표를 행에 고정하는 구조 때문에 분리했다고 머리말이 밝히고 있다.
      *
      * <p>여기에 LOCATION이 섞여 들어오면 그 결정이 조용히 뒤집힌 것이므로 드러나야 한다.
@@ -248,7 +248,7 @@ class QuestCatalogSeedTest {
     void 확장_시드는_전부_직접_완료다() {
         for (Quest quest : extendedSeededQuests()) {
             assertFalse(quest.isLocationBased(),
-                    quest.getTitle() + ": V17은 SELF_REPORT만 넣기로 했다 — "
+                    quest.getTitle() + ": V22은 SELF_REPORT만 넣기로 했다 — "
                             + "LOCATION 결손은 반경 확대·지역 분산 중 방향이 정해진 뒤 별도 마이그레이션이다");
         }
     }
