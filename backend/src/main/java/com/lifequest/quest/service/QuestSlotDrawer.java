@@ -5,6 +5,7 @@ import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestGrade;
 
 import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
  * 배정했던 것을 되살리는 대신 엉뚱한 타입으로 대체해 버린다. 판정 단위가 실제 결정 단위보다
  * 거칠면 사다리 순서가 뒤집힌다.
  */
+@Component
 public class QuestSlotDrawer {
     final double[] GRADE_PERCENTAGE = {0.55, 0.3, 0.12, 0.03};
     static final String COMBINING_STRING = "_combine_";
