@@ -9,7 +9,6 @@ import com.lifequest.quest.repository.QuestAssignmentMarkerRepository;
 import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -102,13 +101,15 @@ public class QuestAssignmentCreator {
         LocalDate periodStart = period.getStartAt();
         LocalDateTime expiresAt = period.getExpiresAt();
 
-        try {
-            questAssignmentMarkerRepository.saveAndFlush(
-                new QuestAssignmentMarker(userId, cadence, periodStart, LocalDateTime.now(clock)));
-        } catch (DataIntegrityViolationException e) {
-            // 다른 요청이 이미 이 주기의 배정을 만들었다. 이 트랜잭션은 롤백되고 바깥이 재조회한다
-            return;
-        }
+        // 유니크 위반을 여기서 잡지 않는다. 잡고 return하면 Spring이 이 트랜잭션을 커밋하려
+        // 드는데, flush가 실패한 Hibernate 세션은 커밋될 수 없어 요청이 500으로 끝난다.
+        // 예외가 밖으로 나가야 이 트랜잭션이 롤백으로 정상 종료되고, 호출자가 그것을
+        // "경합에서 짐"으로 읽어 재조회로 넘어갈 수 있다.
+        //
+        // ⚠ 이 경로는 동시 요청에서만 실행된다. 순차 호출은 두 번째에 배정이 이미 있어
+        // 호출자가 여기까지 오지 않으므로, 단위 테스트로는 지나가지 않는 자리다.
+        questAssignmentMarkerRepository.saveAndFlush(
+            new QuestAssignmentMarker(userId, cadence, periodStart, LocalDateTime.now(clock)));
 
         Set<Long> previousQuestIds = new HashSet<>();
         for (UserDailyQuest previous : userDailyQuestRepository.findByUserIdAndAssignedDate(

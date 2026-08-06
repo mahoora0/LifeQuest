@@ -12,6 +12,7 @@ import com.lifequest.quest.dto.TodayQuestsResponse;
 import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
 import com.lifequest.user.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,7 +109,16 @@ public class QuestAssignmentService {
             if (assignedCadences.contains(cadence)) {
                 continue;
             }
-            questAssignmentCreator.createForTrack(userId, cadence);
+            try {
+                questAssignmentCreator.createForTrack(userId, cadence);
+            } catch (DataIntegrityViolationException e) {
+                // 다른 요청이 같은 주기의 마커를 먼저 넣었다 — 정상 흐름이다. 그쪽 트랜잭션이
+                // 배정까지 만들었으므로 아래 재조회가 그것을 가져온다.
+                //
+                // 잡는 자리가 여기인 이유는 생성 트랜잭션이 REQUIRES_NEW이기 때문이다.
+                // 안에서 잡으면 그 트랜잭션이 커밋을 시도하는데, flush가 실패한 세션은
+                // 커밋될 수 없어 500이 된다. 밖에서 잡아야 롤백으로 끝난 뒤 이어갈 수 있다.
+            }
         }
 
         List<UserDailyQuest> refreshed =

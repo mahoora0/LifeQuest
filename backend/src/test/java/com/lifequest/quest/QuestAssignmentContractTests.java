@@ -1,6 +1,7 @@
 package com.lifequest.quest;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lifequest.quest.domain.QuestAssignmentMarker;
 import com.lifequest.quest.domain.QuestCadence;
 import com.lifequest.quest.repository.QuestAssignmentMarkerRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
@@ -16,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,6 +108,35 @@ class QuestAssignmentContractTests {
         assertThat(userDailyQuestRepository.findByUserIdAndAssignedDate(
             userId, questPeriod.logicalDate()))
             .hasSize(SLOTS_PER_TRACK);
+    }
+
+    /**
+     * 경합에서 밀린 요청이 500이 아니라 정상 응답을 받는다.
+     *
+     * <p>마커만 미리 넣어 <b>다른 요청이 이미 이겼다</b>는 상태를 만든다. 실제 경합에서는
+     * 이긴 쪽이 배정까지 만들지만, 여기서 재는 것은 배정 내용이 아니라 <b>밀린 쪽이
+     * 응답을 만들어내는가</b>이다.
+     *
+     * <p>이 경로는 MySQL 실측(동시 요청 5개)에서 500으로 드러났다. 생성 트랜잭션이
+     * {@code REQUIRES_NEW}인데 유니크 위반을 그 안에서 잡고 {@code return}하면, flush가
+     * 실패한 세션을 Spring이 커밋하려 들어 요청이 죽는다. 예외가 밖으로 나가 트랜잭션이
+     * 롤백으로 끝나야 호출자가 이어갈 수 있다.
+     *
+     * <p><b>순차 호출로는 이 자리를 지나지 않는다</b> — 두 번째 호출은 배정이 이미 있어
+     * 생성을 부르지 않기 때문이다. 마커를 직접 넣는 것이 단위 테스트로 재현하는 방법이다.
+     */
+    @Test
+    void 마커가_이미_있으면_생성을_건너뛰고_정상_응답한다() throws Exception {
+        String email = "assign-lost-race@lifequest.test";
+        String token = signUpAndGetAccessToken(email, "경합탐험가");
+        Long userId = userId(email);
+
+        markerRepository.saveAndFlush(new QuestAssignmentMarker(
+            userId, QuestCadence.DAILY, questPeriod.logicalDate(), LocalDateTime.now()));
+
+        mockMvc.perform(get("/api/quests/today").header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.assignedDate").value(questPeriod.logicalDate().toString()));
     }
 
     /** 주간이 열린 사용자는 두 트랙을 각각 3개씩 받는다 — 트랙별 독립 슬롯(§1-A). */
