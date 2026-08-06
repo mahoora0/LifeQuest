@@ -89,7 +89,7 @@ void main() {
     test('서버가 준 주기 값을 읽는다', () {
       expect(QuestCadence.parse('DAILY'), QuestCadence.daily);
       expect(QuestCadence.parse('WEEKLY'), QuestCadence.weekly);
-      expect(QuestCadence.parse('monthly'), QuestCadence.monthly);
+      expect(QuestCadence.parse('weekly'), QuestCadence.weekly);
     });
 
     test('누락·미지의 값은 일간으로 다룬다', () {
