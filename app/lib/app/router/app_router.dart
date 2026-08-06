@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/app/router/navigation_shell.dart';
-import 'package:life_quest/features/admin/data/admin_quest.dart';
-import 'package:life_quest/features/admin/presentation/admin_quest_form_screen.dart';
-import 'package:life_quest/features/admin/presentation/admin_quest_screen.dart';
 import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
 import 'package:life_quest/features/auth/presentation/login_screen.dart';
@@ -222,20 +219,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/friends/:userId',
         builder: (context, state) => FriendJourneyScreen(
           userId: int.tryParse(state.pathParameters['userId'] ?? '') ?? 0,
-        ),
-      ),
-      GoRoute(
-        path: '/admin/quests',
-        builder: (context, state) => const AdminQuestScreen(),
-      ),
-      GoRoute(
-        path: '/admin/quests/new',
-        builder: (context, state) => const AdminQuestFormScreen(),
-      ),
-      GoRoute(
-        path: '/admin/quests/:questId/edit',
-        builder: (context, state) => AdminQuestFormScreen(
-          quest: state.extra is AdminQuest ? state.extra! as AdminQuest : null,
         ),
       ),
       GoRoute(
