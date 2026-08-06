@@ -55,5 +55,23 @@ public class QuestPeriod {
     public QuestLifePeriod create(QuestCadence cadence) {
         return new QuestLifePeriod(cadence);
     }
+
+    /**
+     * 직전 주기의 시작일. 배정에서 "어제(지난주)에 받은 퀘스트"를 후보에서 빼는 데 쓴다
+     * (docs/05-business-rules.md §1-B).
+     *
+     * <p>일간은 하루 전, 주간은 7일 전이다. 두 값 모두 이번 주기 시작일에서 빼므로 주간은
+     * 지지난 월요일이 되며, 요일 정렬은 {@link #create}가 이미 끝낸 상태다.
+     *
+     * <p>이 계산을 호출자에게 넘기지 않는 이유는 {@link #create}와 같다 — 호출부에서
+     * {@code LocalDate.now()}를 빼는 형태가 되면 04:00 이전 조회가 하루 어긋나는데,
+     * 컴파일도 테스트도 통과하고 매일 같은 시간대에만 조용히 틀린다.
+     */
+    public LocalDate previousPeriodStart(QuestCadence cadence) {
+        LocalDate periodStart = create(cadence).getStartAt();
+        return cadence == QuestCadence.WEEKLY
+            ? periodStart.minusDays(7)
+            : periodStart.minusDays(1);
+    }
 }
 
