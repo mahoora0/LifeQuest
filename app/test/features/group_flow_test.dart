@@ -1,9 +1,8 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/features/group/application/group_providers.dart';
 import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/features/group/data/group_repository.dart';
@@ -19,8 +18,6 @@ import 'package:life_quest/features/group/presentation/group_quest_form_screen.d
 import 'package:life_quest/features/group/presentation/group_search_screen.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   testWidgets('내 그룹 목록에 역할과 인원 및 주요 진입점을 표시한다', (tester) async {
     final repository = _FakeGroupRepository();
     await _pump(tester, const GroupListScreen(), repository);

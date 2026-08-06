@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/core/config/app_config.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 
 /// 아바타 원형 배경 — 시안(10번 화면)이 친구별로 지정한 4색.
@@ -19,26 +20,21 @@ class LqAvatar extends StatelessWidget {
     super.key,
     required this.nickname,
     required this.seed,
+    this.imageUrl,
     this.size = 38,
     this.fontSize = 16,
   });
 
   final String nickname;
   final int seed;
+  final String? imageUrl;
   final double size;
   final double fontSize;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: lqAvatarColorFor(seed),
-        shape: BoxShape.circle,
-        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
-      ),
+    final resolvedImageUrl = AppConfig.resolveMediaUrl(imageUrl);
+    final fallback = Center(
       child: Text(
         nickname.isEmpty ? '?' : nickname.characters.first,
         style: LqText.badge.copyWith(
@@ -46,6 +42,26 @@ class LqAvatar extends StatelessWidget {
           color: LqColors.goldText,
         ),
       ),
+    );
+
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: lqAvatarColorFor(seed),
+        shape: BoxShape.circle,
+        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+      ),
+      child: resolvedImageUrl.isEmpty
+          ? fallback
+          : Image.network(
+              resolvedImageUrl,
+              fit: BoxFit.cover,
+              width: size,
+              height: size,
+              errorBuilder: (_, _, _) => fallback,
+            ),
     );
   }
 }

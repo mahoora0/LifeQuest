@@ -5,6 +5,8 @@ import com.lifequest.user.dto.UpdateProfileRequest;
 import com.lifequest.user.dto.BadgeCollectionResponse;
 import com.lifequest.user.dto.CharacterResponse;
 import com.lifequest.user.dto.CharacterSelectionRequest;
+import com.lifequest.user.dto.AccessoryCollectionResponse;
+import com.lifequest.user.dto.AccessorySelectionRequest;
 import com.lifequest.user.dto.RepresentativeBadgeRequest;
 import com.lifequest.user.dto.RepresentativeTitleRequest;
 import com.lifequest.user.dto.RewardHistoryResponse;
@@ -84,6 +86,20 @@ public class UserController {
             @Valid @RequestBody CharacterSelectionRequest request) {
         return ApiResponse.success(
                 userService.selectCharacter(userId(jwt), request.characterId()));
+    }
+
+    @GetMapping("/accessories")
+    public ApiResponse<AccessoryCollectionResponse> accessories(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.success(userService.getAccessories(userId(jwt)));
+    }
+
+    @PatchMapping("/accessory")
+    public ApiResponse<UserProfileResponse> selectAccessory(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody AccessorySelectionRequest request) {
+        return ApiResponse.success(
+                userService.selectAccessory(userId(jwt), request.accessoryId()));
     }
 
     @GetMapping("/titles")

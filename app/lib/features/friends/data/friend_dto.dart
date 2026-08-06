@@ -9,6 +9,7 @@ class Friend {
     required this.userId,
     required this.nickname,
     required this.level,
+    this.profileImageUrl,
     this.statusLine,
     this.cheered = false,
   });
@@ -16,6 +17,7 @@ class Friend {
   final int userId;
   final String nickname;
   final int level;
+  final String? profileImageUrl;
 
   /// 오늘 진행도나 최근 활동 같은 보조 문구. 서버가 주지 않으면 비운다.
   final String? statusLine;
@@ -27,6 +29,7 @@ class Friend {
     userId: userId,
     nickname: nickname,
     level: level,
+    profileImageUrl: profileImageUrl,
     statusLine: statusLine,
     cheered: cheered ?? this.cheered,
   );
@@ -35,6 +38,7 @@ class Friend {
     userId: asInt(pick(json, ['userId', 'id'])) ?? 0,
     nickname: asString(pick(json, ['nickname', 'name'])) ?? '모험가',
     level: asInt(json['level']) ?? 1,
+    profileImageUrl: asString(json['profileImageUrl']),
     statusLine: asString(pick(json, ['statusLine', 'activity', 'summary'])),
     cheered: asBool(pick(json, ['cheered', 'cheeredToday'])),
   );

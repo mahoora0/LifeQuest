@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/core/network/provider_retry.dart';
 import 'package:life_quest/features/achievement/application/achievement_providers.dart';
@@ -21,13 +21,9 @@ import 'package:life_quest/features/user/data/user_repository.dart';
 /// 마이페이지는 대표 배지 지정 결과가 돌아와 보이는 화면이고, 서버가 아직 없는
 /// 구간(도감·업적)을 오류가 아니라 준비 중으로 알려야 하는 화면이기도 하다.
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
-  Future<void> pumpProfile(WidgetTester tester) async {
+  Future<void> pumpProfile(WidgetTester tester, {double width = 420}) async {
     // 카드가 많아 기본 600 높이에서는 아래쪽 카드가 build되지 않는다.
-    await tester.binding.setSurfaceSize(const Size(420, 2400));
+    await tester.binding.setSurfaceSize(Size(width, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -80,6 +76,33 @@ void main() {
     // 퀘스트 완료 카운트와 총 EXP는 서버가 응답하는 구간이다.
     expect(find.text('12'), findsOneWidget);
     expect(find.text('350'), findsOneWidget);
+  });
+
+  testWidgets('상단에 캐릭터와 사용자 정보를 좌우로 표시한다', (tester) async {
+    await pumpProfile(tester);
+
+    expect(find.text('캐릭터 꾸미기'), findsOneWidget);
+    expect(find.bySemanticsLabel('프로필 사진 변경'), findsOneWidget);
+    expect(find.text('모험가'), findsOneWidget);
+    expect(find.text('길잡이'), findsOneWidget);
+    expect(find.text('Lv. 3'), findsOneWidget);
+    expect(find.text('변경'), findsOneWidget);
+  });
+
+  testWidgets('시안 폭에서도 남은 EXP 값이 말줄임되지 않는다', (tester) async {
+    // 420 프레임에서는 드러나지 않는다. 남은 EXP를 첫 줄에 같이 두면 360에서
+    // 자리가 54px 모자라 값이 통째로 사라진다. 말줄임은 예외를 던지지 않으므로
+    // 렌더된 문단을 직접 확인한다.
+    //
+    // 테스트 글꼴은 A2Z보다 넓어(글자당 1em) 실제보다 빡빡한 조건이다.
+    await pumpProfile(tester, width: 360);
+
+    final remaining = find.text('다음 레벨까지 250');
+    expect(remaining, findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(remaining).didExceedMaxLines,
+      isFalse,
+    );
   });
 }
 

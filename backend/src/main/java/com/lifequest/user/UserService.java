@@ -5,17 +5,22 @@ import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.user.dto.UpdateProfileRequest;
 import com.lifequest.user.dto.BadgeCollectionResponse;
 import com.lifequest.user.dto.CharacterResponse;
+import com.lifequest.user.dto.AccessoryCollectionResponse;
+import com.lifequest.user.dto.AccessoryResponse;
 import com.lifequest.user.dto.ProfileItemResponse;
 import com.lifequest.user.dto.RewardHistoryResponse;
 import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.TitleResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.growth.GrowthService;
+import com.lifequest.growth.LevelReward;
+import com.lifequest.growth.LevelRewardRepository;
 import com.lifequest.quest.domain.QuestFeature;
 import com.lifequest.quest.service.QuestUnlockPolicy;
 import com.lifequest.profile.AvatarCharacter;
 import com.lifequest.profile.AvatarCharacterRepository;
 import com.lifequest.profile.ProfileItem;
+import com.lifequest.profile.ProfileItemRepository;
 import com.lifequest.profile.ProfileImageStorage;
 import com.lifequest.profile.UserProfileItem;
 import com.lifequest.profile.UserProfileItemRepository;
@@ -23,6 +28,8 @@ import com.lifequest.profile.UserTitle;
 import com.lifequest.profile.UserTitleRepository;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +48,8 @@ public class UserService {
     private final AvatarCharacterRepository characterRepository;
     private final UserTitleRepository userTitleRepository;
     private final UserProfileItemRepository userProfileItemRepository;
+    private final ProfileItemRepository profileItemRepository;
+    private final LevelRewardRepository levelRewardRepository;
     private final ProfileImageStorage profileImageStorage;
     private final QuestUnlockPolicy questUnlockPolicy;
 
@@ -49,12 +58,16 @@ public class UserService {
             AvatarCharacterRepository characterRepository,
             UserTitleRepository userTitleRepository,
             UserProfileItemRepository userProfileItemRepository,
+            ProfileItemRepository profileItemRepository,
+            LevelRewardRepository levelRewardRepository,
             ProfileImageStorage profileImageStorage,
             QuestUnlockPolicy questUnlockPolicy) {
         this.userRepository = userRepository;
         this.characterRepository = characterRepository;
         this.userTitleRepository = userTitleRepository;
         this.userProfileItemRepository = userProfileItemRepository;
+        this.profileItemRepository = profileItemRepository;
+        this.levelRewardRepository = levelRewardRepository;
         this.profileImageStorage = profileImageStorage;
         this.questUnlockPolicy = questUnlockPolicy;
     }
@@ -123,6 +136,60 @@ public class UserService {
             throw new BusinessException(ErrorCode.CHARACTER_LOCKED);
         }
         user.selectCharacter(character);
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public AccessoryCollectionResponse getAccessories(Long userId) {
+        User user = getUser(userId);
+        List<AccessoryResponse> accessories = userAccessoryResponses(user);
+        return new AccessoryCollectionResponse(
+                accessories,
+                user.getSelectedAccessory() == null
+                        ? null
+                        : user.getSelectedAccessory().getId());
+    }
+
+    private List<AccessoryResponse> userAccessoryResponses(User user) {
+        List<ProfileItem> accessories = profileItemRepository
+                .findAllByItemTypeOrderById(ProfileItem.ItemType.OUTFIT);
+        Set<Long> ownedIds = userProfileItemRepository
+                .findAllByUserIdOrderByAcquiredAtDesc(user.getId()).stream()
+                .filter(owned -> owned.getProfileItem().getItemType()
+                        == ProfileItem.ItemType.OUTFIT)
+                .map(owned -> owned.getProfileItem().getId())
+                .collect(Collectors.toSet());
+        Map<Long, Integer> requiredLevels = levelRewardRepository
+                .findAllByRewardTypeOrderByLevelAscIdAsc(
+                        LevelReward.RewardType.PROFILE_ITEM).stream()
+                .filter(reward -> accessories.stream().anyMatch(
+                        item -> item.getId().equals(reward.getRewardRefId())))
+                .collect(Collectors.toMap(
+                        LevelReward::getRewardRefId,
+                        LevelReward::getLevel,
+                        Math::min));
+        return accessories.stream()
+                .map(item -> AccessoryResponse.from(
+                        item,
+                        requiredLevels.get(item.getId()),
+                        ownedIds.contains(item.getId())))
+                .toList();
+    }
+
+    @Transactional
+    public UserProfileResponse selectAccessory(Long userId, Long accessoryId) {
+        User user = getUser(userId);
+        if (accessoryId == null) {
+            user.selectAccessory(null);
+            return UserProfileResponse.from(user);
+        }
+
+        UserProfileItem owned = userProfileItemRepository
+                .findByUserIdAndProfileItemId(userId, accessoryId)
+                .filter(item -> item.getProfileItem().getItemType()
+                        == ProfileItem.ItemType.OUTFIT)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
+        user.selectAccessory(owned.getProfileItem());
         return UserProfileResponse.from(user);
     }
 

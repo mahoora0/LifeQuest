@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/recommendation/application/quest_recommendation_provider.dart';
 import 'package:life_quest/features/recommendation/data/quest_recommendation_dto.dart';
+import 'package:life_quest/features/recommendation/presentation/recommendation_input_widgets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
@@ -15,22 +17,51 @@ class PlaceRecommendationFormScreen extends ConsumerStatefulWidget {
 }
 
 class _State extends ConsumerState<PlaceRecommendationFormScreen> {
+  static const _interestOptions = [
+    '맛집',
+    '카페',
+    '산책',
+    '자연',
+    '문화·전시',
+    '운동',
+    '체험',
+    '쇼핑',
+    '사진',
+    '독서',
+  ];
+
   final area = TextEditingController(),
-      minutes = TextEditingController(text: '180'),
-      budget = TextEditingController(text: '30000'),
-      companions = TextEditingController(text: '1'),
-      interests = TextEditingController(),
+      customMinutes = TextEditingController(),
+      customBudget = TextEditingController(),
+      customInterests = TextEditingController(),
       additional = TextEditingController();
+  int? selectedMinutes = 180;
+  int? selectedBudget = 30000;
+  int companions = 1;
+  final selectedInterests = <String>{};
+  bool showCustomInterests = false;
   RecommendationEnvironment environment = RecommendationEnvironment.any;
   bool busy = false;
+
+  void toggleInterest(String value) {
+    if (selectedInterests.contains(value)) {
+      setState(() => selectedInterests.remove(value));
+      return;
+    }
+    if (selectedInterests.length >= 5) {
+      showLqSnack(context, '관심사는 최대 5개까지 선택할 수 있어요');
+      return;
+    }
+    setState(() => selectedInterests.add(value));
+  }
+
   @override
   void dispose() {
     for (final c in [
       area,
-      minutes,
-      budget,
-      companions,
-      interests,
+      customMinutes,
+      customBudget,
+      customInterests,
       additional,
     ]) {
       c.dispose();
@@ -40,14 +71,16 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
 
   Future<void> submit() async {
     final a = area.text.trim(),
-        m = int.tryParse(minutes.text),
-        b = int.tryParse(budget.text),
-        c = int.tryParse(companions.text),
-        tags = interests.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
+        m = selectedMinutes ?? int.tryParse(customMinutes.text),
+        b = selectedBudget ?? int.tryParse(customBudget.text),
+        tags = <String>{
+          ...selectedInterests,
+          if (showCustomInterests)
+            ...customInterests.text
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty),
+        }.toList();
     if (a.length < 2 ||
         a.length > 100 ||
         m == null ||
@@ -56,9 +89,8 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
         b == null ||
         b < 0 ||
         b > 10000000 ||
-        c == null ||
-        c < 1 ||
-        c > 20 ||
+        companions < 1 ||
+        companions > 20 ||
         tags.length > 5 ||
         tags.any((e) => e.length > 30) ||
         additional.text.trim().length > 500) {
@@ -71,7 +103,7 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
         'area': a,
         'availableMinutes': m,
         'budgetPerPerson': b,
-        'companionCount': c,
+        'companionCount': companions,
         'environment': environment.name.toUpperCase(),
         'interests': tags,
         'additionalRequest': additional.text.trim().isEmpty
@@ -95,49 +127,86 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
         maxLength: 100,
         decoration: const InputDecoration(labelText: '지역 (예: 서울 성수동)'),
       ),
-      TextField(
-        controller: minutes,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: '가능 시간 (30~720분)'),
-      ),
-      TextField(
-        controller: budget,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: '1인 예산 상한'),
-      ),
-      TextField(
-        controller: companions,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: '참여 인원'),
-      ),
-      DropdownButtonFormField(
-        initialValue: environment,
-        items: const [
-          DropdownMenuItem(
-            value: RecommendationEnvironment.any,
-            child: Text('상관없음'),
-          ),
-          DropdownMenuItem(
-            value: RecommendationEnvironment.indoor,
-            child: Text('실내'),
-          ),
-          DropdownMenuItem(
-            value: RecommendationEnvironment.outdoor,
-            child: Text('실외'),
-          ),
+      RecommendationChoiceSection<int?>(
+        label: '가능 시간',
+        selected: selectedMinutes,
+        options: const [
+          RecommendationOption(30, '30분'),
+          RecommendationOption(60, '1시간'),
+          RecommendationOption(120, '2시간'),
+          RecommendationOption(180, '3시간'),
+          RecommendationOption(360, '반나절'),
+          RecommendationOption(null, '직접 입력'),
         ],
-        onChanged: (v) => setState(() => environment = v!),
-        decoration: const InputDecoration(labelText: '환경'),
+        onSelected: (value) => setState(() => selectedMinutes = value),
+        child: selectedMinutes == null
+            ? TextField(
+                controller: customMinutes,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: '가능 시간 직접 입력',
+                  suffixText: '분',
+                  helperText: '30~720분',
+                ),
+              )
+            : null,
       ),
-      TextField(
-        controller: interests,
-        decoration: const InputDecoration(labelText: '관심사 (쉼표 구분, 최대 5개)'),
+      RecommendationChoiceSection<int?>(
+        label: '1인 예산',
+        selected: selectedBudget,
+        options: const [
+          RecommendationOption(0, '무료'),
+          RecommendationOption(5000, '5천원 이하'),
+          RecommendationOption(10000, '1만원 이하'),
+          RecommendationOption(30000, '3만원 이하'),
+          RecommendationOption(50000, '5만원 이하'),
+          RecommendationOption(null, '직접 입력'),
+        ],
+        onSelected: (value) => setState(() => selectedBudget = value),
+        child: selectedBudget == null
+            ? TextField(
+                controller: customBudget,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: '1인 예산 직접 입력',
+                  suffixText: '원',
+                ),
+              )
+            : null,
+      ),
+      RecommendationCompanionStepper(
+        value: companions,
+        onChanged: (value) => setState(() => companions = value),
+      ),
+      RecommendationChoiceSection<RecommendationEnvironment>(
+        label: '환경',
+        selected: environment,
+        options: const [
+          RecommendationOption(RecommendationEnvironment.any, '상관없음'),
+          RecommendationOption(RecommendationEnvironment.indoor, '실내'),
+          RecommendationOption(RecommendationEnvironment.outdoor, '실외'),
+        ],
+        onSelected: (value) => setState(() => environment = value),
+      ),
+      RecommendationInterestPicker(
+        options: _interestOptions,
+        selected: selectedInterests,
+        onToggle: toggleInterest,
+        showCustomInput: showCustomInterests,
+        onCustomInputChanged: (value) =>
+            setState(() => showCustomInterests = value),
+        customController: customInterests,
       ),
       TextField(
         controller: additional,
         maxLength: 500,
         maxLines: 3,
-        decoration: const InputDecoration(labelText: '추가 요청'),
+        decoration: const InputDecoration(
+          labelText: '원하는 조건이 더 있나요? (선택)',
+          hintText: '예: 조용하고 차분한 분위기',
+        ),
       ),
       LqButton(label: '3개 추천받기', busy: busy, onPressed: submit),
     ],

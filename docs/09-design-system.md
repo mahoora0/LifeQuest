@@ -43,7 +43,7 @@
 
 ### 1-3. 타이포 — 크기와 굵기로만 위계를 만든다
 
-전 텍스트 **Gaegu** 단일. 굵기는 400 / 700 두 단계뿐이며, 위젯에서 `fontFamily`를 지정하지 않는다(테마 글꼴을 덮어쓴다).
+전 텍스트 **에이투지체(A2Z)** 단일 — SIL OFL, `app/assets/fonts/`에 번들되며 `ThemeData.fontFamily`로 일괄 적용된다. 굵기는 400 / 700 두 단계뿐이고(테마 기본값이 쓰는 500 포함 3종만 번들), 위젯에서 `fontFamily`를 지정하지 않는다(테마 글꼴을 덮어쓴다).
 
 `30` displayTitle · `25` bigTitle · `24` levelNumber · `21` sectionTitle · `20` screenTitle · `16.5` cardTitle · `16` body · `15` bodySm · `14` label · `13.5` caption · `11.5` tabLabel(최소) · `11` badge
 

@@ -62,5 +62,8 @@ class GrowthServiceIntegrationTests {
         assertThat(userService.getBadges(user.getId()).badges())
                 .extracting("name")
                 .containsExactly("나침반 배지", "새싹 배지");
+        assertThat(userService.getAccessories(user.getId()).accessories())
+                .filteredOn("unlocked", true)
+                .isEmpty();
     }
 }

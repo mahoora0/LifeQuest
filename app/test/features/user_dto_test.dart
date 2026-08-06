@@ -15,10 +15,12 @@ void main() {
         'name': '몽글',
         'assetKey': 'mongle.png',
       },
+      'selectedAccessory': {'id': 5, 'code': 'EXPLORER_HAT', 'name': '탐험가 모자'},
     });
 
     expect(profile.profileImageUrl, '/uploads/profile/me.png');
     expect(profile.selectedCharacter?.code, 'MONGLE');
+    expect(profile.selectedAccessory?.code, 'EXPLORER_HAT');
     expect(profile.representativeTitleId, 1);
     expect(profile.representativeBadge, '나침반 배지');
   });

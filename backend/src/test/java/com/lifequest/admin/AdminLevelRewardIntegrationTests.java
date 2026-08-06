@@ -44,7 +44,7 @@ class AdminLevelRewardIntegrationTests {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.titles.length()").value(3))
-                .andExpect(jsonPath("$.data.profileItems.length()").value(3));
+                .andExpect(jsonPath("$.data.profileItems.length()").value(17));
 
         MvcResult created = mockMvc.perform(post("/api/admin/level-rewards")
                         .header("Authorization", bearer(token))

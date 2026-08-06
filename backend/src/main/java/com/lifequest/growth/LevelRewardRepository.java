@@ -8,6 +8,9 @@ public interface LevelRewardRepository extends JpaRepository<LevelReward, Long> 
 
     List<LevelReward> findAllByOrderByLevelAscIdAsc();
 
+    List<LevelReward> findAllByRewardTypeOrderByLevelAscIdAsc(
+            LevelReward.RewardType rewardType);
+
     boolean existsByLevelAndRewardTypeAndRewardRefId(
             int level, LevelReward.RewardType rewardType, Long rewardRefId);
 
