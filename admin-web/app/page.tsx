@@ -35,6 +35,20 @@ const emptyDraft: Draft = {
 
 const apiBase = "/api/backend";
 
+const gradeRewards = {
+  NORMAL: { min: 10, max: 20, defaultValue: 10 },
+  RARE: { min: 30, max: 50, defaultValue: 30 },
+  EPIC: { min: 60, max: 100, defaultValue: 60 },
+  LEGENDARY: { min: 150, max: 300, defaultValue: 150 },
+} satisfies Record<Draft["grade"], { min: number; max: number; defaultValue: number }>;
+
+const errorMessages: Record<string, string> = {
+  VALIDATION_FAILED: "입력값을 확인해 주세요. 등급별 EXP 범위와 필수 항목을 확인해 주세요.",
+  INVALID_REQUEST: "요청 내용을 확인해 주세요.",
+  UNAUTHORIZED: "로그인이 만료되었습니다. 다시 로그인해 주세요.",
+  FORBIDDEN: "관리자 권한이 필요합니다.",
+};
+
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = typeof window === "undefined" ? null : sessionStorage.getItem("lq-admin-token");
   const response = await fetch(`${apiBase}${path}`, {
@@ -47,7 +61,8 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   const body = await response.json().catch(() => null);
   if (!response.ok || body?.success === false) {
-    throw new Error(body?.error?.message || `요청에 실패했습니다 (${response.status})`);
+    const code = body?.error?.code as string | undefined;
+    throw new Error((code && errorMessages[code]) || body?.error?.message || `요청에 실패했습니다 (${response.status})`);
   }
   return (body?.data ?? body) as T;
 }
@@ -96,8 +111,8 @@ export default function Home() {
       <aside className="sidebar">
         <div className="brand"><span className="brandMark">LQ</span><div><strong>LifeQuest</strong><small>ADMIN CONSOLE</small></div></div>
         <nav aria-label="관리 메뉴">
-          <button className="navItem active"><span>◆</span> 퀘스트 관리</button>
-          <button className="navItem" disabled><span>◇</span> 레벨 보상 <em>준비 중</em></button>
+          <button className="navItem active">퀘스트 관리</button>
+          <button className="navItem" disabled>레벨 보상 <em>준비 중</em></button>
         </nav>
         <button className="logout" onClick={() => { sessionStorage.removeItem("lq-admin-token"); setToken(null); }}>로그아웃</button>
       </aside>
@@ -105,7 +120,7 @@ export default function Home() {
       <section className="content">
         <header className="topbar">
           <div><p className="eyebrow">QUEST OPERATIONS</p><h1>퀘스트 관리</h1><p>모험가에게 배정할 퀘스트를 등록하고 운영 상태를 관리합니다.</p></div>
-          <button className="primary" onClick={() => setEditing("new")}><span>＋</span> 새 퀘스트</button>
+          <button className="primary" onClick={() => setEditing("new")}>새 퀘스트</button>
         </header>
 
         <div className="stats">
@@ -116,7 +131,7 @@ export default function Home() {
 
         <section className="panel">
           <div className="toolbar">
-            <label className="search"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="퀘스트 이름 검색" /></label>
+            <label className="search"><span className="srOnly">검색</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="퀘스트 이름 검색" /></label>
             <div className="segments" aria-label="상태 필터">
               {(["ALL", "ACTIVE", "INACTIVE"] as const).map((value) => <button key={value} className={filter === value ? "selected" : ""} onClick={() => setFilter(value)}>{value === "ALL" ? "전체" : value === "ACTIVE" ? "활성" : "비활성"}</button>)}
             </div>
@@ -156,9 +171,21 @@ function QuestModal({ quest, onClose, onSaved }: { quest: Quest | null; onClose:
   const [draft, setDraft] = useState<Draft>(quest ? { ...quest } : emptyDraft);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => {
+    if (key === "grade") {
+      const grade = value as Draft["grade"];
+      return { ...current, grade, expReward: gradeRewards[grade].defaultValue };
+    }
+    return { ...current, [key]: value };
+  });
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError("");
+    const reward = gradeRewards[draft.grade];
+    if (draft.expReward < reward.min || draft.expReward > reward.max) {
+      setError(`${draft.grade} 등급의 EXP 보상은 ${reward.min}~${reward.max} 사이여야 합니다.`);
+      setBusy(false);
+      return;
+    }
     try {
       const payload = { ...draft, placeName: draft.completionType === "LOCATION" ? draft.placeName : null, latitude: draft.completionType === "LOCATION" ? draft.latitude : null, longitude: draft.completionType === "LOCATION" ? draft.longitude : null, radiusM: draft.completionType === "LOCATION" ? draft.radiusM : null };
       await api(quest ? `/admin/quests/${quest.id}` : "/admin/quests", { method: quest ? "PATCH" : "POST", body: JSON.stringify(payload) });
