@@ -211,8 +211,6 @@ void main() {
     expect(find.text('캐릭터 꾸미기'), findsOneWidget);
     expect(find.text('루키'), findsOneWidget);
     expect(find.text('모각'), findsOneWidget);
-    expect(find.text('액세서리'), findsOneWidget);
-    expect(find.text('앞치마'), findsOneWidget);
     // 잠금 캐릭터가 비분리 ColorFilter 합성 레이어를 만들면 Android에서
     // 본문 전체가 회색으로 덮일 수 있다.
     expect(find.byType(ColorFiltered), findsNothing);
@@ -224,6 +222,16 @@ void main() {
       find.byKey(const ValueKey('character-image-1')),
     );
     expect(imageCenter.dx, closeTo(cardCenter.dx, 0.1));
+
+    await tester.scrollUntilVisible(
+      find.text('액세서리'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('액세서리'), findsOneWidget);
+    expect(find.text('앞치마'), findsOneWidget);
 
     await tester.tap(find.text('앞치마'));
     await tester.pumpAndSettle();
