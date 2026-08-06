@@ -6,6 +6,9 @@ import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
 import com.lifequest.quest.domain.QuestFeature;
 import com.lifequest.quest.domain.UserDailyQuest;
+import com.lifequest.quest.dto.DailyQuestResponse;
+import com.lifequest.quest.dto.QuestSummaryResponse;
+import com.lifequest.quest.dto.TodayQuestsResponse;
 import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
 import com.lifequest.user.UserRepository;
@@ -13,11 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,6 +43,10 @@ import java.util.Set;
  * <p><b>이 결함은 "트랙당 3개" 테스트로는 안 잡힌다.</b> 배정이 6개로 늘지는 않기 때문이다.
  * 깨지는 것은 진 쪽의 <b>응답</b>이고 그것만 따로 재야 드러난다. H2로도 안 잡히므로
  * MySQL 실측이 필요하다.
+ *
+ * <p><b>지연 생성을 하는 진입점마다 어노테이션을 붙인다.</b> {@link #getNearbyQuests}가
+ * {@link #getTodayQuests}를 자기호출로 부르므로 그 호출은 프록시를 거치지 않는다 — 바깥 진입점에
+ * 같은 설정이 걸려 있어야 격리 수준이 실제로 적용된다.
  */
 @Service
 public class QuestAssignmentService {
@@ -44,6 +56,7 @@ public class QuestAssignmentService {
     private final UserRepository userRepository;
     private final QuestUnlockPolicy questUnlockPolicy;
     private final QuestAssignmentCreator questAssignmentCreator;
+    private final QuestPeriod questPeriod;
     private final Clock clock;
 
     public QuestAssignmentService(UserDailyQuestRepository userDailyQuestRepository,
@@ -51,12 +64,14 @@ public class QuestAssignmentService {
                                   UserRepository userRepository,
                                   QuestUnlockPolicy questUnlockPolicy,
                                   QuestAssignmentCreator questAssignmentCreator,
+                                  QuestPeriod questPeriod,
                                   Clock clock) {
         this.userDailyQuestRepository = userDailyQuestRepository;
         this.questRepository = questRepository;
         this.userRepository = userRepository;
         this.questUnlockPolicy = questUnlockPolicy;
         this.questAssignmentCreator = questAssignmentCreator;
+        this.questPeriod = questPeriod;
         this.clock = clock;
     }
 
@@ -72,7 +87,7 @@ public class QuestAssignmentService {
      * @return 유효한 배정. 트랙별로 최대 3개씩이며 잠긴 트랙은 비어 있다
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
-    public List<UserDailyQuest> getTodayQuests(Long userId) {
+    public TodayQuestsResponse getTodayQuests(Long userId) {
         LocalDateTime now = LocalDateTime.now(clock);
         List<UserDailyQuest> assigned =
             userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
@@ -81,7 +96,11 @@ public class QuestAssignmentService {
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND))
             .getLevel();
 
-        Set<QuestCadence> assignedCadences = assignedCadences(assigned);
+        Set<QuestCadence> assignedCadences = new HashSet<>();
+        for (Quest quest : questsOf(assigned).values()) {
+            assignedCadences.add(quest.getCadence());
+        }
+
         for (QuestCadence cadence : QuestCadence.values()) {
             if (!questUnlockPolicy.isUnlocked(level, feature(cadence))) {
                 continue;
@@ -92,29 +111,108 @@ public class QuestAssignmentService {
             questAssignmentCreator.createForTrack(userId, cadence);
         }
 
-        return userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
+        List<UserDailyQuest> refreshed =
+            userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
+
+        return new TodayQuestsResponse(questPeriod.logicalDate(), toResponses(refreshed));
     }
 
     /**
-     * 배정된 퀘스트들이 어느 트랙에 속하는지.
+     * 퀘스트 원본 상세. 배정 여부와 무관하다 — 완료 기록이나 도감에서 들어올 수 있고,
+     * 그때 배정이 남아 있다는 보장이 없다.
+     *
+     * <p>비활성 퀘스트도 돌려준다. 배정 풀에서 빠졌을 뿐 과거에 완료한 기록은 유효하며,
+     * 여기서 404를 내면 완료 이력 화면이 깨진다.
+     */
+    @Transactional(readOnly = true)
+    public QuestSummaryResponse getQuest(Long questId) {
+        return questRepository.findById(questId)
+            .map(QuestSummaryResponse::from)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    /**
+     * 오늘 배정된 LOCATION 퀘스트 중 주어진 반경 안에 있는 것(docs/04-api-spec.md §3).
+     *
+     * <p>{@link #getTodayQuests}를 거치므로 <b>지도 화면으로 먼저 들어와도 배정이 만들어진다.</b>
+     * 목록을 먼저 열어야만 배정이 생기는 구조라면 진입 순서가 결과를 바꾼다.
+     *
+     * <p>거리 오름차순으로 정렬한다. 지도에서 가까운 것부터 보는 것이 자연스럽고, 정렬을
+     * 앱에 맡기면 화면마다 기준이 갈린다.
+     *
+     * @param radiusKm 검색 반경(km). 퀘스트별 인증 반경({@code radius_m})과는 다른 값이다 —
+     *                 이쪽은 "지도에서 얼마나 넓게 볼까"이고, 인증 판정은 완료 API가 한다
+     */
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public List<DailyQuestResponse> getNearbyQuests(Long userId, Double lat, Double lng, Double radiusKm) {
+        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "위경도가 유효 범위를 벗어났습니다.");
+        }
+        if (radiusKm == null || radiusKm <= 0) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "검색 반경은 0보다 커야 합니다.");
+        }
+
+        double radiusM = radiusKm * 1000;
+        List<DailyQuestResponse> nearby = new ArrayList<>();
+
+        for (DailyQuestResponse assignment : getTodayQuests(userId).quests()) {
+            QuestSummaryResponse quest = assignment.quest();
+            if (quest.latitude() == null || quest.longitude() == null) {
+                continue;
+            }
+
+            double distance = GeoDistance.meters(
+                lat, lng, quest.latitude().doubleValue(), quest.longitude().doubleValue());
+            if (distance > radiusM) {
+                continue;
+            }
+
+            nearby.add(new DailyQuestResponse(
+                assignment.dailyQuestId(),
+                assignment.questId(),
+                assignment.status(),
+                quest,
+                BigDecimal.valueOf(distance).setScale(1, RoundingMode.HALF_UP)));
+        }
+
+        nearby.sort(Comparator.comparing(DailyQuestResponse::distanceM));
+        return nearby;
+    }
+
+    private List<DailyQuestResponse> toResponses(List<UserDailyQuest> assigned) {
+        Map<Long, Quest> quests = questsOf(assigned);
+        List<DailyQuestResponse> responses = new ArrayList<>();
+        for (UserDailyQuest assignment : assigned) {
+            Quest quest = quests.get(assignment.getQuestId());
+            // 배정이 가리키는 퀘스트가 사라지는 경로는 없다(시드는 삭제 대신 비활성). 그래도
+            // null이면 그 항목만 빼고 나머지를 보낸다 — 목록 전체가 500이 되는 편이 더 나쁘다
+            if (quest != null) {
+                responses.add(DailyQuestResponse.of(assignment, quest));
+            }
+        }
+        return responses;
+    }
+
+    /**
+     * 배정이 가리키는 퀘스트들을 id로 묶어 돌려준다.
      *
      * <p>{@code UserDailyQuest}에 트랙 컬럼이 없어 {@code questId}로 원본을 봐야 한다. 배정 건이
      * 트랙당 3개씩 최대 6개뿐이라 조회 한 번으로 충분하며, 이 때문에 비정규화 컬럼을 두지 않는다.
      */
-    private Set<QuestCadence> assignedCadences(List<UserDailyQuest> assigned) {
+    private Map<Long, Quest> questsOf(List<UserDailyQuest> assigned) {
         if (assigned.isEmpty()) {
-            return Set.of();
+            return Map.of();
         }
         List<Long> questIds = new ArrayList<>();
-        for (UserDailyQuest userDailyQuest : assigned) {
-            questIds.add(userDailyQuest.getQuestId());
+        for (UserDailyQuest assignment : assigned) {
+            questIds.add(assignment.getQuestId());
         }
 
-        Set<QuestCadence> cadences = new HashSet<>();
+        Map<Long, Quest> byId = new HashMap<>();
         for (Quest quest : questRepository.findAllById(questIds)) {
-            cadences.add(quest.getCadence());
+            byId.put(quest.getId(), quest);
         }
-        return cadences;
+        return byId;
     }
 
     /**
