@@ -47,7 +47,7 @@ class HomeQuestRow extends StatelessWidget {
         borderColor: LqColors.divider,
         radius: LqShape.tileRadius,
         shadow: false,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16.5),
         onTap: onTap,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -71,7 +71,7 @@ class HomeQuestRow extends StatelessWidget {
                       decoration: completed ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 10.5),
                   Wrap(
                     spacing: 5,
                     runSpacing: 4,
