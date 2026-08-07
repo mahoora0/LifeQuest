@@ -108,7 +108,7 @@ class AuthFlowIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessories.length()").value(14))
                 .andExpect(jsonPath("$.data.accessories[0].requiredLevel").doesNotExist())
-                .andExpect(jsonPath("$.data.accessories[0].unlocked").value(false))
+                .andExpect(jsonPath("$.data.accessories[0].unlocked").value(true))
                 .andExpect(jsonPath("$.data.selectedAccessoryId").doesNotExist());
 
         mockMvc.perform(patch("/api/users/me/accessory")
@@ -117,7 +117,15 @@ class AuthFlowIntegrationTests {
                         .content("""
                                 {"accessoryId":4}
                                 """))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.selectedAccessory.id").value(4))
+                .andExpect(jsonPath("$.data.selectedAccessory.code").value("APRON"));
+
+        mockMvc.perform(get("/api/users/me/accessories")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$.data.selectedAccessoryIdsByCharacter['1']").value(4));
 
         mockMvc.perform(get("/api/users/me/titles")
                         .header("Authorization", "Bearer " + accessToken))

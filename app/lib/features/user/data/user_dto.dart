@@ -86,18 +86,30 @@ class AccessoryCollection {
   const AccessoryCollection({
     required this.accessories,
     required this.selectedAccessoryId,
+    this.selectedAccessoryIdsByCharacter = const {},
   });
 
   final List<AvatarAccessory> accessories;
   final int? selectedAccessoryId;
+  final Map<int, int> selectedAccessoryIdsByCharacter;
 
   factory AccessoryCollection.fromJson(Object? body) {
     final json = asMap(body);
+    final selectedByCharacter = <int, int>{};
+    for (final entry
+        in asMap(json['selectedAccessoryIdsByCharacter']).entries) {
+      final characterId = asInt(entry.key);
+      final accessoryId = asInt(entry.value);
+      if (characterId != null && accessoryId != null) {
+        selectedByCharacter[characterId] = accessoryId;
+      }
+    }
     return AccessoryCollection(
       accessories: asMapList(
         json['accessories'],
       ).map(AvatarAccessory.fromJson).toList(),
       selectedAccessoryId: asInt(json['selectedAccessoryId']),
+      selectedAccessoryIdsByCharacter: selectedByCharacter,
     );
   }
 }
