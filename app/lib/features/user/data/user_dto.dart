@@ -96,8 +96,9 @@ class AccessoryCollection {
   factory AccessoryCollection.fromJson(Object? body) {
     final json = asMap(body);
     final selectedByCharacter = <int, int>{};
-    for (final entry
-        in asMap(json['selectedAccessoryIdsByCharacter']).entries) {
+    for (final entry in asMap(
+      json['selectedAccessoryIdsByCharacter'],
+    ).entries) {
       final characterId = asInt(entry.key);
       final accessoryId = asInt(entry.value);
       if (characterId != null && accessoryId != null) {
