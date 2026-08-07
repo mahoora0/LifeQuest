@@ -9,7 +9,6 @@ import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
-import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -54,18 +53,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               showBack: false,
               trailing: LqIconButton(
                 icon: Icons.person_add_alt,
-                size: 26,
-                iconSize: 15,
+                size: 36,
+                iconSize: 20,
                 semanticLabel: '동료 찾기',
                 onTap: () => context.push('/friends/search'),
               ),
             ),
-            LqChipRow(
+            _FriendSegmentControl(
               labels: _segments,
               selectedIndex: _segment,
               onSelected: (index) => setState(() => _segment = index),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 14),
             Expanded(
               child: _segment == 0
                   ? const _FriendListTab()
@@ -73,6 +72,77 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 참고 시안처럼 화면 폭을 반씩 쓰는 친구 화면 전용 세그먼트.
+class _FriendSegmentControl extends StatelessWidget {
+  const _FriendSegmentControl({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
+      child: Row(
+        children: [
+          for (var index = 0; index < labels.length; index++) ...[
+            if (index > 0) const SizedBox(width: 12),
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: index == selectedIndex,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSelected(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: index == selectedIndex
+                          ? LqColors.primary
+                          : LqColors.surfacePanel,
+                      borderRadius: LqShape.pillRadius,
+                      border: Border.all(
+                        color: index == selectedIndex
+                            ? LqColors.ink
+                            : LqColors.borderMuted,
+                        width: LqShape.borderWidth,
+                      ),
+                      boxShadow: index == selectedIndex
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x2E5A4628),
+                                offset: Offset(2, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Text(
+                      labels[index],
+                      style: LqText.cardTitle.copyWith(
+                        fontSize: 17,
+                        color: index == selectedIndex
+                            ? LqColors.onDark
+                            : LqColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -167,17 +237,18 @@ class _RequestBanner extends ConsumerWidget {
     final hasReceived = receivedCount > 0;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: LqSpacing.gap),
+      padding: const EdgeInsets.only(bottom: 16),
       child: LqCard(
         radius: LqShape.rowRadius,
         background: hasReceived ? LqColors.goldBg : LqColors.surfaceCard,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        borderColor: hasReceived ? LqColors.goldBorder : LqColors.borderMuted,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         onTap: () => context.push('/friends/requests'),
         child: Row(
           children: [
             Container(
-              width: 26,
-              height: 26,
+              width: 48,
+              height: 48,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: hasReceived ? LqColors.accent : LqColors.tileFill,
@@ -191,37 +262,45 @@ class _RequestBanner extends ConsumerWidget {
                   ? Text(
                       '$receivedCount',
                       style: LqText.badge.copyWith(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: LqColors.onDark,
                       ),
                     )
                   : const Icon(
-                      Icons.outbox_rounded,
-                      size: 15,
+                      Icons.assignment_outlined,
+                      size: 24,
                       color: LqColors.textPrimary,
                     ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     hasReceived ? '친구 요청이 $receivedCount건 도착했어요' : '친구 요청 관리',
-                    style: LqText.bodySm.copyWith(
+                    style: LqText.cardTitle.copyWith(
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: hasReceived
                           ? LqColors.goldText
                           : LqColors.textPrimary,
                     ),
                   ),
-                  Text('보낸 요청 $sentCount건 확인', style: LqText.caption),
+                  const SizedBox(height: 3),
+                  Text(
+                    '보낸 요청 $sentCount건 확인',
+                    style: LqText.bodySm.copyWith(
+                      color: LqColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
             Text(
               '›',
-              style: LqText.cardTitle.copyWith(
+              style: LqText.sectionTitle.copyWith(
+                fontSize: 28,
                 color: hasReceived ? LqColors.goldText : LqColors.textPrimary,
               ),
             ),
@@ -241,17 +320,23 @@ class _IntroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      borderColor: LqColors.borderMuted,
+      shadow: false,
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       child: Row(
         children: [
-          const LqImage(LqAssets.charWave, width: 46),
+          const LqImage(LqAssets.charWave, width: 54),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               friendCount == 0
                   ? '아직 친구가 없어요.\n친구 코드를 나누고 함께 모험해요!'
                   : '친구 $friendCount명이 오늘도 모험 중!\n응원하면 서로 EXP 5!',
-              style: LqText.bodySm,
+              style: LqText.bodySm.copyWith(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w400,
+                height: 1.45,
+              ),
             ),
           ),
         ],
@@ -277,7 +362,8 @@ class _FriendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       radius: LqShape.rowRadius,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      borderColor: LqColors.divider,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       onTap: onOpen,
       child: Row(
         children: [
@@ -285,19 +371,62 @@ class _FriendRow extends StatelessWidget {
             nickname: friend.nickname,
             seed: friend.userId,
             imageUrl: friend.profileImageUrl,
+            size: 52,
+            fontSize: 19,
           ),
+          const SizedBox(width: 12),
+          Expanded(child: _FriendIdentity(friend: friend)),
           const SizedBox(width: 10),
-          Expanded(
-            child: LqAdventurerIdentity(
-              nickname: friend.nickname,
-              level: friend.level,
-              statusLine: friend.statusLine,
-            ),
-          ),
-          const SizedBox(width: 8),
           _CheerButton(cheered: friend.cheered, onTap: onCheer),
         ],
       ),
+    );
+  }
+}
+
+class _FriendIdentity extends StatelessWidget {
+  const _FriendIdentity({required this.friend});
+
+  final Friend friend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: friend.nickname, style: LqText.cardTitle),
+              TextSpan(
+                text: '  Lv.${friend.level}',
+                style: LqText.cardTitle.copyWith(
+                  fontSize: 15,
+                  color: LqColors.primary,
+                ),
+              ),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (friend.statusLine != null) ...[
+          const SizedBox(height: 5),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '●  ',
+                  style: LqText.caption.copyWith(color: LqColors.gem),
+                ),
+                TextSpan(text: friend.statusLine, style: LqText.caption),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
     );
   }
 }
@@ -323,25 +452,27 @@ class _CheerButton extends StatelessWidget {
         onTap: cheered ? () {} : onTap,
         child: Container(
           constraints: const BoxConstraints(
+            minWidth: 62,
             minHeight: LqSpacing.minTouchTarget,
           ),
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 2),
+            constraints: const BoxConstraints(minHeight: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: cheered ? LqColors.gold : LqColors.surfaceTile,
               borderRadius: LqShape.pillRadius,
               border: Border.all(
-                color: LqColors.ink,
+                color: LqColors.primary,
                 width: LqShape.borderWidth,
               ),
             ),
             child: Text(
               cheered ? '응원함 ✓' : '응원',
               style: LqText.badge.copyWith(
-                fontSize: 13,
+                fontSize: 12,
                 color: cheered ? LqColors.goldText : LqColors.primary,
               ),
             ),
@@ -362,15 +493,15 @@ class _FriendCodeCard extends StatelessWidget {
     return LqCard(
       locked: true,
       radius: LqShape.rowRadius,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       // 코드 카드의 ›는 동료 찾기(코드 입력)로 간다. 헤더 +와 같은 곳이지만
       // 코드를 들고 있는 사람은 여기서 바로 들어오는 흐름이 자연스럽다.
       onTap: () => context.push('/friends/search'),
       child: Row(
         children: [
           Container(
-            width: 30,
-            height: 30,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -382,8 +513,8 @@ class _FriendCodeCard extends StatelessWidget {
             child: Text(
               '+',
               style: LqText.badge.copyWith(
-                fontSize: 17,
-                color: LqColors.textSecondary,
+                fontSize: 20,
+                color: LqColors.primary,
               ),
             ),
           ),
@@ -395,23 +526,23 @@ class _FriendCodeCard extends StatelessWidget {
                 Text(
                   '친구 코드로 추가',
                   style: LqText.bodySm.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: LqColors.textBody,
                   ),
                 ),
                 if (myCode != null) ...[
-                  const SizedBox(height: 2),
-                  Text('내 코드 · $myCode', style: LqText.caption),
+                  const SizedBox(height: 1),
+                  Text(
+                    '내 코드 · $myCode',
+                    style: LqText.caption.copyWith(fontSize: 11.5),
+                  ),
                 ],
               ],
             ),
           ),
           if (myCode != null)
-            LqStatePill(
-              label: '복사',
-              tone: LqPillTone.quiet,
-              onTap: () => _copy(context, myCode!),
-            )
+            _CompactCopyButton(onTap: () => _copy(context, myCode!))
           else
             const Icon(
               Icons.chevron_right,
@@ -426,6 +557,49 @@ class _FriendCodeCard extends StatelessWidget {
   Future<void> _copy(BuildContext context, String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (context.mounted) showLqSnack(context, '친구 코드를 복사했어요');
+  }
+}
+
+class _CompactCopyButton extends StatelessWidget {
+  const _CompactCopyButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '복사',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(
+            minWidth: 54,
+            minHeight: LqSpacing.minTouchTarget,
+          ),
+          alignment: Alignment.center,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: LqColors.surfacePanel,
+              borderRadius: LqShape.pillRadius,
+              border: Border.all(
+                color: LqColors.primary,
+                width: LqShape.borderWidth,
+              ),
+            ),
+            child: Text(
+              '복사',
+              style: LqText.badge.copyWith(
+                fontSize: 10.5,
+                color: LqColors.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -451,7 +625,7 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
           padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
           child: Row(
             children: [
-              Text('랭킹 범위', style: LqText.label),
+              Text('랭킹 범위', style: LqText.cardTitle.copyWith(fontSize: 16)),
               const Spacer(),
               LqStatePill(
                 label: '전체',
@@ -471,7 +645,7 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
           child: _RankingTypeSwitch(
@@ -479,7 +653,7 @@ class _RankingTabState extends ConsumerState<_RankingTab> {
             onSelected: (type) => setState(() => _type = type),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Expanded(
           child: LqAsyncView<WeeklyRanking>(
             value: ranking,
@@ -535,7 +709,7 @@ class _RankingTypeSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: LqColors.surfaceTile,
@@ -596,13 +770,14 @@ class _RankingTypeButton extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 17,
+                  size: 20,
                   color: selected ? LqColors.onDark : LqColors.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: LqText.label.copyWith(
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: selected ? LqColors.onDark : LqColors.textSecondary,
                   ),
@@ -634,23 +809,23 @@ class _RankSummaryCard extends StatelessWidget {
 
     return LqCard(
       background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 15),
       child: Row(
         children: [
-          const LqImage(LqAssets.charFront, width: 42),
-          const SizedBox(width: 12),
+          const LqImage(LqAssets.charFront, width: 48),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   type == RankingType.exp ? '내 EXP 순위' : '내 레벨 순위',
-                  style: LqText.bodySm.copyWith(
+                  style: LqText.body.copyWith(
                     fontWeight: FontWeight.w700,
                     color: LqColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 if (me == null)
                   Text('아직 순위에 없어요', style: LqText.cardTitle)
                 else
@@ -727,13 +902,13 @@ class _RankRow extends StatelessWidget {
       radius: LqShape.tileRadius,
       background: entry.isMe ? _selfRowBackground : LqColors.surfaceTile,
       borderColor: entry.isMe ? LqColors.ink : LqColors.divider,
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       onTap: onOpen,
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 34,
+            height: 34,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: _medalColor,
@@ -746,12 +921,12 @@ class _RankRow extends StatelessWidget {
             child: Text(
               '${entry.rank}',
               style: LqText.badge.copyWith(
-                fontSize: 14,
+                fontSize: 15,
                 color: LqColors.goldText,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               entry.nickname,
@@ -762,7 +937,7 @@ class _RankRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
             decoration: const BoxDecoration(
               color: LqColors.expBadge,
               borderRadius: LqShape.pillRadius,
@@ -772,7 +947,7 @@ class _RankRow extends StatelessWidget {
                   ? 'EXP ${_thousands(entry.weeklyExp)}'
                   : 'Lv. ${entry.level}',
               style: LqText.badge.copyWith(
-                fontSize: 12.5,
+                fontSize: 13.5,
                 color: LqColors.onDark,
               ),
             ),
