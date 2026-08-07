@@ -236,6 +236,44 @@ void main() {
     expect(find.byIcon(Icons.edit), findsNothing);
     expect(find.text('퀘스트 취소'), findsNothing);
   });
+
+  testWidgets('활성 멤버는 협동 퀘스트 참여를 신청하고 취소할 수 있다', (tester) async {
+    final repository = _FakeGroupRepository();
+    await _pump(
+      tester,
+      const GroupQuestDetailScreen(groupId: 1, questId: 41),
+      repository,
+    );
+
+    expect(find.text('참여 신청'), findsOneWidget);
+    await tester.tap(find.text('참여 신청'));
+    await tester.pumpAndSettle();
+    expect(repository.appliedQuestIds, [41]);
+    expect(find.text('참여 신청 취소'), findsOneWidget);
+
+    await tester.tap(find.text('참여 신청 취소'));
+    await tester.pumpAndSettle();
+    expect(repository.withdrawnQuestIds, [41]);
+    expect(find.text('참여 신청'), findsOneWidget);
+  });
+
+  testWidgets('시작 후 그룹장이 공동 완료하면 참여자 EXP 지급 상태를 표시한다', (tester) async {
+    final repository = _FakeGroupRepository(started: true);
+    await _pump(
+      tester,
+      const GroupQuestDetailScreen(groupId: 1, questId: 41),
+      repository,
+    );
+
+    expect(find.text('그룹 공동 완료 · 40 EXP 지급'), findsOneWidget);
+    await tester.tap(find.text('그룹 공동 완료 · 40 EXP 지급'));
+    await tester.pumpAndSettle();
+
+    expect(repository.completedQuestIds, [41]);
+    expect(find.text('공동 완료된 퀘스트'), findsOneWidget);
+    expect(find.text('내 상태 · EXP 지급 완료'), findsOneWidget);
+    expect(find.text('· 그룹장 · 지급 완료'), findsOneWidget);
+  });
 }
 
 Future<void> _pump(
@@ -253,8 +291,10 @@ Future<void> _pump(
 }
 
 class _FakeGroupRepository extends GroupRepository {
-  _FakeGroupRepository({this.archived = false}) : super(Dio());
+  _FakeGroupRepository({this.archived = false, this.started = false})
+    : super(Dio());
   final bool archived;
+  final bool started;
   int createCalls = 0;
   String? createdName;
   int? createdMaxMembers;
@@ -268,6 +308,9 @@ class _FakeGroupRepository extends GroupRepository {
   final savedQuestTitles = <String>[];
   final savedScheduledAt = <DateTime>[];
   final cancelledQuestIds = <int>[];
+  final appliedQuestIds = <int>[];
+  final withdrawnQuestIds = <int>[];
+  final completedQuestIds = <int>[];
   int messageCalls = 0;
 
   @override
@@ -342,9 +385,20 @@ class _FakeGroupRepository extends GroupRepository {
 
   @override
   Future<GroupQuest> quest(int id, int questId) async => _quest(
-    status: cancelledQuestIds.contains(questId)
+    status: completedQuestIds.contains(questId)
+        ? GroupQuestStatus.completed
+        : cancelledQuestIds.contains(questId)
         ? GroupQuestStatus.cancelled
         : GroupQuestStatus.published,
+    scheduledAt: started
+        ? DateTime.now().subtract(const Duration(hours: 1))
+        : null,
+    participation: completedQuestIds.contains(questId)
+        ? GroupQuestParticipationStatus.rewarded
+        : appliedQuestIds.contains(questId) &&
+              !withdrawnQuestIds.contains(questId)
+        ? GroupQuestParticipationStatus.applied
+        : null,
   );
 
   @override
@@ -364,6 +418,25 @@ class _FakeGroupRepository extends GroupRepository {
   @override
   Future<void> cancelQuest(int id, int questId) async {
     cancelledQuestIds.add(questId);
+  }
+
+  @override
+  Future<GroupQuest> applyToQuest(int id, int questId) async {
+    appliedQuestIds.add(questId);
+    withdrawnQuestIds.remove(questId);
+    return quest(id, questId);
+  }
+
+  @override
+  Future<GroupQuest> withdrawFromQuest(int id, int questId) async {
+    withdrawnQuestIds.add(questId);
+    return quest(id, questId);
+  }
+
+  @override
+  Future<GroupQuest> completeGroupQuest(int id, int questId) async {
+    completedQuestIds.add(questId);
+    return quest(id, questId);
   }
 
   @override
@@ -475,6 +548,8 @@ GroupMember _activeMember() => const GroupMember(
 GroupQuest _quest({
   String title = '한강 야경 산책',
   GroupQuestStatus status = GroupQuestStatus.published,
+  DateTime? scheduledAt,
+  GroupQuestParticipationStatus? participation,
 }) => GroupQuest(
   id: 41,
   groupId: 1,
@@ -483,8 +558,23 @@ GroupQuest _quest({
   title: title,
   description: '함께 한강을 걸어요',
   placeName: '여의도 한강공원',
-  scheduledAt: DateTime.now().add(const Duration(days: 2)),
+  scheduledAt: scheduledAt ?? DateTime.now().add(const Duration(days: 2)),
   status: status,
+  participantCount: participation == null ? 0 : 1,
+  myParticipationStatus: participation,
+  participants: participation == null
+      ? const []
+      : [
+          GroupQuestParticipant(
+            userId: 1,
+            nickname: '그룹장',
+            status: participation,
+            appliedAt: DateTime(2026, 8, 7),
+            rewardedAt: participation == GroupQuestParticipationStatus.rewarded
+                ? DateTime(2026, 8, 7, 20)
+                : null,
+          ),
+        ],
 );
 
 GroupMessage _message(int id, String content, {bool mine = false}) =>

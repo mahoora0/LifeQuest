@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/group/application/group_providers.dart';
 import 'package:life_quest/features/group/data/group_dto.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
@@ -23,6 +24,7 @@ class GroupQuestDetailScreen extends ConsumerStatefulWidget {
 class _State extends ConsumerState<GroupQuestDetailScreen> {
   GroupQuest? quest;
   Object? error;
+  bool busy = false;
   @override
   void initState() {
     super.initState();
@@ -45,14 +47,62 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
       await ref
           .read(groupRepositoryProvider)
           .cancelQuest(widget.groupId, widget.questId);
-      ref.invalidate(upcomingGroupQuestsProvider(widget.groupId));
-      ref.invalidate(pastGroupQuestsProvider(widget.groupId));
       // 그룹 상세는 최근 그룹 퀘스트 3개를 함께 내려주므로 취소 후 낡은 채로 남는다.
-      ref.invalidate(groupDetailProvider(widget.groupId));
+      _invalidateQuestLists();
       await load();
     } catch (e) {
       if (mounted) showLqError(context, e);
     }
+  }
+
+  Future<void> apply() => _run(
+    () => ref
+        .read(groupRepositoryProvider)
+        .applyToQuest(widget.groupId, widget.questId),
+    '참여 신청을 완료했어요',
+  );
+
+  Future<void> withdraw() => _run(
+    () => ref
+        .read(groupRepositoryProvider)
+        .withdrawFromQuest(widget.groupId, widget.questId),
+    '참여 신청을 취소했어요',
+  );
+
+  Future<void> complete() => _run(
+    () => ref
+        .read(groupRepositoryProvider)
+        .completeGroupQuest(widget.groupId, widget.questId),
+    '참여자 모두에게 EXP를 지급했어요',
+    refreshLevel: true,
+  );
+
+  Future<void> _run(
+    Future<GroupQuest> Function() action,
+    String message, {
+    bool refreshLevel = false,
+  }) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final updated = await action();
+      if (!mounted) return;
+      setState(() => quest = updated);
+      _invalidateQuestLists();
+      if (refreshLevel) ref.invalidate(levelStatusProvider);
+      showLqSnack(context, message);
+    } catch (e) {
+      if (mounted) showLqError(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  void _invalidateQuestLists() {
+    ref.invalidate(upcomingGroupQuestsProvider(widget.groupId));
+    ref.invalidate(pastGroupQuestsProvider(widget.groupId));
+    ref.invalidate(groupDetailProvider(widget.groupId));
+    ref.invalidate(myCoopGroupQuestsProvider);
   }
 
   @override
@@ -64,6 +114,18 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
         q != null &&
         q.status == GroupQuestStatus.published &&
         q.scheduledAt.isAfter(DateTime.now()) &&
+        group?.archived == false;
+    final participationOpen =
+        q != null &&
+        q.status == GroupQuestStatus.published &&
+        q.scheduledAt.isAfter(DateTime.now()) &&
+        group?.isActiveMember == true &&
+        group?.archived == false;
+    final completable =
+        q != null &&
+        q.status == GroupQuestStatus.published &&
+        !q.scheduledAt.isAfter(DateTime.now()) &&
+        group?.isOwner == true &&
         group?.archived == false;
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
@@ -107,6 +169,31 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                                 '작성자 · ${q.creatorNickname}',
                                 style: LqText.caption,
                               ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '참여 ${q.participantCount}명 · 공동 완료 시 ${q.expReward} EXP',
+                                style: LqText.label,
+                              ),
+                              if (q.isParticipating)
+                                Text('내 상태 · 참여 신청 완료', style: LqText.label),
+                              if (q.rewarded)
+                                Text('내 상태 · EXP 지급 완료', style: LqText.label),
+                              if (q.participants.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text('참여자', style: LqText.cardTitle),
+                                for (final participant in q.participants)
+                                  Text(
+                                    '· ${participant.nickname}${participant.status == GroupQuestParticipationStatus.rewarded ? ' · 지급 완료' : ''}',
+                                    style: LqText.caption,
+                                  ),
+                              ],
+                              if (q.status == GroupQuestStatus.completed)
+                                Text(
+                                  '공동 완료된 퀘스트',
+                                  style: LqText.label.copyWith(
+                                    color: LqColors.successText,
+                                  ),
+                                ),
                               if (q.status == GroupQuestStatus.cancelled)
                                 Text(
                                   '취소된 퀘스트',
@@ -117,6 +204,26 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                             ],
                           ),
                         ),
+                        if (participationOpen) ...[
+                          const SizedBox(height: 16),
+                          LqButton(
+                            label: q.isParticipating ? '참여 신청 취소' : '참여 신청',
+                            busy: busy,
+                            shadow: !q.isParticipating,
+                            borderColor: q.isParticipating
+                                ? LqColors.borderMuted
+                                : LqColors.ink,
+                            onPressed: q.isParticipating ? withdraw : apply,
+                          ),
+                        ],
+                        if (completable) ...[
+                          const SizedBox(height: 16),
+                          LqButton(
+                            label: '그룹 공동 완료 · ${q.expReward} EXP 지급',
+                            busy: busy,
+                            onPressed: complete,
+                          ),
+                        ],
                         if (modifiable) ...[
                           const SizedBox(height: 16),
                           LqButton(

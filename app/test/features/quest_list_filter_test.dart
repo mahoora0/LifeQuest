@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
+import 'package:life_quest/features/group/application/group_providers.dart';
+import 'package:life_quest/features/group/data/group_dto.dart';
+import 'package:life_quest/features/group/data/group_repository.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
@@ -17,6 +20,7 @@ void main() {
         key: UniqueKey(),
         overrides: [
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
+          groupRepositoryProvider.overrideWithValue(_FakeGroupRepository()),
           levelStatusProvider.overrideWith(
             (ref) async => LevelStatus(
               level: level,
@@ -85,6 +89,43 @@ void main() {
     expect(find.text('Lv. 3에 열려요'), findsOneWidget);
     expect(find.text('현재 Lv. 1'), findsOneWidget);
   });
+
+  testWidgets('Lv.5 협동 탭은 내가 속한 그룹 퀘스트를 표시한다', (tester) async {
+    await pumpList(tester);
+
+    await tester.tap(find.text('협동'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('협동 퀘스트 · 1개'), findsOneWidget);
+    expect(find.text('한강 공동 산책'), findsOneWidget);
+    expect(find.text('주말 탐험대 · 여의도 한강공원'), findsOneWidget);
+    expect(find.text('참여 2명 · 8/9 19:00'), findsOneWidget);
+    expect(find.text('참여 신청 완료'), findsOneWidget);
+  });
+}
+
+class _FakeGroupRepository extends GroupRepository {
+  _FakeGroupRepository() : super(Dio());
+
+  @override
+  Future<List<GroupQuest>> myQuests({required bool upcoming}) async => upcoming
+      ? [
+          GroupQuest(
+            id: 41,
+            groupId: 7,
+            groupName: '주말 탐험대',
+            createdByUserId: 1,
+            creatorNickname: '그룹장',
+            title: '한강 공동 산책',
+            description: '함께 걸어요',
+            placeName: '여의도 한강공원',
+            scheduledAt: DateTime(2026, 8, 9, 19),
+            status: GroupQuestStatus.published,
+            participantCount: 2,
+            myParticipationStatus: GroupQuestParticipationStatus.applied,
+          ),
+        ]
+      : [];
 }
 
 class _FakeQuestRepository extends QuestRepository {

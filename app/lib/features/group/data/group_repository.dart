@@ -171,6 +171,20 @@ class GroupRepository {
           asMap(r.data)['content'],
         ).map(GroupQuest.fromJson).toList();
       });
+  Future<List<GroupQuest>> myQuests({required bool upcoming}) =>
+      _guard(() async {
+        final r = await _dio.get<dynamic>(
+          '/group-quests/me',
+          queryParameters: {
+            'scope': upcoming ? 'UPCOMING' : 'PAST',
+            'page': 0,
+            'size': 50,
+          },
+        );
+        return asMapList(
+          asMap(r.data)['content'],
+        ).map(GroupQuest.fromJson).toList();
+      });
   Future<GroupQuest> quest(int id, int questId) => _guard(
     () async => GroupQuest.fromJson(
       asMap((await _dio.get<dynamic>('/groups/$id/quests/$questId')).data),
@@ -198,4 +212,23 @@ class GroupRepository {
   Future<void> cancelQuest(int id, int questId) => _guard(() async {
     await _dio.delete<dynamic>('/groups/$id/quests/$questId');
   });
+  Future<GroupQuest> applyToQuest(int id, int questId) => _guard(() async {
+    final r = await _dio.post<dynamic>(
+      '/groups/$id/quests/$questId/participation',
+    );
+    return GroupQuest.fromJson(asMap(r.data));
+  });
+  Future<GroupQuest> withdrawFromQuest(int id, int questId) => _guard(() async {
+    final r = await _dio.delete<dynamic>(
+      '/groups/$id/quests/$questId/participation',
+    );
+    return GroupQuest.fromJson(asMap(r.data));
+  });
+  Future<GroupQuest> completeGroupQuest(int id, int questId) =>
+      _guard(() async {
+        final r = await _dio.post<dynamic>(
+          '/groups/$id/quests/$questId/complete',
+        );
+        return GroupQuest.fromJson(asMap(r.data));
+      });
 }

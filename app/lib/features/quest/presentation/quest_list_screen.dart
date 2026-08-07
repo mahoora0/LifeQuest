@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/location/presentation/widgets/location_consent_prompts.dart';
+import 'package:life_quest/features/group/application/group_providers.dart';
+import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
@@ -67,11 +69,19 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
       _QuestFilter.weekly => levelValue?.unlocks.weekly.unlocked ?? false,
       _QuestFilter.coop => levelValue?.unlocks.coop.unlocked ?? false,
     };
+    // 잠긴 협동 탭에서는 목록 요청 자체를 보내지 않는다. 해금 안내만 그린다.
+    final AsyncValue<List<GroupQuest>>? coopQuests =
+        _filter == _QuestFilter.coop && unlocked
+        ? ref.watch(myCoopGroupQuestsProvider)
+        : null;
     // 조회 전에는 개수를 모르므로 레이블에서 개수만 뺀다. 0개로 보이면 오해를 부른다.
     final loaded = today.value;
-    final countLabel = loaded == null || !unlocked
+    final count = _filter == _QuestFilter.coop
+        ? coopQuests?.value?.length
+        : loaded?.quests.where(_filter.matches).length;
+    final countLabel = count == null || !unlocked
         ? '${_filter.label} 퀘스트'
-        : '${_filter.label} 퀘스트 · ${loaded.quests.where(_filter.matches).length}개';
+        : '${_filter.label} 퀘스트 · $count개';
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
@@ -113,9 +123,18 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
                       levelLoadFailed: level.hasError,
                     )
                   : _filter == _QuestFilter.coop
-                  ? const LqEmptyView(
-                      message: '협동 퀘스트 목록은 아직 준비 중이에요',
-                      hint: 'Lv. 5 해금 정보는 적용됐고, 퀘스트 담당 API 연결을 기다리고 있어요.',
+                  ? LqAsyncView<List<GroupQuest>>(
+                      value: coopQuests!,
+                      isEmpty: (quests) => quests.isEmpty,
+                      emptyMessage: '참여할 수 있는 협동 퀘스트가 없어요',
+                      onRetry: () => ref.invalidate(myCoopGroupQuestsProvider),
+                      data: (quests) => _CoopQuestList(
+                        quests: quests,
+                        onRefresh: () async {
+                          ref.invalidate(myCoopGroupQuestsProvider);
+                          await ref.read(myCoopGroupQuestsProvider.future);
+                        },
+                      ),
                     )
                   : LqAsyncView<TodayQuests>(
                       value: today,
@@ -177,6 +196,64 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
       ),
     );
   }
+}
+
+class _CoopQuestList extends StatelessWidget {
+  const _CoopQuestList({required this.quests, required this.onRefresh});
+
+  final List<GroupQuest> quests;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(
+    color: LqColors.primary,
+    backgroundColor: LqColors.surfaceRaised,
+    onRefresh: onRefresh,
+    child: ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        LqSpacing.screen,
+        8,
+        LqSpacing.screen,
+        24,
+      ),
+      itemCount: quests.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final quest = quests[index];
+        final completed = quest.status == GroupQuestStatus.completed;
+        return LqCard(
+          radius: LqShape.rowRadius,
+          onTap: () =>
+              context.push('/groups/${quest.groupId}/quests/${quest.id}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(quest.title, style: LqText.cardTitle)),
+                  Text(
+                    completed ? '완료' : '${quest.expReward} EXP',
+                    style: LqText.label,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${quest.groupName} · ${quest.placeName}',
+                style: LqText.caption,
+              ),
+              Text(
+                '참여 ${quest.participantCount}명 · ${quest.scheduledAt.month}/${quest.scheduledAt.day} ${quest.scheduledAt.hour.toString().padLeft(2, '0')}:${quest.scheduledAt.minute.toString().padLeft(2, '0')}',
+                style: LqText.caption,
+              ),
+              if (quest.isParticipating) Text('참여 신청 완료', style: LqText.label),
+              if (quest.rewarded) Text('공동 완료 보상 획득', style: LqText.label),
+            ],
+          ),
+        );
+      },
+    ),
+  );
 }
 
 class _QuestLockedView extends StatelessWidget {

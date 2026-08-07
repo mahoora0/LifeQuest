@@ -15,7 +15,9 @@ enum GroupMembershipStatus {
 
 enum GroupStatus { active, archived }
 
-enum GroupQuestStatus { published, cancelled }
+enum GroupQuestStatus { published, completed, cancelled }
+
+enum GroupQuestParticipationStatus { applied, withdrawn, rewarded }
 
 T _enum<T>(String? raw, Map<String, T> values, T fallback) =>
     values[raw] ?? fallback;
@@ -100,14 +102,29 @@ class GroupQuest {
     required this.placeName,
     required this.scheduledAt,
     required this.status,
+    this.groupName = '그룹',
+    this.expReward = 40,
+    this.participantCount = 0,
+    this.participants = const [],
+    this.myParticipationStatus,
+    this.completedAt,
   });
   final int id, groupId, createdByUserId;
-  final String creatorNickname, title, description, placeName;
+  final String groupName, creatorNickname, title, description, placeName;
   final DateTime scheduledAt;
   final GroupQuestStatus status;
+  final int expReward, participantCount;
+  final GroupQuestParticipationStatus? myParticipationStatus;
+  final List<GroupQuestParticipant> participants;
+  final DateTime? completedAt;
+  bool get isParticipating =>
+      myParticipationStatus == GroupQuestParticipationStatus.applied;
+  bool get rewarded =>
+      myParticipationStatus == GroupQuestParticipationStatus.rewarded;
   factory GroupQuest.fromJson(Map<String, dynamic> j) => GroupQuest(
     id: asInt(j['id']) ?? 0,
     groupId: asInt(j['groupId']) ?? 0,
+    groupName: asString(j['groupName']) ?? '그룹',
     createdByUserId: asInt(j['createdByUserId']) ?? 0,
     creatorNickname: asString(j['creatorNickname']) ?? '모험가',
     title: asString(j['title']) ?? '그룹 퀘스트',
@@ -118,9 +135,44 @@ class GroupQuest {
         DateTime.fromMillisecondsSinceEpoch(0),
     status: _enum(asString(j['status']), {
       'PUBLISHED': GroupQuestStatus.published,
+      'COMPLETED': GroupQuestStatus.completed,
       'CANCELLED': GroupQuestStatus.cancelled,
     }, GroupQuestStatus.published),
+    expReward: asInt(j['expReward']) ?? 40,
+    participantCount: asInt(j['participantCount']) ?? 0,
+    myParticipationStatus: _participation(asString(j['myParticipationStatus'])),
+    participants: asMapList(
+      j['participants'],
+    ).map(GroupQuestParticipant.fromJson).toList(),
+    completedAt: DateTime.tryParse(asString(j['completedAt']) ?? ''),
   );
+}
+
+class GroupQuestParticipant {
+  const GroupQuestParticipant({
+    required this.userId,
+    required this.nickname,
+    required this.status,
+    required this.appliedAt,
+    this.rewardedAt,
+  });
+  final int userId;
+  final String nickname;
+  final GroupQuestParticipationStatus status;
+  final DateTime appliedAt;
+  final DateTime? rewardedAt;
+  factory GroupQuestParticipant.fromJson(Map<String, dynamic> j) =>
+      GroupQuestParticipant(
+        userId: asInt(j['userId']) ?? 0,
+        nickname: asString(j['nickname']) ?? '모험가',
+        status:
+            _participation(asString(j['status'])) ??
+            GroupQuestParticipationStatus.applied,
+        appliedAt:
+            DateTime.tryParse(asString(j['appliedAt']) ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0),
+        rewardedAt: DateTime.tryParse(asString(j['rewardedAt']) ?? ''),
+      );
 }
 
 class GroupDetail {
@@ -256,4 +308,11 @@ GroupMembershipStatus? _membership(String? raw) =>
       'REJECTED': GroupMembershipStatus.rejected,
       'LEFT': GroupMembershipStatus.left,
       'REMOVED': GroupMembershipStatus.removed,
+    }, null);
+
+GroupQuestParticipationStatus? _participation(String? raw) =>
+    _enum<GroupQuestParticipationStatus?>(raw, {
+      'APPLIED': GroupQuestParticipationStatus.applied,
+      'WITHDRAWN': GroupQuestParticipationStatus.withdrawn,
+      'REWARDED': GroupQuestParticipationStatus.rewarded,
     }, null);
