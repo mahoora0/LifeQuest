@@ -2,6 +2,8 @@ package com.lifequest.quest.repository;
 
 import com.lifequest.quest.domain.QuestCompletion;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +23,18 @@ public interface QuestCompletionRepository extends JpaRepository<QuestCompletion
     Page<QuestCompletion> findByUserIdOrderByCompletedAtDescIdDesc(Long userId, Pageable pageable);
 
     long countByUserId(Long userId);
+
+    long countByCompletedAtGreaterThanEqual(LocalDateTime from);
+
+    List<QuestCompletion> findTop10ByOrderByCompletedAtDescIdDesc();
+
+    List<QuestCompletion> findTop10ByUserIdOrderByCompletedAtDescIdDesc(Long userId);
+
+    @Query("""
+            select qc.questId, count(qc.id) from QuestCompletion qc
+            group by qc.questId order by count(qc.id) desc
+            """)
+    List<Object[]> findPopularQuestCounts(Pageable pageable);
 
     /** 위치 좌표나 방문 시각은 노출하지 않고, 완료한 서로 다른 장소 수만 집계한다. */
     @Query(value = """

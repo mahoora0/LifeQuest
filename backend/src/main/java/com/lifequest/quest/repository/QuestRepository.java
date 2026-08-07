@@ -8,4 +8,8 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
 
     /** 배정 풀 후보: 비활성(is_active=false) 퀘스트는 제외한다. */
     List<Quest> findByActiveTrue();
+
+    long countByActiveTrue();
+
+    long countByCadence(com.lifequest.quest.domain.QuestCadence cadence);
 }

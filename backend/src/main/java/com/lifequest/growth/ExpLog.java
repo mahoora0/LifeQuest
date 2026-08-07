@@ -46,4 +46,11 @@ public class ExpLog {
         this.expAmount = expAmount;
         this.createdAt = Instant.now();
     }
+
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public String getSourceType() { return sourceType; }
+    public Long getSourceId() { return sourceId; }
+    public int getExpAmount() { return expAmount; }
+    public Instant getCreatedAt() { return createdAt; }
 }
