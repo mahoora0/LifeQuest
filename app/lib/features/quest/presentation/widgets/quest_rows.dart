@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 
 /// 홈(S-07)의 오늘의 퀘스트 행.
 ///
 /// SELF_REPORT는 우측 원형 체크 버튼으로 즉시 완료,
 /// LOCATION은 체크 대신 `위치 인증` 뱃지를 두고 행 전체 탭으로 상세로 보낸다.
+///
+/// 행은 시안대로 각자 `divider` 테두리를 두른 카드다. 배경은 지정하지 않고
+/// 부모 카드의 `surfaceCard`를 그대로 쓴다 — 테두리만으로 경계를 만든다.
 class HomeQuestRow extends StatelessWidget {
   const HomeQuestRow({
     super.key,
@@ -31,61 +35,66 @@ class HomeQuestRow extends StatelessWidget {
     // 만료 건도 서버가 QUEST_EXPIRED로 거절하므로 완료와 같이 비활성으로 보인다.
     final inactive = !status.isActionable;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Opacity(
-        opacity: inactive ? 0.55 : 1,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      quest.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LqText.cardTitle.copyWith(
-                        decoration: completed
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
+    // 흐림은 만료에만 준다. 완료는 해낸 일이라 선명하게 두고 취소선과 채워진
+    // 체크로만 표시한다 — 둘을 같이 흐리면 "못 한 것"과 구분이 사라진다(시안).
+    return Opacity(
+      opacity: status.isExpired ? 0.55 : 1,
+      child: LqCard(
+        background: LqColors.surfaceCard,
+        borderColor: LqColors.divider,
+        radius: LqShape.tileRadius,
+        shadow: false,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        onTap: onTap,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    quest.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: LqText.cardTitle.copyWith(
+                      fontSize: 16,
+                      height: 1.1,
+                      // 완료한 줄은 취소선과 함께 글자도 한 단계 물린다.
+                      color: completed ? LqColors.textSecondary : null,
+                      decoration: completed ? TextDecoration.lineThrough : null,
                     ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        LqRewardBadge.exp(quest.expReward),
-                        if (LqFeatures.currencyEnabled)
-                          LqRewardBadge.gold(quest.expReward ~/ 2),
-                        if (quest.completionType.isLocation)
-                          LqRewardBadge.location(),
-                        if (status.isExpired) const _ExpiredBadge(),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 4,
+                    children: [
+                      LqRewardBadge.exp(quest.expReward),
+                      if (LqFeatures.currencyEnabled)
+                        LqRewardBadge.gold(quest.expReward ~/ 2),
+                      if (quest.completionType.isLocation)
+                        LqRewardBadge.location(),
+                      if (status.isExpired) const _ExpiredBadge(),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              if (quest.completionType.isLocation)
-                const Icon(
-                  Icons.chevron_right,
-                  size: 22,
-                  color: LqColors.textMuted,
-                )
-              else
-                QuestCheckButton(
-                  checked: completed,
-                  busy: busy,
-                  onTap: (inactive || busy) ? null : onCheck,
-                ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 9),
+            if (quest.completionType.isLocation)
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: LqColors.textMuted,
+              )
+            else
+              QuestCheckButton(
+                checked: completed,
+                busy: busy,
+                onTap: (inactive || busy) ? null : onCheck,
+              ),
+          ],
         ),
       ),
     );
