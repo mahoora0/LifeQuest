@@ -11,7 +11,12 @@ import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 class PlaceRecommendationFormScreen extends ConsumerStatefulWidget {
-  const PlaceRecommendationFormScreen({super.key});
+  const PlaceRecommendationFormScreen({this.weekly = false, super.key});
+
+  /// 주간 퀘스트 슬롯용이면 서버 경로가 다르다 — Lv.3 잠금과 남은 기간 제한이
+  /// 걸리고, 그쪽에서만 후보가 저장돼 `candidateId`가 채워진다.
+  final bool weekly;
+
   @override
   ConsumerState<PlaceRecommendationFormScreen> createState() => _State();
 }
@@ -99,7 +104,8 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
     }
     setState(() => busy = true);
     try {
-      final r = await ref.read(questRecommendationRepositoryProvider).place({
+      final repository = ref.read(questRecommendationRepositoryProvider);
+      final body = {
         'area': a,
         'availableMinutes': m,
         'budgetPerPerson': b,
@@ -109,7 +115,10 @@ class _State extends ConsumerState<PlaceRecommendationFormScreen> {
         'additionalRequest': additional.text.trim().isEmpty
             ? null
             : additional.text.trim(),
-      });
+      };
+      final r = widget.weekly
+          ? await repository.weeklyPlace(body)
+          : await repository.place(body);
       if (mounted) context.push('/quest-recommendations/result', extra: r);
     } catch (e) {
       if (mounted) showLqError(context, e);

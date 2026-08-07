@@ -51,16 +51,34 @@ import java.util.Set;
 public class QuestAssignmentCreator {
 
     /**
-     * 슬롯 구성 — A는 LOCATION, B는 SELF_REPORT, C는 타입 제한 없이 잔여에서 고른다.
-     * 트랙이 달라도 구성은 같고, 트랙별 차이는 풀(그 트랙의 퀘스트)에서 나온다.
+     * 일간 슬롯 구성 — A는 LOCATION, B는 SELF_REPORT, C는 타입 제한 없이 잔여에서 고른다.
      *
      * <p>추출기가 이 리스트의 원소를 변형하지 않는 계약이라 상수로 공유해도 안전하다 —
      * 완화는 슬롯마다 뜨는 복사본에만 적용된다({@link QuestSlotDrawer} 참조).
      */
-    private static final List<Set<CompletionType>> TRACK_SLOTS = List.of(
+    private static final List<Set<CompletionType>> DAILY_SLOTS = List.of(
         Set.of(CompletionType.LOCATION),
         Set.of(CompletionType.SELF_REPORT),
         Set.of(CompletionType.values()));
+
+    /**
+     * 주간 <b>자동</b> 슬롯 구성 — A·B만 뽑고 C는 비워 둔다.
+     *
+     * <p>세 번째 자리는 사용자가 AI 추천 중에서 직접 고른다({@code WeeklyAiQuestService}).
+     * 자동으로 채워 버리면 사용자가 고를 자리가 없어지고, 그렇다고 네 번째로 얹으면
+     * "트랙당 3개" 계약이 깨진다.
+     *
+     * <p>여기서 빼는 것은 <b>타입 제한 없는 슬롯 C</b>다. A(LOCATION)를 남기는 이유는 AI가 그
+     * 자리를 대신할 수 없기 때문이다 — 추천은 좌표를 만들지 못하므로 항상 SELF_REPORT다.
+     * C를 빼면 잃는 것은 "잔여에서 아무거나 하나"뿐이라 손실이 가장 작다.
+     */
+    private static final List<Set<CompletionType>> WEEKLY_AUTO_SLOTS = List.of(
+        Set.of(CompletionType.LOCATION),
+        Set.of(CompletionType.SELF_REPORT));
+
+    private static List<Set<CompletionType>> slotsFor(QuestCadence cadence) {
+        return cadence == QuestCadence.WEEKLY ? WEEKLY_AUTO_SLOTS : DAILY_SLOTS;
+    }
 
     private final QuestAssignmentMarkerRepository questAssignmentMarkerRepository;
     private final QuestRepository questRepository;
@@ -119,9 +137,12 @@ public class QuestAssignmentCreator {
 
         // 직전 주기 배정분을 빼는 것이 아니라 갈라 둔다. 추출기가 완화 ①에서 그쪽을 후보로
         // 되살리기 때문이다 — 여기서 버리면 슬롯을 채울 수 있는데도 비는 경우가 생긴다
+        // 개인 AI 퀘스트는 풀 조회 단계에서 이미 빠진다(owner_user_id IS NULL). 지난 주기의 AI
+        // 퀘스트 id가 previousQuestIds에 남아 있어도 대조할 대상이 없어 그냥 무시된다 — 정상이며,
+        // §1-B의 "직전 주기 제외"는 공용 카탈로그에만 적용된다.
         List<Quest> pool = new ArrayList<>();
         List<Quest> previouslyAssigned = new ArrayList<>();
-        for (Quest quest : questRepository.findByActiveTrue()) {
+        for (Quest quest : questRepository.findByActiveTrueAndOwnerUserIdIsNull()) {
             if (quest.getCadence() != cadence) {
                 continue;
             }
@@ -132,7 +153,7 @@ public class QuestAssignmentCreator {
             }
         }
 
-        for (Quest drawn : questSlotDrawer.questDrawer(TRACK_SLOTS, pool, previouslyAssigned)) {
+        for (Quest drawn : questSlotDrawer.questDrawer(slotsFor(cadence), pool, previouslyAssigned)) {
             userDailyQuestRepository.save(
                 new UserDailyQuest(userId, drawn.getId(), periodStart, expiresAt));
         }

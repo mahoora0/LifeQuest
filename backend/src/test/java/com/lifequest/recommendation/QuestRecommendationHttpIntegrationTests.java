@@ -159,7 +159,7 @@ class QuestRecommendationHttpIntegrationTests {
     }
 
     private QuestRecommendationCandidate candidate(int index,RecommendationType type,DurationUnit unit,int duration) {
-        return new QuestRecommendationCandidate(index,type,"추천 "+index,"충분히 구체적인 추천 설명입니다 "+index,
+        return new QuestRecommendationCandidate(index,null,type,"추천 "+index,"충분히 구체적인 추천 설명입니다 "+index,
                 RecommendationCategory.CULTURE,duration,unit,10000,"추천 장소 "+index,"현장에서 경험을 완료하고 기록하세요 "+index);
     }
 }

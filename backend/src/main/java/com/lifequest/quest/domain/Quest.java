@@ -26,6 +26,16 @@ import java.time.LocalDateTime;
 @Table(name = "quests")
 public class Quest {
 
+    /**
+     * AI 주간 퀘스트의 고정 등급. §2의 RARE 대역(30~50 EXP)에 맞췄고, 기존 주간 SELF_REPORT
+     * 시드가 쓰는 값(35·40)과 같은 자리다. 사용자가 예산·기간을 부풀려 상위 등급을 노리는 경로가
+     * 생기지 않도록 후보 내용과 무관하게 고정한다.
+     */
+    public static final QuestGrade AI_QUEST_GRADE = QuestGrade.RARE;
+
+    /** AI 주간 퀘스트의 고정 EXP. {@link #AI_QUEST_GRADE} 참조. */
+    public static final int AI_QUEST_EXP_REWARD = 40;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -72,6 +82,24 @@ public class Quest {
     @Column(name = "created_by", nullable = false, length = 20)
     private QuestCreator createdBy;
 
+    /**
+     * 개인 전용 퀘스트의 주인. {@code null}이면 공용 카탈로그다(docs/05-business-rules.md §1).
+     *
+     * <p><b>배정 풀·상세 권한·어드민 관리는 전부 이 컬럼으로 공용/개인을 가른다.</b>
+     * {@code createdBy}가 아니라 이쪽을 보는 이유는 두 축이 다른 것을 말하기 때문이다 —
+     * createdBy는 "누가 만들었나", ownerUserId는 "누구 것인가"다. AI가 나중에 공용 카탈로그를
+     * 생성하게 되면 {@code createdBy == AI}로 개인 여부를 판정하던 자리가 전부 틀어진다.
+     */
+    @Column(name = "owner_user_id")
+    private Long ownerUserId;
+
+    /**
+     * 완료 기준 설명. {@code SELF_REPORT}는 시스템이 판정하지 않으므로 사용자에게는 이 문장이
+     * 유일한 완료 기준이다. 공용 시드 퀘스트는 아직 {@code null}이다.
+     */
+    @Column(name = "completion_guide", length = 300)
+    private String completionGuide;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
@@ -81,11 +109,18 @@ public class Quest {
     protected Quest() {
     }
 
+    /**
+     * 공용 카탈로그 퀘스트를 만든다. {@code ownerUserId}는 항상 {@code null}이므로
+     * <b>이 생성자로는 개인 AI 퀘스트를 만들 수 없다</b> — 그쪽은
+     * {@link #createPrivateAiWeekly}만 통한다. 소유·등급·EXP를 서버가 고정하는 자리를
+     * 하나로 좁혀 두면 호출부가 늘어도 불변식이 새지 않는다.
+     */
     public Quest(String title, String description, QuestGrade grade, QuestCadence cadence,
                  CompletionType completionType, int expReward, String placeName,
                  BigDecimal latitude, BigDecimal longitude, Integer radiusM, Long lifedexItemId,
                  QuestCreator createdBy, boolean active) {
         requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
+        requireAiOwnership(createdBy, null);
         this.title = title;
         this.description = description;
         this.grade = grade;
@@ -99,6 +134,52 @@ public class Quest {
         this.lifedexItemId = lifedexItemId;
         this.createdBy = createdBy;
         this.active = active;
+    }
+
+    /**
+     * 사용자가 고른 AI 추천 후보를 개인 주간 퀘스트로 만든다.
+     *
+     * <p><b>등급·EXP·완료 방식·주기를 인자로 받지 않는다.</b> 전부 서버가 고정한다 — LLM 응답이나
+     * 앱 요청에서 받으면 보상을 부풀리는 경로가 열린다. 추천 후보가 나르는 것은 텍스트(제목·설명·
+     * 장소·완료 가이드)뿐이고, 그 값들은 {@code QuestRecommendationValidator}가 이미 길이·예산·
+     * 기간을 검증한 것이다.
+     *
+     * <p>완료 방식이 {@code SELF_REPORT}인 것은 선택이 아니라 제약이다. 추천 시스템 지시가
+     * 좌표와 인증 반경을 만들지 못하게 막고 있고({@code QuestRecommendationPromptFactory}),
+     * 좌표 없는 LOCATION은 {@link #requireVerifiableIfLocation}과 {@code ck_quests_location_verifiable}이
+     * 거부한다. {@code suggestedPlaceName}은 표시용 이름일 뿐 좌표가 아니다.
+     *
+     * @param ownerUserId 이 퀘스트를 고른 사용자. 배정 풀과 상세 권한이 이 값으로 갈린다
+     */
+    public static Quest createPrivateAiWeekly(Long ownerUserId, String title, String description,
+                                              String placeName, String completionGuide) {
+        Quest quest = new Quest(
+            title, description, AI_QUEST_GRADE, QuestCadence.WEEKLY,
+            CompletionType.SELF_REPORT, AI_QUEST_EXP_REWARD, placeName,
+            null, null, null, null, QuestCreator.SYSTEM, true);
+        // 공용 생성자는 ownerUserId를 받지 않는다(그쪽으로 개인 퀘스트가 새지 않게 하려는 것이다).
+        // 여기서 소유자와 생성 주체를 함께 덮어쓴 뒤 불변식을 다시 확인한다.
+        quest.ownerUserId = ownerUserId;
+        quest.createdBy = QuestCreator.AI;
+        quest.completionGuide = completionGuide;
+        requireAiOwnership(quest.createdBy, quest.ownerUserId);
+        return quest;
+    }
+
+    /**
+     * {@code created_by}와 {@code owner_user_id}는 함께 움직인다. AI인데 주인이 없으면 아무에게도
+     * 배정되지 않으면서 배정 풀에서도 빠진 고아 행이 되고, 공용인데 주인이 있으면 그 사용자에게만
+     * 보이는 카탈로그 퀘스트가 된다. 둘 다 예외도 로그도 없이 조용히 틀리는 종류라
+     * {@code ck_quests_ai_owner} CHECK와 함께 양쪽에서 막는다.
+     */
+    private static void requireAiOwnership(QuestCreator createdBy, Long ownerUserId) {
+        if (createdBy == QuestCreator.AI && ownerUserId == null) {
+            throw new IllegalArgumentException("AI 퀘스트는 owner_user_id가 필요하다");
+        }
+        if (createdBy != QuestCreator.AI && ownerUserId != null) {
+            throw new IllegalArgumentException(
+                "공용 퀘스트는 owner_user_id를 가질 수 없다: " + ownerUserId);
+        }
     }
 
     /**
@@ -186,6 +267,25 @@ public class Quest {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    /** {@code null}이면 공용 카탈로그, 값이 있으면 그 사용자 전용 퀘스트다. */
+    public Long getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public String getCompletionGuide() {
+        return completionGuide;
+    }
+
+    /** 특정 사용자 전용 퀘스트인가. 배정 풀·상세 권한·어드민 목록의 판정 기준이다. */
+    public boolean isPrivate() {
+        return ownerUserId != null;
+    }
+
+    /** 이 사용자가 볼 수 있는가. 공용은 누구나, 개인은 주인만 볼 수 있다. */
+    public boolean isVisibleTo(Long userId) {
+        return ownerUserId == null || ownerUserId.equals(userId);
     }
 
     public boolean isLocationBased() {

@@ -88,8 +88,8 @@ class QuestDomainMappingTest {
         em.flush();
         em.clear();
 
-        assertTrue(questRepository.findByActiveTrue().stream().allMatch(Quest::isActive));
-        assertTrue(questRepository.findByActiveTrue().stream().noneMatch(q -> "종료된 퀘스트".equals(q.getTitle())));
+        assertTrue(questRepository.findByActiveTrueAndOwnerUserIdIsNull().stream().allMatch(Quest::isActive));
+        assertTrue(questRepository.findByActiveTrueAndOwnerUserIdIsNull().stream().noneMatch(q -> "종료된 퀘스트".equals(q.getTitle())));
     }
 
     @Test

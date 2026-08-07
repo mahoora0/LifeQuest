@@ -22,6 +22,20 @@ class QuestRepository {
     return Quest.fromJson(asMap(response.data));
   });
 
+  /// `POST /quests/weekly/ai`
+  ///
+  /// 사용자가 고른 AI 추천 후보를 이번 주 주간 슬롯에 넣는다. 후보 내용이 아니라
+  /// id만 보낸다 — 내용을 보내면 제목·완료 가이드를 앱에서 바꿔 보낼 수 있다.
+  ///
+  /// 주당 한 번이며 이미 받았으면 서버가 409(`WEEKLY_AI_QUEST_ALREADY_CLAIMED`)를 준다.
+  Future<DailyQuest> claimWeeklyAiQuest(int candidateId) => _guard(() async {
+    final response = await _dio.post<dynamic>(
+      '/quests/weekly/ai',
+      data: {'candidateId': candidateId},
+    );
+    return DailyQuest.fromJson(asMap(response.data));
+  });
+
   /// `GET /quests/nearby`
   Future<List<DailyQuest>> fetchNearby({
     required double latitude,

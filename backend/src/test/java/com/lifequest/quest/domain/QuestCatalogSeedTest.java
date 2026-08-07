@@ -93,7 +93,7 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 배정_풀에서_빠진_시드는_의도된_비활성_2건뿐이다() {
-        List<Quest> pool = questRepository.findByActiveTrue();
+        List<Quest> pool = questRepository.findByActiveTrueAndOwnerUserIdIsNull();
 
         assertEquals(
                 Set.of(37L, 38L),

@@ -50,6 +50,9 @@ class QuestAssignmentContractTests {
     /** 트랙당 슬롯 수(docs/05-business-rules.md §1-A). */
     private static final int SLOTS_PER_TRACK = 3;
 
+    /** 주간에서 <b>자동으로</b> 채우는 슬롯 수. 세 번째는 사용자가 AI 추천에서 고른다. */
+    private static final int WEEKLY_AUTO_SLOTS = 2;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -139,22 +142,37 @@ class QuestAssignmentContractTests {
             .andExpect(jsonPath("$.data.assignedDate").value(questPeriod.logicalDate().toString()));
     }
 
-    /** 주간이 열린 사용자는 두 트랙을 각각 3개씩 받는다 — 트랙별 독립 슬롯(§1-A). */
+    /**
+     * 주간이 열린 사용자는 일간 3개 + 주간 <b>자동 2개</b>를 받는다.
+     *
+     * <p>주간의 세 번째 자리는 자동으로 채우지 않는다 — 사용자가 AI 추천 중에서 직접 고르는
+     * 슬롯이다({@code WeeklyAiQuestService}). 자동으로 3개를 채우면 고를 자리가 없어지고,
+     * 네 번째로 얹으면 "트랙당 3개" 계약이 깨진다.
+     *
+     * <p>빠지는 것은 타입 제한 없는 슬롯 C다. A(LOCATION)는 남는다 — 추천은 좌표를 만들지 못해
+     * 항상 SELF_REPORT라 그 자리를 대신할 수 없다.
+     */
     @Test
-    void 주간이_열리면_트랙마다_세_개씩_배정된다() throws Exception {
+    void 주간은_자동_두_개만_배정되고_세_번째_자리는_비워둔다() throws Exception {
         String email = "assign-weekly@lifequest.test";
         String token = signUpAndGetAccessToken(email, "주간탐험가");
         levelUp(email, 3);
 
         MvcResult result = mockMvc.perform(get("/api/quests/today").header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.quests.length()").value(SLOTS_PER_TRACK * 2))
+            .andExpect(jsonPath("$.data.quests.length()").value(SLOTS_PER_TRACK + WEEKLY_AUTO_SLOTS))
             .andReturn();
 
-        List<String> cadences = JsonPath.read(
-            result.getResponse().getContentAsString(), "$.data.quests[*].quest.cadence");
+        String body = result.getResponse().getContentAsString();
+        List<String> cadences = JsonPath.read(body, "$.data.quests[*].quest.cadence");
         assertThat(cadences).filteredOn(QuestCadence.DAILY.name()::equals).hasSize(SLOTS_PER_TRACK);
-        assertThat(cadences).filteredOn(QuestCadence.WEEKLY.name()::equals).hasSize(SLOTS_PER_TRACK);
+        assertThat(cadences).filteredOn(QuestCadence.WEEKLY.name()::equals).hasSize(WEEKLY_AUTO_SLOTS);
+
+        // 자동 주간 2개는 슬롯 A·B라 완료 타입이 갈린다. 둘 다 SELF_REPORT면 슬롯 C가 아니라
+        // A가 빠진 것이고, 그러면 위치 인증 주간 퀘스트가 영영 나오지 않는다.
+        List<String> weeklyTypes = JsonPath.read(
+            body, "$.data.quests[?(@.quest.cadence == 'WEEKLY')].quest.completionType");
+        assertThat(weeklyTypes).containsExactlyInAnyOrder("LOCATION", "SELF_REPORT");
     }
 
     /**

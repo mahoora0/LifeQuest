@@ -97,8 +97,21 @@ public class QuestAssignmentService {
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND))
             .getLevel();
 
+        // 개인 AI 퀘스트는 "이 트랙의 자동 배정이 이미 있다"의 근거가 되지 못한다.
+        //
+        // AI 주간 퀘스트도 cadence가 WEEKLY라, 빼지 않으면 사용자가 자동 배정보다 AI 퀘스트를
+        // 먼저 받았을 때 그 주 주간이 AI 1개로 끝난다 — 자동 2개가 영영 생기지 않는다.
+        // 순서가 반대면(자동 먼저 → AI 나중) 정상 동작하므로 테스트에서 지나치기 쉽다.
+        //
+        // 판정 기준을 createdBy가 아니라 ownerUserId로 두는 이유는 Quest.ownerUserId 참조.
+        //
+        // 이 필터는 createForTrack을 부를지 정하는 빠른 판정일 뿐이고, 동시 요청에서 둘 다
+        // "없음"을 봐도 중복 생성은 아래 마커 유니크 제약이 막는다 — 판정 주체는 여전히 DB다.
         Set<QuestCadence> assignedCadences = new HashSet<>();
         for (Quest quest : questsOf(assigned).values()) {
+            if (quest.isPrivate()) {
+                continue;
+            }
             assignedCadences.add(quest.getCadence());
         }
 
@@ -133,12 +146,22 @@ public class QuestAssignmentService {
      *
      * <p>비활성 퀘스트도 돌려준다. 배정 풀에서 빠졌을 뿐 과거에 완료한 기록은 유효하며,
      * 여기서 404를 내면 완료 이력 화면이 깨진다.
+     *
+     * <p><b>개인 AI 퀘스트는 주인만 볼 수 있다.</b> 이 검사가 없으면 id를 훑어 남의 개인
+     * 퀘스트를 읽을 수 있다 — 추천 요청에 담긴 지역·예산·동행 인원이 제목과 설명에 그대로
+     * 반영되므로 노출 대상이 퀘스트 문구만이 아니다.
+     *
+     * <p>403이 아니라 <b>404</b>를 준다. 403은 "그 id에 무언가 있다"를 알려주므로 존재 여부
+     * 자체가 새고, 이 API는 없는 id에도 404를 주므로 두 경우를 구분할 수 없어야 한다.
      */
     @Transactional(readOnly = true)
-    public QuestSummaryResponse getQuest(Long questId) {
-        return questRepository.findById(questId)
-            .map(QuestSummaryResponse::from)
+    public QuestSummaryResponse getQuest(Long userId, Long questId) {
+        Quest quest = questRepository.findById(questId)
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (!quest.isVisibleTo(userId)) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+        return QuestSummaryResponse.from(quest);
     }
 
     /**

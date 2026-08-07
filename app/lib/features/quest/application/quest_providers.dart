@@ -45,6 +45,20 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
     return result.withQuestTitle(_titleOf(dailyQuestId));
   }
 
+  /// AI 추천 후보를 주간 퀘스트로 받는다. 성공하면 목록을 다시 불러
+  /// 새 배정이 세 번째 주간 자리에 나타나게 한다.
+  ///
+  /// 목록 전체를 새로 부르는 이유는 이 호출이 <b>자동 주간 배정을 유발할 수도</b>
+  /// 있기 때문이다 — 오늘의 퀘스트를 한 번도 열지 않은 사용자는 이 시점에
+  /// 자동 2개가 아직 없고, 다음 조회가 그것을 만든다.
+  Future<DailyQuest> claimWeeklyAiQuest(int candidateId) async {
+    final claimed = await ref
+        .read(questRepositoryProvider)
+        .claimWeeklyAiQuest(candidateId);
+    await refresh();
+    return claimed;
+  }
+
   String? _titleOf(int dailyQuestId) {
     final current = state.value;
     if (current == null) return null;

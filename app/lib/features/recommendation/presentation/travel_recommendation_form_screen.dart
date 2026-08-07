@@ -9,7 +9,13 @@ import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 class TravelRecommendationFormScreen extends ConsumerStatefulWidget {
-  const TravelRecommendationFormScreen({super.key});
+  const TravelRecommendationFormScreen({this.weekly = false, super.key});
+
+  /// 주간 퀘스트 슬롯용이면 기간 상한이 14일이 아니라 그 주의 남은 일수다.
+  /// 상한 판정은 서버가 하므로 여기서 미리 깎지 않는다 — 앱이 계산하면
+  /// 04:00 경계에서 서버와 어긋난다.
+  final bool weekly;
+
   @override
   ConsumerState<TravelRecommendationFormScreen> createState() => _State();
 }
@@ -96,7 +102,8 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
     }
     setState(() => busy = true);
     try {
-      final r = await ref.read(questRecommendationRepositoryProvider).travel({
+      final repository = ref.read(questRecommendationRepositoryProvider);
+      final body = {
         'destination': d,
         'days': day,
         'budgetPerPerson': b,
@@ -105,7 +112,10 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
         'additionalRequest': additional.text.trim().isEmpty
             ? null
             : additional.text.trim(),
-      });
+      };
+      final r = widget.weekly
+          ? await repository.weeklyTravel(body)
+          : await repository.travel(body);
       if (mounted) context.push('/quest-recommendations/result', extra: r);
     } catch (e) {
       if (mounted) showLqError(context, e);

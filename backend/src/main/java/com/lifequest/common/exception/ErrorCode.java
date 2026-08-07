@@ -61,6 +61,24 @@ public enum ErrorCode {
     LLM_PROVIDER_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "LLM_PROVIDER_TIMEOUT", "추천 생성 시간이 초과되었습니다."),
     LLM_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "LLM_PROVIDER_ERROR", "추천 제공자 응답을 처리하지 못했습니다."),
     LLM_INVALID_RESPONSE(HttpStatus.BAD_GATEWAY, "LLM_INVALID_RESPONSE", "추천 결과 형식이 올바르지 않습니다."),
+    WEEKLY_AI_QUEST_ALREADY_CLAIMED(
+            HttpStatus.CONFLICT,
+            "WEEKLY_AI_QUEST_ALREADY_CLAIMED",
+            "이번 주 AI 퀘스트는 이미 받았습니다."),
+    RECOMMENDATION_CANDIDATE_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "RECOMMENDATION_CANDIDATE_NOT_FOUND",
+            "추천 후보를 찾을 수 없습니다."),
+    RECOMMENDATION_CANDIDATE_ALREADY_CLAIMED(
+            HttpStatus.CONFLICT,
+            "RECOMMENDATION_CANDIDATE_ALREADY_CLAIMED",
+            "이미 퀘스트로 받은 추천입니다."),
+    // 후보가 만들어진 주가 지났다는 뜻이다. NOT_FOUND로 뭉뚱그리면 화면에 후보가 보이는 채로
+    // "찾을 수 없습니다"가 떠서 버그로 읽힌다 — 다시 추천받으면 된다는 것을 알려야 한다.
+    RECOMMENDATION_CANDIDATE_EXPIRED(
+            HttpStatus.CONFLICT,
+            "RECOMMENDATION_CANDIDATE_EXPIRED",
+            "새로운 주가 시작됐어요. 추천을 다시 받아 주세요."),
     DUPLICATE_FRIEND_REQUEST(
             HttpStatus.CONFLICT,
             "DUPLICATE_FRIEND_REQUEST",
