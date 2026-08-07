@@ -31,4 +31,7 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
      * 개인 AI 퀘스트가 카탈로그 관리 대상에 섞인다.
      */
     Optional<Quest> findByIdAndOwnerUserIdIsNull(Long id);
+    long countByActiveTrue();
+
+    long countByCadence(com.lifequest.quest.domain.QuestCadence cadence);
 }

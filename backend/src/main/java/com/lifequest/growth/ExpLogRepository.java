@@ -2,6 +2,8 @@ package com.lifequest.growth;
 
 import java.time.Instant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ExpLogRepository extends JpaRepository<ExpLog, Long> {
     boolean existsByUserIdAndSourceTypeAndSourceId(Long userId, String sourceType, Long sourceId);
@@ -13,4 +15,11 @@ public interface ExpLogRepository extends JpaRepository<ExpLog, Long> {
      */
     long countByUserIdAndSourceTypeAndCreatedAtGreaterThanEqual(
         Long userId, String sourceType, Instant from);
+
+    List<ExpLog> findTop10ByOrderByCreatedAtDescIdDesc();
+
+    List<ExpLog> findTop10ByUserIdOrderByCreatedAtDescIdDesc(Long userId);
+
+    @Query("select coalesce(sum(e.expAmount), 0) from ExpLog e")
+    long sumExpAmount();
 }

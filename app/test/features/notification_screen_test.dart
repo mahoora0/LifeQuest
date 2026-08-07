@@ -130,16 +130,31 @@ void main() {
     expect(find.text('어제 · 오전 7:00'), findsOneWidget);
   });
 
-  testWidgets('알림 설정 4종을 목록 하단에 함께 둔다', (tester) async {
+  testWidgets('홈 알림 기록에는 알림 설정이 보이지 않는다', (tester) async {
     await pumpNotifications(tester);
 
-    await tester.scrollUntilVisible(find.text('알림 설정'), 200);
+    expect(find.text('알림 설정'), findsNothing);
+    for (final channel in LqNotificationChannel.values) {
+      expect(find.text(channel.label), findsNothing);
+    }
+  });
+
+  testWidgets('마이페이지 알림 설정에는 설정만 보이고 기록은 보이지 않는다', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: NotificationScreen(mode: NotificationScreenMode.settings),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     for (final channel in LqNotificationChannel.values) {
       expect(find.text(channel.label), findsOneWidget);
     }
     expect(find.text('"재촉" 계열은 기본으로 꺼 둬요. 필요할 때만 켜세요.'), findsOneWidget);
+    expect(find.text('비밀 업적 "야행성 탐험가" 해금!'), findsNothing);
+    expect(find.text('모두 읽음'), findsNothing);
   });
 
   test('마감 임박 재촉만 기본으로 꺼져 있다', () async {

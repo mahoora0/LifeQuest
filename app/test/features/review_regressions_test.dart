@@ -153,7 +153,7 @@ void main() {
     });
   });
 
-  group('알림 설정은 목록 상태와 무관하게 닿을 수 있다', () {
+  group('홈 알림 화면은 기록만 보여 준다', () {
     Future<void> pumpNotifications(
       WidgetTester tester,
       NotificationRepository repository,
@@ -169,22 +169,19 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('새 소식이 없어도 설정 카드가 남는다', (tester) async {
+    testWidgets('새 소식이 없을 때도 설정은 노출하지 않는다', (tester) async {
       await pumpNotifications(tester, const _EmptyNotificationRepository());
 
       expect(find.text('새 소식이 없어요'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('알림 설정'), 200);
-      expect(find.text('알림 설정'), findsOneWidget);
+      expect(find.text('알림 설정'), findsNothing);
     });
 
-    testWidgets('준비 중 안내가 가리키는 설정 카드가 실제로 있다', (tester) async {
+    testWidgets('준비 중이어도 설정은 노출하지 않는다', (tester) async {
       await pumpNotifications(tester, const _NotReadyNotificationRepository());
 
-      // 안내문이 "아래에서 미리 정해 둘 수 있어요"라고 말하는 대상이다.
       expect(find.text('알림은 아직 준비 중이에요'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('알림 설정'), 200);
-      expect(find.text('알림 설정'), findsOneWidget);
-      expect(find.text(LqNotificationChannel.deadline.label), findsOneWidget);
+      expect(find.text('알림 설정'), findsNothing);
+      expect(find.text(LqNotificationChannel.deadline.label), findsNothing);
     });
   });
 
