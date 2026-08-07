@@ -221,11 +221,7 @@ void main() {
 
   testWidgets('그룹 퀘스트 최대 인원은 2~100명만 저장한다', (tester) async {
     final repository = _FakeGroupRepository();
-    await _pump(
-      tester,
-      const GroupQuestFormScreen(groupId: 1),
-      repository,
-    );
+    await _pump(tester, const GroupQuestFormScreen(groupId: 1), repository);
 
     await tester.enterText(find.widgetWithText(TextField, '제목'), '한강 야경 산책');
     await tester.enterText(find.widgetWithText(TextField, '설명'), '함께 한강을 걸어요');
@@ -282,9 +278,7 @@ void main() {
     expect(find.text('참여 신청'), findsOneWidget);
   });
 
-  testWidgets('정원이 찬 그룹 퀘스트는 신청 버튼을 비활성으로 두고 인원을 함께 보여준다', (
-    tester,
-  ) async {
+  testWidgets('정원이 찬 그룹 퀘스트는 신청 버튼을 비활성으로 두고 인원을 함께 보여준다', (tester) async {
     final repository = _FakeGroupRepository(full: true);
     await _pump(
       tester,

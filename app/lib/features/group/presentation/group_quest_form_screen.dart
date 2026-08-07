@@ -19,9 +19,11 @@ class GroupQuestFormScreen extends ConsumerStatefulWidget {
 class _State extends ConsumerState<GroupQuestFormScreen> {
   final title = TextEditingController(),
       description = TextEditingController(),
-      place = TextEditingController(),
-      // 최대 참여 인원. 비워 두면 정원 없이 그룹 멤버 누구나 신청할 수 있다.
-      maxParticipants = TextEditingController();
+      place = TextEditingController();
+
+  /// 최대 참여 인원. 비워 두면 정원 없이 그룹 멤버 누구나 신청할 수 있다.
+  final maxParticipants = TextEditingController();
+
   DateTime scheduled = DateTime.now().add(const Duration(days: 1));
   bool busy = false, loaded = false;
   @override
