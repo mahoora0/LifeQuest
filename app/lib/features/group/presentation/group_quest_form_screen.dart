@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/group/application/group_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/presentation/date_labels.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -18,7 +19,9 @@ class GroupQuestFormScreen extends ConsumerStatefulWidget {
 class _State extends ConsumerState<GroupQuestFormScreen> {
   final title = TextEditingController(),
       description = TextEditingController(),
-      place = TextEditingController();
+      place = TextEditingController(),
+      // 최대 참여 인원. 비워 두면 정원 없이 그룹 멤버 누구나 신청할 수 있다.
+      maxParticipants = TextEditingController();
   DateTime scheduled = DateTime.now().add(const Duration(days: 1));
   bool busy = false, loaded = false;
   @override
@@ -34,6 +37,7 @@ class _State extends ConsumerState<GroupQuestFormScreen> {
             title.text = q.title;
             description.text = q.description;
             place.text = q.placeName;
+            maxParticipants.text = q.maxParticipants?.toString() ?? '';
             setState(() => scheduled = q.scheduledAt);
           });
     }
@@ -44,6 +48,7 @@ class _State extends ConsumerState<GroupQuestFormScreen> {
     title.dispose();
     description.dispose();
     place.dispose();
+    maxParticipants.dispose();
     super.dispose();
   }
 
@@ -75,7 +80,15 @@ class _State extends ConsumerState<GroupQuestFormScreen> {
   Future<void> submit() async {
     final t = title.text.trim(),
         d = description.text.trim(),
-        p = place.text.trim();
+        p = place.text.trim(),
+        capacityText = maxParticipants.text.trim();
+    // 빈 칸은 "정원 없음"이고, 값을 넣었는데 2~100을 벗어나면 서버가 거절한다.
+    final capacity = capacityText.isEmpty ? null : int.tryParse(capacityText);
+    if (capacityText.isNotEmpty &&
+        (capacity == null || capacity < 2 || capacity > 100)) {
+      showLqSnack(context, '최대 인원은 2~100명 사이로 적어 주세요');
+      return;
+    }
     if (t.length < 2 ||
         t.length > 100 ||
         d.isEmpty ||
@@ -97,6 +110,7 @@ class _State extends ConsumerState<GroupQuestFormScreen> {
             description: d,
             placeName: p,
             scheduledAt: scheduled,
+            maxParticipants: capacity,
           );
       ref.invalidate(upcomingGroupQuestsProvider(widget.groupId));
       ref.invalidate(pastGroupQuestsProvider(widget.groupId));
@@ -136,11 +150,19 @@ class _State extends ConsumerState<GroupQuestFormScreen> {
                   maxLength: 200,
                   decoration: const InputDecoration(labelText: '장소'),
                 ),
+                TextField(
+                  controller: maxParticipants,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: '최대 인원',
+                    helperText: '비워 두면 인원 제한 없이 신청받아요 (2~100명)',
+                  ),
+                ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('일시'),
                   subtitle: Text(
-                    '${scheduled.year}.${scheduled.month}.${scheduled.day} ${scheduled.hour.toString().padLeft(2, '0')}:${scheduled.minute.toString().padLeft(2, '0')}',
+                    '${scheduled.year}년 ${questDateTimeLabel(scheduled)}',
                   ),
                   trailing: TextButton(
                     onPressed: pick,

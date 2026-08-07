@@ -5,6 +5,7 @@ import 'package:life_quest/features/group/application/group_providers.dart';
 import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/presentation/date_labels.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
@@ -127,6 +128,22 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
         !q.scheduledAt.isAfter(DateTime.now()) &&
         group?.isOwner == true &&
         group?.archived == false;
+    // 완료는 참여자 개개인이 아니라 그룹장이 한 번 눌러 참여자 전원에게 EXP를
+    // 지급하는 방식이다. 조건이 어긋나면 버튼 자리가 그냥 비어 "완료 버튼이 없다"로
+    // 읽히므로, 왜 못 누르는지를 같은 자리에 남긴다.
+    final String? completionHint =
+        q == null ||
+            q.status != GroupQuestStatus.published ||
+            group?.archived != false ||
+            group?.isActiveMember != true
+        ? null
+        : group?.isOwner == true
+        ? q.scheduledAt.isAfter(DateTime.now())
+              ? '시작 시각이 지나면 완료 처리할 수 있어요'
+              : null
+        : q.scheduledAt.isAfter(DateTime.now())
+        ? '시작 시각 이후 그룹장이 완료 처리하면 참여자 전원이 EXP를 받아요'
+        : '그룹장이 완료 처리하면 참여자 전원이 EXP를 받아요';
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
@@ -162,7 +179,8 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                               const SizedBox(height: 12),
                               Text('장소 · ${q.placeName}', style: LqText.label),
                               Text(
-                                '일시 · ${q.scheduledAt.year}.${q.scheduledAt.month}.${q.scheduledAt.day} ${q.scheduledAt.hour.toString().padLeft(2, '0')}:${q.scheduledAt.minute.toString().padLeft(2, '0')}',
+                                '일시 · ${q.scheduledAt.year}년 '
+                                '${questDateTimeLabel(q.scheduledAt)}',
                                 style: LqText.label,
                               ),
                               Text(
@@ -171,7 +189,7 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '참여 ${q.participantCount}명 · 공동 완료 시 ${q.expReward} EXP',
+                                '${q.participantLabel} · 공동 완료 시 ${q.expReward} EXP',
                                 style: LqText.label,
                               ),
                               if (q.isParticipating)
@@ -207,14 +225,28 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                         if (participationOpen) ...[
                           const SizedBox(height: 16),
                           LqButton(
-                            label: q.isParticipating ? '참여 신청 취소' : '참여 신청',
+                            label: q.isParticipating
+                                ? '참여 신청 취소'
+                                : q.isFull
+                                ? '정원이 찼어요'
+                                : '참여 신청',
                             busy: busy,
                             shadow: !q.isParticipating,
                             borderColor: q.isParticipating
                                 ? LqColors.borderMuted
                                 : LqColors.ink,
-                            onPressed: q.isParticipating ? withdraw : apply,
+                            // 정원이 찬 뒤에는 눌러도 서버가 거절한다. 누를 수 있는
+                            // 것처럼 두지 않고 버튼에 이유를 적는다.
+                            onPressed: q.isParticipating
+                                ? withdraw
+                                : q.isFull
+                                ? null
+                                : apply,
                           ),
+                        ],
+                        if (completionHint != null) ...[
+                          const SizedBox(height: 16),
+                          Text(completionHint, style: LqText.label),
                         ],
                         if (completable) ...[
                           const SizedBox(height: 16),

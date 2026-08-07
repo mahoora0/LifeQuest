@@ -197,12 +197,15 @@ class GroupRepository {
     required String description,
     required String placeName,
     required DateTime scheduledAt,
+    int? maxParticipants,
   }) => _guard(() async {
+    // 정원을 비워 보내면(null) 서버가 "정원 없음"으로 저장한다.
     final data = {
       'title': title,
       'description': description,
       'placeName': placeName,
       'scheduledAt': scheduledAt.toIso8601String(),
+      'maxParticipants': maxParticipants,
     };
     final r = questId == null
         ? await _dio.post<dynamic>('/groups/$id/quests', data: data)

@@ -177,7 +177,7 @@ class _NotificationSettingsScreen extends StatelessWidget {
   }
 }
 
-const _shellRootRoutes = {'/', '/quests', '/map', '/friends', '/profile'};
+const _shellRootRoutes = {'/', '/quests', '/groups', '/friends', '/profile'};
 
 /// "모두 읽음" — 읽지 않은 것이 없으면 비활성으로 남긴다.
 class _MarkAllReadButton extends StatelessWidget {

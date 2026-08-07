@@ -21,7 +21,9 @@ class LqBottomNav extends StatelessWidget {
   static const destinations = <LqNavDestination>[
     LqNavDestination(icon: LqIcons.home, label: '홈'),
     LqNavDestination(icon: LqIcons.quest, label: '퀘스트'),
-    LqNavDestination(icon: LqIcons.map, label: '지도'),
+    // 지도 대신 그룹이 들어간다. 그룹은 마이페이지 메뉴 안쪽에 있어 찾기 어려웠고,
+    // 지도는 이 자리를 쓰던 화면 중 진입 빈도가 가장 낮았다.
+    LqNavDestination(icon: LqIcons.group, label: '그룹'),
     // LifeDex 도감은 탭에서 빠지고 마이페이지 "나의 기록"에서 push로 연다.
     LqNavDestination(icon: LqIcons.friends, label: '친구'),
     LqNavDestination(icon: LqIcons.my, label: '마이'),
