@@ -271,7 +271,7 @@ void main() {
       // 거절할 자리를 권하면 안 된다 — 다음 주기부터 자동이 2개라 자연히 열린다.
       await _pumpList(tester, weeklyAiAssigned: false, legacyWeeklyCount: 3);
 
-      expect(find.text('나만의 주간 퀘스트'), findsNothing);
+      expect(find.text('나만의 주간 퀘스트'), findsOneWidget);
     });
 
     testWidgets('일간 탭에는 주간 슬롯 카드가 없다', (tester) async {
