@@ -253,15 +253,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/location-consent',
         builder: (context, state) => const LocationConsentScreen(),
       ),
-      // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
-      // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.
+      // 홈의 벨은 기록 전용, 마이페이지의 알림 설정은 설정 전용 화면으로 연다.
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',
-        redirect: (context, state) => '/notifications',
+        builder: (context, state) =>
+            const NotificationScreen(mode: NotificationScreenMode.settings),
       ),
       GoRoute(
         path: '/groups',
