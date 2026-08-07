@@ -53,6 +53,11 @@ class LqRewardBadge extends StatelessWidget {
   final Color background;
   final Color foreground;
   final Color? border;
+
+  /// 글자 크기. 테두리 몫은 아래에서 상쇄하지만 **글자 크기 차이는 상쇄하지
+  /// 않는다** — 한 줄에 나란히 놓는 뱃지끼리는 같은 값을 줘야 높이가 맞는다.
+  /// 다른 값을 주는 곳(완료 결과 14, 비밀 업적 모달 13)은 모두 그 줄에서
+  /// 크기가 같은 것들끼리만 서 있다.
   final double fontSize;
 
   /// 테두리 두께. 이 만큼이 뱃지 바깥에 더해진다.
