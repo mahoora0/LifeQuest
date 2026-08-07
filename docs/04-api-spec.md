@@ -187,8 +187,12 @@
 | API | 요청 | 성공 응답 `data` | 주요 오류 |
 |---|---|---|---|
 | `GET /quests/today` | 없음 | `assignedDate`(조회 시점의 논리적 일자), `quests[]`(`dailyQuestId`, `questId`, `status`, 퀘스트 요약) | `UNAUTHORIZED` |
-| `GET /quests/{questId}` | path `questId` | 퀘스트 상세·장소·보상 | `RESOURCE_NOT_FOUND` |
+| `GET /quests/{questId}` | path `questId` | 퀘스트 상세·장소·보상(`createdBy`, `completionGuide` 포함) | `RESOURCE_NOT_FOUND`(없거나 **남의 개인 AI 퀘스트**) |
 | `GET /quests/nearby` | query `lat`, `lng`, `radiusKm` | 오늘 배정된 LOCATION 퀘스트 `quests[]`(`dailyQuestId` 포함) | `VALIDATION_FAILED` |
+| `POST /quest-recommendations/weekly/place` | 일반 place 추천과 동일 | 후보 3건(`candidateId` 포함) | `QUEST_FEATURE_LOCKED`(Lv.3 미만), `WEEKLY_AI_QUEST_ALREADY_CLAIMED`, `WEEKLY_AI_SLOT_UNAVAILABLE`, `LLM_DAILY_LIMIT_EXCEEDED` |
+| `POST /quest-recommendations/weekly/travel` | 일반 travel 추천과 동일. `days`는 **그 주에 남은 일수** 이하 | 후보 3건(`candidateId` 포함) | `QUEST_FEATURE_LOCKED`, `WEEKLY_AI_QUEST_ALREADY_CLAIMED`, `WEEKLY_AI_SLOT_UNAVAILABLE`, `VALIDATION_FAILED`(기간 초과) |
+| `GET /quest-recommendations/weekly/status` | 없음 | `available`, `reason`(닫힌 이유 코드), `remainingDays` | `UNAUTHORIZED` |
+| `POST /quests/weekly/ai` | `candidateId` | 배정 1건(목록 항목과 같은 모양) | `WEEKLY_AI_QUEST_ALREADY_CLAIMED`(주 1회 초과), `RECOMMENDATION_CANDIDATE_NOT_FOUND`, `RECOMMENDATION_CANDIDATE_EXPIRED`(주기 경과), `RECOMMENDATION_CANDIDATE_ALREADY_CLAIMED`, `WEEKLY_AI_SLOT_UNAVAILABLE`, `QUEST_FEATURE_LOCKED` |
 | `GET /users/me/quests/history` | `page`, `size` | 완료 기록 `content[]` | `UNAUTHORIZED` |
 | `GET /lifedex/categories` | 없음 | 카테고리와 전체 항목 수 `categories[]` | `UNAUTHORIZED` |
 | `GET /lifedex` | query `categoryId`(선택) | 도감 항목 `items[]` | `VALIDATION_FAILED` |

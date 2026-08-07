@@ -3,6 +3,7 @@ package com.lifequest.quest.dto;
 import com.lifequest.quest.domain.CompletionType;
 import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
 
 import java.math.BigDecimal;
@@ -27,7 +28,9 @@ public record QuestSummaryResponse(
     String placeName,
     BigDecimal latitude,
     BigDecimal longitude,
-    Integer radiusM) {
+    Integer radiusM,
+    String completionGuide,
+    QuestCreator createdBy) {
 
     public static QuestSummaryResponse from(Quest quest) {
         return new QuestSummaryResponse(
@@ -41,6 +44,8 @@ public record QuestSummaryResponse(
             quest.getPlaceName(),
             quest.getLatitude(),
             quest.getLongitude(),
-            quest.getRadiusM());
+            quest.getRadiusM(),
+            quest.getCompletionGuide(),
+            quest.getCreatedBy());
     }
 }

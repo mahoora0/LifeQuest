@@ -103,7 +103,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/quests',
-                builder: (context, state) => const QuestListScreen(),
+                // `?tab=weekly`로 주간 탭을 지정해 들어올 수 있다. AI 퀘스트를
+                // 받은 직후 목록으로 돌아올 때 일간 탭이 뜨면 방금 받은 퀘스트가
+                // 보이지 않아 실패한 것처럼 읽힌다.
+                builder: (context, state) => QuestListScreen(
+                  initialTab: state.uri.queryParameters['tab'],
+                ),
               ),
             ],
           ),
@@ -331,15 +336,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/quest-recommendations',
-        builder: (context, state) => const RecommendationTypeScreen(),
+        builder: (context, state) =>
+            RecommendationTypeScreen(weekly: _isWeekly(state)),
       ),
       GoRoute(
         path: '/quest-recommendations/place',
-        builder: (context, state) => const PlaceRecommendationFormScreen(),
+        builder: (context, state) =>
+            PlaceRecommendationFormScreen(weekly: _isWeekly(state)),
       ),
       GoRoute(
         path: '/quest-recommendations/travel',
-        builder: (context, state) => const TravelRecommendationFormScreen(),
+        builder: (context, state) =>
+            TravelRecommendationFormScreen(weekly: _isWeekly(state)),
       ),
       GoRoute(
         path: '/quest-recommendations/result',
@@ -355,3 +363,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// `?weekly=true`면 주간 퀘스트 슬롯용 추천이다.
+///
+/// 일반 추천과 경로가 갈리는 이유는 서버 계약이 다르기 때문이다 — 주간 쪽만
+/// Lv.3 잠금과 그 주의 남은 기간 제한이 걸리고, 후보도 그쪽에서만 저장된다.
+bool _isWeekly(GoRouterState state) =>
+    state.uri.queryParameters['weekly'] == 'true';

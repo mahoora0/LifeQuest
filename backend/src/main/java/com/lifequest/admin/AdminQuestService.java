@@ -34,7 +34,7 @@ public class AdminQuestService {
     public AdminQuestPageResponse getQuests(int page, int size) {
         validatePage(page, size);
         return AdminQuestPageResponse.from(
-                questRepository.findAll(PageRequest.of(page, size, NEWEST_FIRST)));
+                questRepository.findByOwnerUserIdIsNull(PageRequest.of(page, size, NEWEST_FIRST)));
     }
 
     @Transactional
@@ -85,8 +85,13 @@ public class AdminQuestService {
         return DeactivateQuestResponse.success(questId);
     }
 
+    /**
+     * 어드민이 다룰 수 있는 것은 공용 카탈로그뿐이다. 개인 AI 퀘스트는 목록에서 빼는 것만으로는
+     * 부족하다 — 수정·비활성화는 id만 알면 되는 경로라 어드민이 특정 사용자의 개인 퀘스트를
+     * 바꾸거나 내려버릴 수 있다.
+     */
     private Quest getQuest(Long questId) {
-        return questRepository.findById(questId)
+        return questRepository.findByIdAndOwnerUserIdIsNull(questId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 

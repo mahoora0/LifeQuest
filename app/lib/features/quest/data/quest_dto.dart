@@ -110,6 +110,8 @@ class Quest {
     this.latitude,
     this.longitude,
     this.radiusM,
+    this.completionGuide,
+    this.createdBy,
   });
 
   final int id;
@@ -123,6 +125,16 @@ class Quest {
   final double? latitude;
   final double? longitude;
   final int? radiusM;
+
+  /// 완료 기준 설명. `SELF_REPORT`는 시스템이 판정하지 않으므로 사용자에게는
+  /// 이 문장이 유일한 완료 기준이다. 공용 시드 퀘스트는 아직 비어 있다.
+  final String? completionGuide;
+
+  /// 생성 주체(`SYSTEM`·`ADMIN`·`AI`). AI 뱃지를 그리는 근거다.
+  final String? createdBy;
+
+  /// 사용자가 AI 추천에서 직접 고른 주간 퀘스트인가.
+  bool get isAiGenerated => createdBy == 'AI';
 
   bool get hasCoordinates => latitude != null && longitude != null;
 
@@ -148,6 +160,10 @@ class Quest {
       latitude: asDouble(pick(json, ['latitude', 'lat'])),
       longitude: asDouble(pick(json, ['longitude', 'lng', 'lon'])),
       radiusM: asInt(pick(json, ['radiusM', 'radius_m', 'radius'])),
+      completionGuide: asString(
+        pick(json, ['completionGuide', 'completion_guide']),
+      ),
+      createdBy: asString(pick(json, ['createdBy', 'created_by'])),
     );
   }
 }

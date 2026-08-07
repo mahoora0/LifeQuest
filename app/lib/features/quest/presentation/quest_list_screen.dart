@@ -35,15 +35,27 @@ enum _QuestFilter {
 
 /// S-08 퀘스트 목록. 홈과 동일한 `todayQuestsProvider`를 재사용한다.
 class QuestListScreen extends ConsumerStatefulWidget {
-  const QuestListScreen({super.key});
+  const QuestListScreen({this.initialTab, super.key});
+
+  /// 진입 시 열어둘 탭(`daily`·`weekly`·`coop`). AI 퀘스트를 받은 직후 목록으로
+  /// 돌아올 때 기본값인 일간이 뜨면 방금 받은 퀘스트가 보이지 않아 실패한 것처럼
+  /// 읽힌다. 값이 없거나 모르는 값이면 기존대로 일간이다.
+  final String? initialTab;
 
   @override
   ConsumerState<QuestListScreen> createState() => _QuestListScreenState();
 }
 
 class _QuestListScreenState extends ConsumerState<QuestListScreen> {
+  /// 트랙당 슬롯 수. 주간은 이 중 둘만 자동으로 차고 나머지 하나가 AI 슬롯이다.
+  static const _weeklySlots = 3;
+
   /// 진입 시 일간이 선택된다("전체" 칩이 없어 기본값이 반드시 하나 있어야 한다).
-  _QuestFilter _filter = _QuestFilter.daily;
+  late _QuestFilter _filter = switch (widget.initialTab) {
+    'weekly' => _QuestFilter.weekly,
+    'coop' => _QuestFilter.coop,
+    _ => _QuestFilter.daily,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +129,11 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
                       data: (value) => _QuestList(
                         quests: value.quests.where(_filter.matches).toList(),
                         emptyMessage: '오늘 배정된 ${_filter.label} 퀘스트가 없어요',
+                        // 주간 세 번째 자리는 자동 배정이 채우지 않는다 — 사용자가
+                        // AI 추천에서 직접 고르는 슬롯이고, 비어 있을 때만 안내한다.
+                        showWeeklyAiSlot:
+                            _filter == _QuestFilter.weekly &&
+                            _weeklyAiSlotOpen(value.quests),
                         onTap: _openDetail,
                         onRefresh: () =>
                             ref.read(todayQuestsProvider.notifier).refresh(),
@@ -127,6 +144,20 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
         ),
       ),
     );
+  }
+
+  /// 주간 AI 슬롯이 비어 있는가.
+  ///
+  /// **자리가 남았는지까지 본다.** "AI 퀘스트가 없다"만 보면, 자동 배정이 3개를
+  /// 채운 주에도 카드가 떠서 네 번째 줄이 된다 — 슬롯 규칙이 바뀌기 전에 만들어진
+  /// 이번 주 배정이 그렇고, 받아도 서버가 거절할 자리를 권하는 셈이 된다.
+  /// 다음 주기부터는 자동이 2개라 자연히 열린다.
+  bool _weeklyAiSlotOpen(List<DailyQuest> quests) {
+    final weekly = quests
+        .where((q) => q.quest.cadence == QuestCadence.weekly)
+        .toList();
+    return weekly.length < _weeklySlots &&
+        !weekly.any((q) => q.quest.isAiGenerated);
   }
 
   Future<void> _openDetail(DailyQuest dailyQuest) async {
@@ -191,9 +222,13 @@ class _QuestList extends StatelessWidget {
     required this.emptyMessage,
     required this.onTap,
     required this.onRefresh,
+    this.showWeeklyAiSlot = false,
   });
 
   final List<DailyQuest> quests;
+
+  /// 주간 AI 슬롯이 비어 있어 "퀘스트 받기" 카드를 띄울 것인가.
+  final bool showWeeklyAiSlot;
 
   /// 배정은 있으나 선택한 주기에 해당하는 퀘스트가 없을 때의 문구.
   final String emptyMessage;
@@ -202,7 +237,9 @@ class _QuestList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (quests.isEmpty) {
+    // 슬롯 카드가 있으면 목록이 비어도 빈 화면을 띄우지 않는다 — 받을 수 있는
+    // 자리가 있는데 "배정된 퀘스트가 없어요"만 보이면 막다른 길로 읽힌다.
+    if (quests.isEmpty && !showWeeklyAiSlot) {
       return LqEmptyView(message: emptyMessage);
     }
 
@@ -217,9 +254,12 @@ class _QuestList extends StatelessWidget {
           LqSpacing.screen,
           24,
         ),
-        itemCount: quests.length,
+        itemCount: quests.length + (showWeeklyAiSlot ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
+          if (index == quests.length) {
+            return const _WeeklyAiSlotCard();
+          }
           final dailyQuest = quests[index];
           return LqCard(
             radius: LqShape.rowRadius,
@@ -234,4 +274,36 @@ class _QuestList extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 주간 세 번째 자리 — 사용자가 AI 추천 중에서 직접 고르는 슬롯.
+///
+/// 자동 배정은 슬롯 A(위치)·B(직접 완료) 두 개만 만들고 이 자리는 비워 둔다.
+/// 주에 한 번만 받을 수 있다.
+class _WeeklyAiSlotCard extends StatelessWidget {
+  const _WeeklyAiSlotCard();
+
+  @override
+  Widget build(BuildContext context) => LqCard(
+    radius: LqShape.rowRadius,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    onTap: () => context.push('/quest-recommendations?weekly=true'),
+    child: Row(
+      children: [
+        const Icon(Icons.auto_awesome, color: LqColors.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('나만의 주간 퀘스트', style: LqText.cardTitle),
+              const SizedBox(height: 2),
+              Text('AI가 상황에 맞춰 추천해요 · 주 1회', style: LqText.caption),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right, color: LqColors.textMuted),
+      ],
+    ),
+  );
 }

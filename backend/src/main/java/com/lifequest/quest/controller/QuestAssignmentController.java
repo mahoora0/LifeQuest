@@ -67,9 +67,16 @@ public class QuestAssignmentController {
         return ResponseEntity.ok(ApiResponse.success(Map.of("quests", quests)));
     }
 
-    /** 퀘스트 원본 상세. 배정 여부와 무관하며 비활성 퀘스트도 돌려준다. */
+    /**
+     * 퀘스트 원본 상세. 배정 여부와 무관하며 비활성 퀘스트도 돌려준다.
+     *
+     * <p>개인 AI 퀘스트는 주인만 볼 수 있어 요청자 id가 필요하다.
+     */
     @GetMapping("/{questId}")
-    public ResponseEntity<ApiResponse<QuestSummaryResponse>> detail(@PathVariable Long questId) {
-        return ResponseEntity.ok(ApiResponse.success(questAssignmentService.getQuest(questId)));
+    public ResponseEntity<ApiResponse<QuestSummaryResponse>> detail(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long questId) {
+        return ResponseEntity.ok(ApiResponse.success(
+            questAssignmentService.getQuest(Long.valueOf(jwt.getSubject()), questId)));
     }
 }

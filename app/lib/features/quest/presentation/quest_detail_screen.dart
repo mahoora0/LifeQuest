@@ -151,6 +151,10 @@ class _DetailBody extends StatelessWidget {
             ),
             children: [
               Center(child: LqRewardBadge.tag(quest.completionType.palette)),
+              if (quest.isAiGenerated) ...[
+                const SizedBox(height: 8),
+                const Center(child: _AiQuestBadge()),
+              ],
               const SizedBox(height: 10),
               Text(
                 quest.title,
@@ -222,6 +226,22 @@ class _InfoCard extends StatelessWidget {
               ],
             ),
           ),
+          // 추천 장소는 LOCATION이 아니어도 보여준다. AI 퀘스트는 SELF_REPORT지만
+          // 사용자가 후보를 고를 때 본 장소가 있고, 여기서 사라지면 "어디로 가라는
+          // 거였지"가 된다. 인증에는 쓰이지 않으므로 반경은 붙이지 않는다.
+          if (!isLocation && (quest.placeName?.isNotEmpty ?? false)) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 9),
+              child: LqDashedDivider(),
+            ),
+            _InfoRow(
+              label: '추천 장소',
+              child: Text(
+                quest.placeName!,
+                style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
           if (isLocation) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 9),
@@ -247,10 +267,58 @@ class _InfoCard extends StatelessWidget {
               ),
             ),
           ],
+          // 완료 기준. SELF_REPORT는 시스템이 판정하지 않으므로 사용자에게는 이 문장이
+          // 유일한 기준이다 — 안 보여주면 무엇을 해야 완료인지 알 방법이 없다.
+          if (quest.completionGuide?.isNotEmpty ?? false) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 9),
+              child: LqDashedDivider(),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('완료 기준', style: LqText.label),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(quest.completionGuide!, style: LqText.bodySm),
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+/// AI 추천에서 직접 고른 퀘스트라는 표시.
+///
+/// 시드 카탈로그 퀘스트와 섞여 보이면 "내가 고른 것"이라는 맥락이 사라진다.
+class _AiQuestBadge extends StatelessWidget {
+  const _AiQuestBadge();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: LqColors.surfaceCard,
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: LqColors.primary),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.auto_awesome, size: 14, color: LqColors.primary),
+        const SizedBox(width: 4),
+        Text(
+          'AI로 받은 퀘스트',
+          style: LqText.caption.copyWith(
+            color: LqColors.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _InfoRow extends StatelessWidget {
