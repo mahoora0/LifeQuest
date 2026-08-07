@@ -450,6 +450,8 @@ erDiagram
 | USERS | INDEX(total_exp DESC) | 랭킹 정렬 조회 최적화 |
 | QUESTS | INDEX(latitude, longitude) 또는 공간 인덱스 | 주변 퀘스트 조회(§4 참조) |
 | FRIEND_REQUESTS | INDEX(receiver_id, status) | 받은 요청 목록 조회 |
+| GROUP_QUEST_PARTICIPANTS | UNIQUE(group_quest_id, user_id) | 한 사용자의 참여 신청 행을 하나로 유지하고 재신청 시 상태만 전환 |
+| GROUP_QUEST_PARTICIPANTS | INDEX(group_quest_id, status, id) | 공동 완료 시 보상 대상 신청자 조회 |
 
 ## 4. 위치 데이터 처리 방식(참고)
 

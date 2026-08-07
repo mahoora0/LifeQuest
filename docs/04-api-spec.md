@@ -327,7 +327,18 @@ sequenceDiagram
 | LOCATION 퀘스트에 좌표·정확도 누락 | LOCATION_REQUIRED | 400 |
 | 위치 정확도가 허용 기준보다 낮음 | LOCATION_ACCURACY_TOO_LOW | 422 |
 
-## 5. 인증 필요 여부 요약
+## 5. 협동 그룹 퀘스트
+
+| Method | Path | 설명 |
+|---|---|---|
+| GET | `/api/group-quests/me?scope=UPCOMING|PAST` | 내가 속한 그룹의 협동 퀘스트 |
+| POST | `/api/groups/{groupId}/quests/{questId}/participation` | Lv.5 활성 멤버 참여 신청 |
+| DELETE | `/api/groups/{groupId}/quests/{questId}/participation` | 시작 전 참여 신청 취소 |
+| POST | `/api/groups/{groupId}/quests/{questId}/complete` | 시작 후 그룹장 공동 완료 |
+
+공동 완료는 유효한 신청자 전원에게 서버 고정 40 EXP를 지급한다. 그룹 퀘스트 행 잠금과 `EXP_LOGS UNIQUE(user_id, source_type, source_id)`로 동시·중복 완료의 재지급을 막으며, 한 참여자라도 지급에 실패하면 상태와 모든 지급을 롤백한다.
+
+## 6. 인증 필요 여부 요약
 
 | 구분 | 대상 |
 |---|---|
