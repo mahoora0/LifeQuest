@@ -22,6 +22,39 @@ public interface QuestCompletionRepository extends JpaRepository<QuestCompletion
 
     long countByUserId(Long userId);
 
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM quest_completions qc
+            JOIN quests q ON q.id = qc.quest_id
+            WHERE qc.user_id = :userId
+              AND q.completion_type = :completionType
+            """, nativeQuery = true)
+    long countByUserIdAndCompletionType(
+            @Param("userId") Long userId,
+            @Param("completionType") String completionType);
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM quest_completions qc
+            JOIN quests q ON q.id = qc.quest_id
+            WHERE qc.user_id = :userId
+              AND q.cadence = :cadence
+            """, nativeQuery = true)
+    long countByUserIdAndCadence(
+            @Param("userId") Long userId,
+            @Param("cadence") String cadence);
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM quest_completions qc
+            JOIN quests q ON q.id = qc.quest_id
+            WHERE qc.user_id = :userId
+              AND q.grade = :grade
+            """, nativeQuery = true)
+    long countByUserIdAndGrade(
+            @Param("userId") Long userId,
+            @Param("grade") String grade);
+
     /** 위치 좌표나 방문 시각은 노출하지 않고, 완료한 서로 다른 장소 수만 집계한다. */
     @Query(value = """
             SELECT COUNT(DISTINCT q.place_name)

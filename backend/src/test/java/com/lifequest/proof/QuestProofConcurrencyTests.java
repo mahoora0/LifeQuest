@@ -99,6 +99,7 @@ class QuestProofConcurrencyTests {
                         + "(SELECT id FROM quest_proof_posts WHERE user_id IN " + users + ")");
         jdbcTemplate.update("DELETE FROM quest_proof_posts WHERE user_id IN " + users);
         jdbcTemplate.update("DELETE FROM exp_logs WHERE user_id IN " + users);
+        jdbcTemplate.update("DELETE FROM user_titles WHERE user_id IN " + users);
         jdbcTemplate.update("DELETE FROM quest_completions WHERE user_id IN " + users);
         jdbcTemplate.update("DELETE FROM user_daily_quests WHERE user_id IN " + users);
         jdbcTemplate.update("DELETE FROM users WHERE id IN " + users);

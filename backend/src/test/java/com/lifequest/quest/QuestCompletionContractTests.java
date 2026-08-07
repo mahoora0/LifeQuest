@@ -30,6 +30,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -86,7 +88,29 @@ class QuestCompletionContractTests {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.duplicated").value(false))
             .andExpect(jsonPath("$.data.completionId").isNumber())
-            .andExpect(jsonPath("$.data.location.distanceM").isNotEmpty());
+            .andExpect(jsonPath("$.data.location.distanceM").isNotEmpty())
+            .andExpect(jsonPath("$.data.growth.rewards[*].code")
+                .value(hasItem("QUEST_FIRST_STEP")));
+    }
+
+    @Test
+    void 도감_수집과_카테고리_완성_칭호를_완료_보상으로_함께_받는다() throws Exception {
+        String email = "title-lifedex@lifequest.test";
+        String token = signUpAndGetAccessToken(email, "도감칭호모험가");
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        Quest cafeQuest = questRepository.findById(25L).orElseThrow();
+        UserDailyQuest assignment = userDailyQuestRepository.save(new UserDailyQuest(
+            user.getId(), cafeQuest.getId(), LocalDate.now(), LocalDateTime.now().plusDays(7)));
+
+        mockMvc.perform(complete(assignment.getId(), token, """
+                {"latitude": 37.5445, "longitude": 127.0557, "accuracy": 10.0}
+                """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.collection.newLifedexItems[0].id").value(25))
+            .andExpect(jsonPath("$.data.growth.rewards[*].code").value(hasItems(
+                "QUEST_FIRST_STEP",
+                "LIFEDEX_FIRST_PAGE",
+                "LIFEDEX_CAFE_COMPLETE")));
     }
 
     @Test

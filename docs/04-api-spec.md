@@ -312,7 +312,7 @@ sequenceDiagram
 
 - `location`은 `completion_type = LOCATION`인 경우에만 포함된다.
 - `collection.newAchievements[].secret`은 비밀 업적 여부다. 앱은 이 값으로 완료 결과 화면 위에 해금 모달을 겹칠지 정하므로, 비밀 업적을 해금했는데 `false`로 오면 모달이 뜨지 않는다. `newLifedexItems`에는 해당하지 않아 항상 `false`다.
-- `growth.rewards`는 레벨업 보상 전용이다. 업적 단계 보상(`ACHIEVEMENT_STEPS.reward_title_id`)은 해당 업적 항목의 `collection.newAchievements[].reward`에 실어, 어느 업적이 준 보상인지 대응을 남긴다. 형식은 `growth.rewards[]`와 같다.
+- `growth.rewards`에는 레벨업 보상과 이번 완료로 새로 획득한 퀘스트·LifeDex 칭호가 함께 실린다. 업적 단계 보상(`ACHIEVEMENT_STEPS.reward_title_id`)은 해당 업적 항목의 `collection.newAchievements[].reward`에 실어, 어느 업적이 준 보상인지 대응을 남긴다. 형식은 `growth.rewards[]`와 같다.
 - `reward`는 없으면 `null`이다. `newLifedexItems`는 보상 개념이 없어 항상 `null`이고, 업적은 지급 대상이 없거나 지급이 아직 구현되지 않은 동안 `null`이다.
 - `duplicated: true`인 경우 위치를 다시 검증하지 않고 HTTP 200으로 기존 `completionId`와 현재 성장 상태를 반환한다. `growth.expGained=0`, `previousLevel=currentLevel`, `levelUp=false`이고 `growth.rewards`, `collection.newLifedexItems`, `collection.newAchievements`는 빈 배열이며 어떤 보상도 재지급하지 않는다.
 - 랭킹은 이 응답에 포함하지 않는다. 최신 순위는 `GET /api/rankings/*`가 `USERS.total_exp`를 직접 조회해 반환한다.

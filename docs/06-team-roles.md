@@ -50,7 +50,7 @@ flowchart LR
 
 업적 단계 보상(`ACHIEVEMENT_STEPS.reward_title_id`)은 칭호이므로 지급 대상 테이블(`USER_TITLES`)의 소유자는 팀원 1이다. 지급 경로는 둘이고 응답 모양은 어느 쪽이든 같다 — ⓐ 팀원 1이 `RewardService`에 특정 칭호를 지급하는 공개 메서드를 열면 중복 지급 방지와 대표 칭호 자동 설정이 재사용된다. ⓑ `UserTitleRepository`를 직접 사용하면 `UserTitle`이 출처 인자를 이미 받으므로 `"ACHIEVEMENT"`로 저장할 수 있고 스키마 변경이 없으나, 앞의 두 로직은 직접 처리해야 한다.
 
-`QUESTS.lifedex_item_id`는 완료 시 자동 등록될 도감 항목을 가리키지만, `LIFEDEX_ITEMS` 테이블이 아직 없어 외래 키 제약은 보류 상태다(`V4`·`V6` 마이그레이션 주석). 팀원 3이 테이블을 만들 때 제약 추가와 퀘스트 시드 매핑을 함께 정한다.
+`QUESTS.lifedex_item_id`는 완료 시 자동 등록될 도감 항목을 가리킨다. `V25`에서 실제 LOCATION 퀘스트 15개에 맞춘 `LIFEDEX_CATEGORIES`·`LIFEDEX_ITEMS`·`USER_LIFEDEX`를 만들고 외래 키와 시드 매핑을 함께 연결한다.
 
 `QUESTS` 엔티티와 저장소의 소유자는 팀원 2다. 팀원 4의 관리자 기능은 팀원 2가 제공하는 퀘스트 관리 서비스 인터페이스를 호출하며, `QUESTS` 저장 로직을 중복 구현하지 않는다.
 

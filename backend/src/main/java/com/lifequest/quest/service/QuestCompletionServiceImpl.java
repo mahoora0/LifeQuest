@@ -16,6 +16,7 @@ import com.lifequest.quest.dto.QuestCompletionResponse;
 import com.lifequest.quest.repository.QuestCompletionRepository;
 import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.repository.UserDailyQuestRepository;
+import com.lifequest.profile.TitleAwardService;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -41,6 +44,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
     private final CollectionService collectionService;
     private final Clock clock;
     private final UserRepository userRepository;
+    private final TitleAwardService titleAwardService;
 
     QuestCompletionServiceImpl(
         UserDailyQuestRepository userDailyQuestRepository,
@@ -49,7 +53,8 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
         GrowthService growthService,
         CollectionService collectionService,
         Clock clock,
-        UserRepository userRepository) {
+        UserRepository userRepository,
+        TitleAwardService titleAwardService) {
         this.userDailyQuestRepository = userDailyQuestRepository;
         this.questRepository = questRepository;
         this.questCompletionRepository = questCompletionRepository;
@@ -57,6 +62,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
         this.collectionService = collectionService;
         this.clock = clock;
         this.userRepository = userRepository;
+        this.titleAwardService = titleAwardService;
     }
 
     private static boolean checkAccuracy(QuestCompletionRequest request, Quest quest) {
@@ -169,6 +175,10 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
         CollectionOutcome collectionOutcome = collectionService.evaluateOnQuestCompletion(
             requestUserId, quest.getId(), quest.getLifedexItemId(), questCompletion.getId());
 
+        var rewards = new ArrayList<>(growthResult.rewards());
+        rewards.addAll(titleAwardService.grantEligibleTitles(
+            requestUserId, questCompletion.getId()));
+
         return new QuestCompletionResponse(
             questCompletion.getId(),
             userDailyQuest.getId(),
@@ -184,7 +194,7 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
                 growthResult.previousLevel(),
                 growthResult.currentLevel(),
                 growthResult.levelUp(),
-                growthResult.rewards()),
+                List.copyOf(rewards)),
             toCollectionResult(collectionOutcome));
     }
 

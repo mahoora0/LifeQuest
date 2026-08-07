@@ -45,4 +45,8 @@ public class Title {
     public String getDescription() {
         return description;
     }
+
+    public String getAcquireType() {
+        return acquireType;
+    }
 }

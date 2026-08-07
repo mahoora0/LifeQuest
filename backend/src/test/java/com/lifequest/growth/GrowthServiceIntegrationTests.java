@@ -64,7 +64,10 @@ class GrowthServiceIntegrationTests {
                 .containsExactly("나침반 배지", "새싹 배지");
         assertThat(userService.getAccessories(user.getId()).accessories())
                 .filteredOn("unlocked", true)
-                .hasSize(14);
+                .hasSize(1);
+        assertThat(userService.getAccessories(user.getId()).accessories())
+                .extracting("requiredLevel")
+                .containsExactly(2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28);
 
         userService.selectAccessory(user.getId(), 4L);
         growthService.grantExp(user.getId(), "QUEST_COMPLETION", 9002L, 650);

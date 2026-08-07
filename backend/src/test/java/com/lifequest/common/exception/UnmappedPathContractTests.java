@@ -34,14 +34,20 @@ class UnmappedPathContractTests {
     private MockMvc mockMvc;
 
     @Test
-    void unmappedPathAnswersNotFoundWithEndpointCode() throws Exception {
-        // 인증을 통과한 뒤에야 디스패처까지 도달하므로 토큰을 먼저 얻는다.
-        String accessToken = signUpAndGetAccessToken("unmapped@lifequest.test", "길잃은모험가");
+    void lifedexPathAnswersQuestBackedCatalog() throws Exception {
+        String accessToken = signUpAndGetAccessToken("lifedex@lifequest.test", "도감모험가");
 
         mockMvc.perform(get("/api/lifedex/categories").header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("ENDPOINT_NOT_FOUND"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.categories.length()").value(6))
+                .andExpect(jsonPath("$.data.categories[0].name").value("카페"))
+                .andExpect(jsonPath("$.data.categories[0].totalCount").value(1))
+                .andExpect(jsonPath("$.data.categories[0].ownedCount").value(0));
+
+        mockMvc.perform(get("/api/lifedex").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(15));
     }
 
     @Test

@@ -107,8 +107,10 @@ class AuthFlowIntegrationTests {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessories.length()").value(14))
-                .andExpect(jsonPath("$.data.accessories[0].requiredLevel").doesNotExist())
-                .andExpect(jsonPath("$.data.accessories[0].unlocked").value(true))
+                .andExpect(jsonPath("$.data.accessories[0].requiredLevel").value(2))
+                .andExpect(jsonPath("$.data.accessories[0].unlocked").value(false))
+                .andExpect(jsonPath("$.data.accessories[1].requiredLevel").value(4))
+                .andExpect(jsonPath("$.data.accessories[13].requiredLevel").value(28))
                 .andExpect(jsonPath("$.data.selectedAccessoryId").doesNotExist());
 
         mockMvc.perform(patch("/api/users/me/accessory")
@@ -117,15 +119,14 @@ class AuthFlowIntegrationTests {
                         .content("""
                                 {"accessoryId":4}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.selectedAccessory.id").value(4))
-                .andExpect(jsonPath("$.data.selectedAccessory.code").value("APRON"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ACCESSORY_LOCKED"));
 
         mockMvc.perform(get("/api/users/me/accessories")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(
-                        "$.data.selectedAccessoryIdsByCharacter['1']").value(4));
+                        "$.data.selectedAccessoryIdsByCharacter['1']").doesNotExist());
 
         mockMvc.perform(get("/api/users/me/titles")
                         .header("Authorization", "Bearer " + accessToken))

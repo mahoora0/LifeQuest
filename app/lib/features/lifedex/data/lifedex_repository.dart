@@ -6,13 +6,8 @@ import 'package:life_quest/shared/data/sample_data.dart';
 
 /// 도감(S-13·S-14) 조회.
 ///
-/// ⚠ 백엔드에 lifedex 컨트롤러가 아직 없어 세 경로 모두 404다. 화면을 검토할 수
-/// 있도록 [LqSampleData.orSample]이 **`LQ_SAMPLES`를 켰고 컨트롤러가 없을 때만** 표본으로
-/// 떨어진다. 서버가 그 경로를 열면 실제 응답이 오므로 표본은 저절로 물러난다.
-///
-// TODO(server): GET /lifedex/categories · GET /users/me/lifedex · GET /lifedex
-//  개설 시 아래 표본 상수(_sampleCategories·_sampleItems)를 지운다. 호출 코드는
-//  이미 실경로를 가리키고 있어 그대로 둔다.
+/// 서버 연결 없이 화면을 검토할 때만 [LqSampleData.orSample]의 표본을 사용한다.
+/// 표본도 서버 카탈로그와 마찬가지로 실제 LOCATION 퀘스트 15개만 담는다.
 class LifedexRepository {
   const LifedexRepository(this._dio);
 
@@ -80,42 +75,46 @@ class LifedexRepository {
     }
   }
 
-  /// 시안(`Life Quest 초안` LifeDex 화면)의 수집 현황을 재현하는 표본이다.
-  /// 실제 사용자 데이터가 아니며 디버그 빌드에서만 쓰인다.
+  /// 실제 LOCATION 퀘스트 카탈로그를 그대로 축약한 검토용 수집 현황이다.
+  /// 보유 여부만 화면 상태를 확인하기 위한 값이며 실제 사용자 데이터가 아니다.
   static const _sampleOverview = LifedexOverview(
     categories: [
-      LifedexCategory(id: 1, name: '카페', totalCount: 24, ownedCount: 12),
-      LifedexCategory(id: 2, name: '공원 · 산책로', totalCount: 20, ownedCount: 11),
-      LifedexCategory(id: 3, name: '문화 · 전시', totalCount: 18, ownedCount: 7),
-      LifedexCategory(id: 4, name: '시장 · 골목', totalCount: 22, ownedCount: 8),
-      LifedexCategory(id: 5, name: '산 · 하천', totalCount: 16, ownedCount: 4),
+      LifedexCategory(id: 1, name: '카페', totalCount: 1, ownedCount: 1),
+      LifedexCategory(id: 2, name: '공원 · 산책로', totalCount: 5, ownedCount: 2),
+      LifedexCategory(id: 3, name: '문화 · 전시', totalCount: 3, ownedCount: 1),
+      LifedexCategory(id: 4, name: '시장 · 골목', totalCount: 2, ownedCount: 1),
+      LifedexCategory(id: 5, name: '산 · 하천', totalCount: 2, ownedCount: 1),
+      LifedexCategory(id: 6, name: '역사 · 명소', totalCount: 2, ownedCount: 0),
     ],
   );
 
   static const _sampleItems = [
     LifedexItem(
-      id: 101,
-      name: '골목 끝 로스터리',
+      id: 25,
+      name: '성수동 카페거리',
       categoryId: 1,
       owned: true,
-      description: '처음으로 도장을 찍은 카페예요.',
+      description: '새로운 카페를 찾아 한 잔의 여유를 즐긴 기록',
     ),
-    LifedexItem(id: 102, name: '북촌 한옥 찻집', categoryId: 1, owned: true),
-    LifedexItem(id: 103, name: '연남동 브런치 카페', categoryId: 1, owned: false),
     LifedexItem(
-      id: 201,
-      name: '경의선숲길',
+      id: 23,
+      name: '반포한강공원',
       categoryId: 2,
       owned: true,
-      description: '길게 이어진 숲길을 끝까지 걸었어요.',
+      description: '한강의 노을을 바라본 기록',
     ),
-    LifedexItem(id: 202, name: '서울숲', categoryId: 2, owned: true),
-    LifedexItem(id: 203, name: '올림픽공원', categoryId: 2, owned: false),
-    LifedexItem(id: 301, name: '시립 미술관', categoryId: 3, owned: true),
-    LifedexItem(id: 302, name: '국립중앙박물관', categoryId: 3, owned: false),
-    LifedexItem(id: 401, name: '광장시장', categoryId: 4, owned: true),
-    LifedexItem(id: 402, name: '망원시장', categoryId: 4, owned: false),
-    LifedexItem(id: 501, name: '북한산 백운대', categoryId: 5, owned: false),
-    LifedexItem(id: 502, name: '청계천 물길', categoryId: 5, owned: true),
+    LifedexItem(id: 24, name: '서울숲', categoryId: 2, owned: true),
+    LifedexItem(id: 32, name: '경의선숲길', categoryId: 2, owned: false),
+    LifedexItem(id: 41, name: '올림픽공원', categoryId: 2, owned: false),
+    LifedexItem(id: 42, name: '서울식물원', categoryId: 2, owned: false),
+    LifedexItem(id: 22, name: '서울도서관', categoryId: 3, owned: true),
+    LifedexItem(id: 26, name: '서울시립미술관', categoryId: 3, owned: false),
+    LifedexItem(id: 27, name: '국립중앙박물관', categoryId: 3, owned: false),
+    LifedexItem(id: 29, name: '북촌한옥마을', categoryId: 4, owned: true),
+    LifedexItem(id: 30, name: '광장시장', categoryId: 4, owned: false),
+    LifedexItem(id: 21, name: '청계천', categoryId: 5, owned: true),
+    LifedexItem(id: 40, name: '북한산 백운대', categoryId: 5, owned: false),
+    LifedexItem(id: 28, name: '경복궁', categoryId: 6, owned: false),
+    LifedexItem(id: 31, name: '남산서울타워', categoryId: 6, owned: false),
   ];
 }

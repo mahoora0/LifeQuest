@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/presentation/widgets/secret_achievement_modal.dart';
+import 'package:life_quest/features/user/application/user_providers.dart';
+import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/features/proof/presentation/proof_form_args.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
@@ -14,26 +17,47 @@ import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 ///
 /// 완료 응답 객체를 `extra`로 받아 그대로 렌더링한다(재호출 없음).
 /// 탭 밖 push 라우트라 하단 탭바는 표시되지 않는다.
-class QuestResultScreen extends StatefulWidget {
+class QuestResultScreen extends ConsumerStatefulWidget {
   const QuestResultScreen({super.key, required this.result});
 
   final QuestCompletionResult result;
 
   @override
-  State<QuestResultScreen> createState() => _QuestResultScreenState();
+  ConsumerState<QuestResultScreen> createState() => _QuestResultScreenState();
 }
 
-class _QuestResultScreenState extends State<QuestResultScreen> {
+class _QuestResultScreenState extends ConsumerState<QuestResultScreen> {
   @override
   void initState() {
     super.initState();
-    // 비밀 업적 해금은 사건이라 이 화면 위에 모달로 겹친다(S-17).
-    // 첫 프레임 뒤에 띄워야 완료 결과가 먼저 그려지고 그 위에 얹힌 것으로 읽힌다.
-    final secrets = widget.result.collection.newSecretAchievements;
-    if (secrets.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) showSecretAchievementModals(context, secrets);
+      if (mounted) _showResultEvents();
     });
+  }
+
+  Future<void> _showResultEvents() async {
+    final result = widget.result;
+    if (!result.duplicated && result.growth.levelUp) {
+      ref.invalidate(levelStatusProvider);
+      ref.invalidate(characterCollectionProvider);
+      ref.invalidate(accessoryCollectionProvider);
+      ref.invalidate(myProfileProvider);
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: LqColors.ink.withValues(alpha: 0.45),
+        builder: (dialogContext) => _LevelUpDialog(
+          growth: result.growth,
+          onConfirm: () => Navigator.of(dialogContext).pop(),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    final secrets = result.collection.newSecretAchievements;
+    if (secrets.isNotEmpty) {
+      await showSecretAchievementModals(context, secrets);
+    }
   }
 
   @override
@@ -233,6 +257,11 @@ class _LevelUpPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unlocks = _newlyUnlockedFeatures(
+      growth.previousLevel,
+      growth.currentLevel,
+    );
+
     return LqCard(
       background: LqColors.surfaceCard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -257,7 +286,306 @@ class _LevelUpPanel extends StatelessWidget {
                 ),
               ),
           ],
+          if (unlocks.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Divider(color: LqColors.borderMuted, height: 1),
+            const SizedBox(height: 12),
+            Text('새 기능 해금', style: LqText.label),
+            const SizedBox(height: 8),
+            for (final unlock in unlocks)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: LqColors.surfaceRaised,
+                    borderRadius: LqShape.cardRadius,
+                    border: Border.all(
+                      color: LqColors.ink,
+                      width: LqShape.borderWidth,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.lock_open_rounded,
+                        size: 22,
+                        color: LqColors.accent,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(unlock.name, style: LqText.bodySm),
+                            const SizedBox(height: 2),
+                            Text(
+                              unlock.description,
+                              style: LqText.caption.copyWith(
+                                color: LqColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _LevelUnlock {
+  const _LevelUnlock({
+    required this.requiredLevel,
+    required this.name,
+    required this.description,
+  });
+
+  final int requiredLevel;
+  final String name;
+  final String description;
+}
+
+const _levelUnlocks = [
+  _LevelUnlock(
+    requiredLevel: 3,
+    name: '주간 퀘스트',
+    description: '한 주 동안 도전하는 퀘스트를 시작할 수 있어요.',
+  ),
+  _LevelUnlock(
+    requiredLevel: 5,
+    name: '협동 퀘스트',
+    description: '다른 모험가와 함께 퀘스트에 도전할 수 있어요.',
+  ),
+];
+
+List<_LevelUnlock> _newlyUnlockedFeatures(
+  int previousLevel,
+  int currentLevel,
+) => _levelUnlocks
+    .where(
+      (unlock) =>
+          previousLevel < unlock.requiredLevel &&
+          currentLevel >= unlock.requiredLevel,
+    )
+    .toList(growable: false);
+
+List<AvatarCharacter> _newlyUnlockedCharacters(
+  List<AvatarCharacter> characters,
+  int previousLevel,
+  int currentLevel,
+) => characters
+    .where(
+      (character) =>
+          previousLevel < character.requiredLevel &&
+          currentLevel >= character.requiredLevel,
+    )
+    .toList(growable: false);
+
+List<AvatarAccessory> _newlyUnlockedAccessories(
+  List<AvatarAccessory> accessories,
+  int previousLevel,
+  int currentLevel,
+) => accessories
+    .where(
+      (accessory) =>
+          accessory.requiredLevel != null &&
+          previousLevel < accessory.requiredLevel! &&
+          currentLevel >= accessory.requiredLevel!,
+    )
+    .toList(growable: false);
+
+int _crossedAccessoryLevels(int previousLevel, int currentLevel) {
+  var count = 0;
+  for (var level = 2; level <= 28; level += 2) {
+    if (previousLevel < level && currentLevel >= level) count++;
+  }
+  return count;
+}
+
+class _LevelUpDialog extends ConsumerWidget {
+  const _LevelUpDialog({required this.growth, required this.onConfirm});
+
+  final GrowthResult growth;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final featureUnlocks = _newlyUnlockedFeatures(
+      growth.previousLevel,
+      growth.currentLevel,
+    );
+    final expectedAccessories = _crossedAccessoryLevels(
+      growth.previousLevel,
+      growth.currentLevel,
+    );
+    final characters = ref.watch(characterCollectionProvider);
+    final characterUnlocks = _newlyUnlockedCharacters(
+      characters.value ?? const <AvatarCharacter>[],
+      growth.previousLevel,
+      growth.currentLevel,
+    );
+    final accessories = ref.watch(accessoryCollectionProvider);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+      child: LqCard(
+        background: LqColors.surfaceCard,
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 620),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const LqStamp(
+                  label: 'LEVEL UP!',
+                  angleDegrees: -3,
+                  fontSize: 16,
+                ),
+                const SizedBox(height: 14),
+                Text('Lv.${growth.currentLevel}', style: LqText.levelNumber),
+                const SizedBox(height: 4),
+                Text(
+                  'Lv.${growth.previousLevel}에서 한 단계 성장했어요!',
+                  style: LqText.bodySm,
+                  textAlign: TextAlign.center,
+                ),
+                if (growth.rewards.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('획득 보상', style: LqText.label),
+                  const SizedBox(height: 6),
+                  for (final reward in growth.rewards)
+                    _LevelUpUnlockLine(
+                      icon: reward.isTitle
+                          ? Icons.workspace_premium_rounded
+                          : Icons.redeem_rounded,
+                      title: reward.name,
+                      subtitle: reward.isTitle ? '새 칭호 획득' : '새 아이템 획득',
+                    ),
+                ],
+                if (featureUnlocks.isNotEmpty ||
+                    characterUnlocks.isNotEmpty ||
+                    expectedAccessories > 0) ...[
+                  const SizedBox(height: 16),
+                  Text('새로 해금됐어요', style: LqText.label),
+                  const SizedBox(height: 6),
+                  for (final unlock in featureUnlocks)
+                    _LevelUpUnlockLine(
+                      icon: Icons.lock_open_rounded,
+                      title: unlock.name,
+                      subtitle: unlock.description,
+                    ),
+                  for (final character in characterUnlocks)
+                    _LevelUpUnlockLine(
+                      icon: Icons.face_rounded,
+                      title: character.name,
+                      subtitle: '새 캐릭터 해금',
+                    ),
+                  if (expectedAccessories > 0)
+                    accessories.when(
+                      data: (collection) {
+                        final unlocked = _newlyUnlockedAccessories(
+                          collection.accessories,
+                          growth.previousLevel,
+                          growth.currentLevel,
+                        );
+                        if (unlocked.isEmpty && expectedAccessories > 0) {
+                          return const _LevelUpUnlockLine(
+                            icon: Icons.checkroom_rounded,
+                            title: '새 액세서리',
+                            subtitle: '캐릭터 꾸미기에서 확인할 수 있어요.',
+                          );
+                        }
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final accessory in unlocked)
+                              _LevelUpUnlockLine(
+                                icon: Icons.checkroom_rounded,
+                                title: accessory.name,
+                                subtitle: '새 액세서리 해금',
+                              ),
+                          ],
+                        );
+                      },
+                      loading: () => const _LevelUpUnlockLine(
+                        icon: Icons.checkroom_rounded,
+                        title: '새 액세서리',
+                        subtitle: '해금된 액세서리를 확인하고 있어요.',
+                      ),
+                      error: (_, _) => const _LevelUpUnlockLine(
+                        icon: Icons.checkroom_rounded,
+                        title: '새 액세서리',
+                        subtitle: '캐릭터 꾸미기에서 확인할 수 있어요.',
+                      ),
+                    ),
+                ],
+                const SizedBox(height: 18),
+                LqButton(label: '확인', onPressed: onConfirm),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LevelUpUnlockLine extends StatelessWidget {
+  const _LevelUpUnlockLine({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: LqColors.surfaceRaised,
+          borderRadius: LqShape.cardRadius,
+          border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: LqColors.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: LqText.bodySm),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: LqText.caption.copyWith(
+                      color: LqColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

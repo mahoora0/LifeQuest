@@ -41,7 +41,7 @@ public class AdminLevelRewardService {
     @Transactional(readOnly = true)
     public RewardCatalogResponse getCatalog() {
         return new RewardCatalogResponse(
-                titleRepository.findAll().stream()
+                titleRepository.findAllByAcquireTypeOrderById("LEVEL").stream()
                         .map(RewardCatalogResponse.TitleOption::from).toList(),
                 profileItemRepository.findAll().stream()
                         .map(RewardCatalogResponse.ProfileItemOption::from).toList());
@@ -88,7 +88,7 @@ public class AdminLevelRewardService {
 
     private void validateReference(LevelReward.RewardType type, Long referenceId) {
         boolean exists = switch (type) {
-            case TITLE -> titleRepository.existsById(referenceId);
+            case TITLE -> titleRepository.existsByIdAndAcquireType(referenceId, "LEVEL");
             case PROFILE_ITEM -> profileItemRepository.existsById(referenceId);
         };
         if (!exists) throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);

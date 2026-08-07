@@ -13,8 +13,6 @@ import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.TitleResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.growth.GrowthService;
-import com.lifequest.growth.LevelReward;
-import com.lifequest.growth.LevelRewardRepository;
 import com.lifequest.quest.domain.QuestFeature;
 import com.lifequest.quest.service.QuestUnlockPolicy;
 import com.lifequest.profile.AvatarCharacter;
@@ -31,6 +29,7 @@ import com.lifequest.profile.UserTitleRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,7 +50,6 @@ public class UserService {
     private final UserProfileItemRepository userProfileItemRepository;
     private final UserCharacterAccessoryRepository userCharacterAccessoryRepository;
     private final ProfileItemRepository profileItemRepository;
-    private final LevelRewardRepository levelRewardRepository;
     private final ProfileImageStorage profileImageStorage;
     private final QuestUnlockPolicy questUnlockPolicy;
 
@@ -62,7 +60,6 @@ public class UserService {
             UserProfileItemRepository userProfileItemRepository,
             UserCharacterAccessoryRepository userCharacterAccessoryRepository,
             ProfileItemRepository profileItemRepository,
-            LevelRewardRepository levelRewardRepository,
             ProfileImageStorage profileImageStorage,
             QuestUnlockPolicy questUnlockPolicy) {
         this.userRepository = userRepository;
@@ -71,7 +68,6 @@ public class UserService {
         this.userProfileItemRepository = userProfileItemRepository;
         this.userCharacterAccessoryRepository = userCharacterAccessoryRepository;
         this.profileItemRepository = profileItemRepository;
-        this.levelRewardRepository = levelRewardRepository;
         this.profileImageStorage = profileImageStorage;
         this.questUnlockPolicy = questUnlockPolicy;
     }
@@ -150,7 +146,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public AccessoryCollectionResponse getAccessories(Long userId) {
         User user = getUser(userId);
-        List<AccessoryResponse> accessories = accessoryResponses();
+        List<AccessoryResponse> accessories = accessoryResponses(user.getLevel());
         return new AccessoryCollectionResponse(
                 accessories,
                 user.getSelectedAccessory() == null
@@ -162,23 +158,17 @@ public class UserService {
                                 equipped -> equipped.getAccessory().getId())));
     }
 
-    private List<AccessoryResponse> accessoryResponses() {
+    private List<AccessoryResponse> accessoryResponses(int userLevel) {
         List<ProfileItem> accessories = profileItemRepository
                 .findAllByItemTypeOrderById(ProfileItem.ItemType.OUTFIT);
-        Map<Long, Integer> requiredLevels = levelRewardRepository
-                .findAllByRewardTypeOrderByLevelAscIdAsc(
-                        LevelReward.RewardType.PROFILE_ITEM).stream()
-                .filter(reward -> accessories.stream().anyMatch(
-                        item -> item.getId().equals(reward.getRewardRefId())))
-                .collect(Collectors.toMap(
-                        LevelReward::getRewardRefId,
-                        LevelReward::getLevel,
-                        Math::min));
-        return accessories.stream()
-                .map(item -> AccessoryResponse.from(
-                        item,
-                        requiredLevels.get(item.getId()),
-                        true))
+        return IntStream.range(0, accessories.size())
+                .mapToObj(index -> {
+                    int requiredLevel = requiredAccessoryLevel(index);
+                    return AccessoryResponse.from(
+                            accessories.get(index),
+                            requiredLevel,
+                            userLevel >= requiredLevel);
+                })
                 .toList();
     }
 
@@ -201,6 +191,13 @@ public class UserService {
                 .filter(item -> item.getItemType()
                         == ProfileItem.ItemType.OUTFIT)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
+        List<ProfileItem> accessories = profileItemRepository
+                .findAllByItemTypeOrderById(ProfileItem.ItemType.OUTFIT);
+        int accessoryIndex = accessories.indexOf(accessory);
+        if (accessoryIndex < 0
+                || user.getLevel() < requiredAccessoryLevel(accessoryIndex)) {
+            throw new BusinessException(ErrorCode.ACCESSORY_LOCKED);
+        }
         if (equipped.isPresent()) {
             equipped.get().changeAccessory(accessory);
         } else {
@@ -348,6 +345,10 @@ public class UserService {
 
     private int requiredLevel(int characterIndex) {
         return characterIndex == 0 ? 1 : characterIndex * 5;
+    }
+
+    private int requiredAccessoryLevel(int accessoryIndex) {
+        return (accessoryIndex + 1) * 2;
     }
 
     @Transactional

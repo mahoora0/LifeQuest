@@ -74,7 +74,7 @@ public class Quest {
     @Column(name = "radius_m")
     private Integer radiusM;
 
-    /** LIFEDEX_ITEMS.id 참조(팀원 3). 테이블 미존재로 FK 제약은 후속 마이그레이션에서 추가한다. */
+    /** LIFEDEX_ITEMS.id 참조. LOCATION 퀘스트의 수집 항목은 V25에서 연결한다. */
     @Column(name = "lifedex_item_id")
     private Long lifedexItemId;
 
