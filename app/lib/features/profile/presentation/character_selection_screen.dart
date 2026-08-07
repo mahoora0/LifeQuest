@@ -171,8 +171,7 @@ class _CharacterSelectionScreenState
                       itemCount: characterItems.length,
                       itemBuilder: (context, index) {
                         final character = characterItems[index];
-                        final accessoryId =
-                            equippedByCharacter[character.id];
+                        final accessoryId = equippedByCharacter[character.id];
                         final characterAccessory = collection.accessories
                             .where((item) => item.id == accessoryId)
                             .firstOrNull;
@@ -475,10 +474,7 @@ class _AccessoryPreviewDialog extends StatelessWidget {
                 border: Border.all(color: LqColors.borderMuted, width: 1.6),
               ),
               child: LqImage(
-                LqAssets.characterWithAccessory(
-                  character.code,
-                  accessory.code,
-                ),
+                LqAssets.characterWithAccessory(character.code, accessory.code),
                 width: 204,
                 height: 204,
               ),
