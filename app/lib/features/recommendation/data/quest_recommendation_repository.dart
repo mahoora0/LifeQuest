@@ -16,6 +16,18 @@ class QuestRecommendationRepository {
       _post('/quest-recommendations/weekly/place', data);
   Future<QuestRecommendationResult> weeklyTravel(Map<String, dynamic> data) =>
       _post('/quest-recommendations/weekly/travel', data);
+
+  /// `GET /quest-recommendations/weekly/status`
+  Future<WeeklyAiQuestStatus> weeklyStatus() async {
+    try {
+      final response = await _dio.get<dynamic>(
+        '/quest-recommendations/weekly/status',
+      );
+      return WeeklyAiQuestStatus.fromJson(response.data);
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
   Future<QuestRecommendationResult> _post(
     String path,
     Map<String, dynamic> data,

@@ -65,6 +65,12 @@ public enum ErrorCode {
             HttpStatus.CONFLICT,
             "WEEKLY_AI_QUEST_ALREADY_CLAIMED",
             "이번 주 AI 퀘스트는 이미 받았습니다."),
+    // "이미 받았다"와 구분한다 — 이쪽은 아직 안 받았는데 자리가 없는 경우다(슬롯 규칙이
+    // 바뀌기 전에 만들어진 주기의 자동 배정 3개가 남아 있는 동안 생긴다).
+    WEEKLY_AI_SLOT_UNAVAILABLE(
+            HttpStatus.CONFLICT,
+            "WEEKLY_AI_SLOT_UNAVAILABLE",
+            "이번 주는 주간 퀘스트 자리가 이미 찼어요. 다음 주에 받을 수 있어요."),
     RECOMMENDATION_CANDIDATE_NOT_FOUND(
             HttpStatus.NOT_FOUND,
             "RECOMMENDATION_CANDIDATE_NOT_FOUND",

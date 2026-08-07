@@ -1,5 +1,6 @@
 package com.lifequest.quest.repository;
 
+import com.lifequest.quest.domain.QuestCadence;
 import com.lifequest.quest.domain.UserDailyQuest;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,6 +30,24 @@ public interface UserDailyQuestRepository extends JpaRepository<UserDailyQuest, 
 
     /** 동일 퀘스트의 하루 중복 배정 방지 사전 확인(최종 방어는 UNIQUE 제약). */
     boolean existsByUserIdAndQuestIdAndAssignedDate(Long userId, Long questId, LocalDate assignedDate);
+
+    /**
+     * 한 주기의 특정 트랙 배정 수.
+     *
+     * <p><b>퀘스트 원본의 cadence까지 봐야 한다.</b> {@code assignedDate}만으로 세면 월요일에
+     * 틀린다 — 그날은 일간의 논리적 일자와 주간의 주기 시작일이 같은 날짜라 두 트랙이 한꺼번에
+     * 잡힌다. {@code UserDailyQuest}에 트랙 컬럼이 없어 조인이 필요하다.
+     */
+    @Query("""
+        select count(udq) from UserDailyQuest udq, Quest q
+        where udq.questId = q.id
+          and udq.userId = :userId
+          and udq.assignedDate = :periodStart
+          and q.cadence = :cadence
+        """)
+    long countByCadence(@Param("userId") Long userId,
+                        @Param("periodStart") LocalDate periodStart,
+                        @Param("cadence") QuestCadence cadence);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT udq FROM UserDailyQuest udq WHERE udq.id = :id")

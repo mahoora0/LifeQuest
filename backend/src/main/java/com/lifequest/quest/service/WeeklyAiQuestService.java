@@ -49,6 +49,7 @@ public class WeeklyAiQuestService {
     private final QuestRepository questRepository;
     private final UserDailyQuestRepository userDailyQuestRepository;
     private final QuestUnlockPolicy questUnlockPolicy;
+    private final WeeklyAiQuestSlot weeklyAiQuestSlot;
     private final QuestPeriod questPeriod;
     private final Clock clock;
 
@@ -57,6 +58,7 @@ public class WeeklyAiQuestService {
                                 QuestRepository questRepository,
                                 UserDailyQuestRepository userDailyQuestRepository,
                                 QuestUnlockPolicy questUnlockPolicy,
+                                WeeklyAiQuestSlot weeklyAiQuestSlot,
                                 QuestPeriod questPeriod,
                                 Clock clock) {
         this.claimRepository = claimRepository;
@@ -64,6 +66,7 @@ public class WeeklyAiQuestService {
         this.questRepository = questRepository;
         this.userDailyQuestRepository = userDailyQuestRepository;
         this.questUnlockPolicy = questUnlockPolicy;
+        this.weeklyAiQuestSlot = weeklyAiQuestSlot;
         this.questPeriod = questPeriod;
         this.clock = clock;
     }
@@ -83,6 +86,16 @@ public class WeeklyAiQuestService {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
         questUnlockPolicy.requireUnlocked(userId, QuestFeature.WEEKLY);
+
+        // 슬롯이 열려 있는지는 추천 경로와 같은 판정을 쓴다. 여기에만 있으면 이미 받은
+        // 사용자가 LLM 비용을 계속 쓰고, 추천 경로에만 있으면 API를 직접 부르는 길이 남는다.
+        //
+        // "주간 최대 3개"를 앱이 아니라 서버가 지키는 자리이기도 하다 — 앱은 자리가 없으면
+        // 카드를 감추지만, 그것만으로는 요청을 직접 보내는 경로를 막지 못한다.
+        WeeklyAiQuestSlot.Availability availability = weeklyAiQuestSlot.availability(userId);
+        if (!availability.open()) {
+            throw new BusinessException(availability.reason());
+        }
 
         QuestPeriod.QuestLifePeriod period = questPeriod.create(QuestCadence.WEEKLY);
         LocalDate periodStart = period.getStartAt();
@@ -135,13 +148,6 @@ public class WeeklyAiQuestService {
         candidate.markClaimed(now);
 
         return DailyQuestResponse.of(assignment, quest);
-    }
-
-    /** 이번 주 AI 슬롯을 이미 썼는가. 화면이 버튼을 감추는 용도이며 판정 근거가 아니다. */
-    @Transactional(readOnly = true)
-    public boolean hasClaimedThisWeek(Long userId) {
-        return claimRepository.existsByUserIdAndPeriodStart(
-            userId, questPeriod.create(QuestCadence.WEEKLY).getStartAt());
     }
 
     /**

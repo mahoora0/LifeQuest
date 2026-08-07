@@ -35,6 +35,15 @@ String lqErrorMessage(Object error) {
   };
 }
 
+/// 에러 **코드만** 있을 때의 문구. 예외가 아니라 상태 응답으로 이유를 받는
+/// 경우에 쓴다(예: 주간 AI 슬롯 상태의 `reason`).
+String lqErrorMessageForCode(String code) => switch (code) {
+  'WEEKLY_AI_QUEST_ALREADY_CLAIMED' => '이번 주 퀘스트는 이미 받았어요. 다음 주에 새로 받을 수 있어요.',
+  'WEEKLY_AI_SLOT_UNAVAILABLE' => '이번 주는 주간 퀘스트 자리가 이미 찼어요. 다음 주에 받을 수 있어요.',
+  'QUEST_FEATURE_LOCKED' => 'Lv. 3에 열리는 기능이에요.',
+  _ => '지금은 받을 수 없어요.',
+};
+
 /// 서버에 아직 열리지 않은 엔드포인트인지 판별한다.
 ///
 /// 컨트롤러가 없는 경로는 "리소스를 못 찾았다"가 아니라 "그 기능이 아직 없다"는

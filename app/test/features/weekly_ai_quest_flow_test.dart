@@ -7,6 +7,7 @@ import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
+import 'package:life_quest/features/quest/presentation/quest_detail_screen.dart';
 import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/features/recommendation/application/quest_recommendation_provider.dart';
 import 'package:life_quest/features/recommendation/data/quest_recommendation_dto.dart';
@@ -85,7 +86,17 @@ void main() {
         ],
       );
       addTearDown(router.dispose);
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            questRecommendationRepositoryProvider.overrideWithValue(
+              _FakeRecommendationRepository(),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       expect(find.text('주간 퀘스트 받기'), findsOneWidget);
       await tester.tap(find.text('장소 추천'));
@@ -95,6 +106,46 @@ void main() {
         find.byType(PlaceRecommendationFormScreen),
       );
       expect(form.weekly, isTrue);
+    });
+
+    testWidgets('이미 받은 주에는 추천 진입을 막는다', (tester) async {
+      // 막지 않으면 들어가서 추천을 돌리고 LLM 비용을 쓴 뒤 마지막에 거절당한다.
+      final router = GoRouter(
+        initialLocation: '/quest-recommendations',
+        routes: [
+          GoRoute(
+            path: '/quest-recommendations',
+            builder: (_, _) => const RecommendationTypeScreen(weekly: true),
+          ),
+          GoRoute(
+            path: '/quest-recommendations/place',
+            builder: (_, _) => const Scaffold(body: Text('들어오면 안 되는 화면')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            questRecommendationRepositoryProvider.overrideWithValue(
+              _FakeRecommendationRepository(
+                status: const WeeklyAiQuestStatus(
+                  available: false,
+                  remainingDays: 3,
+                  reason: 'WEEKLY_AI_QUEST_ALREADY_CLAIMED',
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('이번 주 퀘스트는 이미 받았어요. 다음 주에 새로 받을 수 있어요.'), findsOneWidget);
+      await tester.tap(find.text('장소 추천'));
+      await tester.pumpAndSettle();
+      expect(find.text('들어오면 안 되는 화면'), findsNothing);
     });
   });
 
@@ -147,6 +198,44 @@ void main() {
     });
   });
 
+  group('상세 화면의 AI 표시', () {
+    testWidgets('AI 퀘스트는 뱃지·추천 장소·완료 기준을 보여준다', (tester) async {
+      // 완료 기준은 SELF_REPORT의 유일한 판정 근거다 — 안 보이면 무엇을 해야
+      // 완료인지 알 방법이 없는 채로 완료 버튼만 눌리게 된다.
+      await _pumpDetail(
+        tester,
+        _aiQuest(
+          placeName: '성수동 전시 공간',
+          completionGuide: '관람을 마친 뒤 완료를 눌러 주세요',
+        ),
+      );
+
+      expect(find.text('AI로 받은 퀘스트'), findsOneWidget);
+      expect(find.text('추천 장소'), findsOneWidget);
+      expect(find.text('성수동 전시 공간'), findsOneWidget);
+      expect(find.text('완료 기준'), findsOneWidget);
+      expect(find.text('관람을 마친 뒤 완료를 눌러 주세요'), findsOneWidget);
+    });
+
+    testWidgets('공용 퀘스트에는 AI 뱃지도 완료 기준도 없다', (tester) async {
+      await _pumpDetail(
+        tester,
+        Quest(
+          id: 9,
+          title: '공용 퀘스트',
+          completionType: QuestCompletionType.selfReport,
+          expReward: 20,
+          cadence: QuestCadence.weekly,
+          createdBy: 'SYSTEM',
+        ),
+      );
+
+      expect(find.text('AI로 받은 퀘스트'), findsNothing);
+      expect(find.text('완료 기준'), findsNothing);
+      expect(find.text('추천 장소'), findsNothing);
+    });
+  });
+
   group('목록의 주간 슬롯 안내', () {
     testWidgets('주간 탭에 AI 퀘스트가 없으면 받기 카드가 보인다', (tester) async {
       await _pumpList(tester, weeklyAiAssigned: false);
@@ -175,6 +264,41 @@ void main() {
       expect(find.text('나만의 주간 퀘스트'), findsNothing);
     });
   });
+}
+
+Quest _aiQuest({required String placeName, required String completionGuide}) => Quest(
+  id: 42,
+  title: 'AI로 고른 주간 퀘스트',
+  description: '가까운 전시를 하나 골라 다녀오세요',
+  completionType: QuestCompletionType.selfReport,
+  expReward: 40,
+  cadence: QuestCadence.weekly,
+  grade: 'RARE',
+  createdBy: 'AI',
+  placeName: placeName,
+  completionGuide: completionGuide,
+);
+
+Future<void> _pumpDetail(WidgetTester tester, Quest quest) async {
+  final router = GoRouter(
+    initialLocation: '/quests/${quest.id}',
+    routes: [
+      GoRoute(
+        path: '/quests/:questId',
+        builder: (_, _) => QuestDetailScreen(questId: quest.id),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        questRepositoryProvider.overrideWithValue(_QuestFake(detail: quest)),
+      ],
+      child: MaterialApp.router(routerConfig: router),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 // --------------------------------------------------------------------- 헬퍼
@@ -321,7 +445,11 @@ class _QuestFake extends QuestRepository {
     this.weeklyAiAssigned = false,
     this.failure,
     this.legacyWeeklyCount = 2,
+    this.detail,
   }) : super(Dio());
+
+  /// 상세 화면이 조회할 퀘스트.
+  final Quest? detail;
 
   final bool weeklyAiAssigned;
 
@@ -343,6 +471,10 @@ class _QuestFake extends QuestRepository {
         _daily(4, 'AI로 고른 주간 퀘스트', QuestCadence.weekly, 'AI'),
     ],
   );
+
+  @override
+  Future<Quest> fetchQuest(int questId) async =>
+      detail ?? (throw StateError('상세 픽스처가 없다'));
 
   @override
   Future<DailyQuest> claimWeeklyAiQuest(int candidateId) async {
@@ -367,7 +499,14 @@ class _QuestFake extends QuestRepository {
 }
 
 class _FakeRecommendationRepository extends QuestRecommendationRepository {
-  _FakeRecommendationRepository() : super(Dio());
+  _FakeRecommendationRepository({this.status}) : super(Dio());
+
+  /// 슬롯 상태. 기본은 "받을 수 있음".
+  final WeeklyAiQuestStatus? status;
+
+  @override
+  Future<WeeklyAiQuestStatus> weeklyStatus() async =>
+      status ?? const WeeklyAiQuestStatus(available: true, remainingDays: 7);
 
   int placeCalls = 0;
   int travelCalls = 0;

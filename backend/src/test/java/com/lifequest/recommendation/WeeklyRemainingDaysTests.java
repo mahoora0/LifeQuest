@@ -53,13 +53,13 @@ class WeeklyRemainingDaysTests {
 
     /**
      * remainingDays는 {@link QuestPeriod}만 쓰므로 나머지 협력자 없이 잴 수 있다.
-     * LLM·저장소를 붙이지 않아야 이 계산이 그것들과 무관하게 고정된다.
+     * LLM·저장소·슬롯 판정을 붙이지 않아야 이 계산이 그것들과 무관하게 고정된다.
      */
     private int remainingDaysAt(String localDateTime) {
         Clock clock = Clock.fixed(
             LocalDateTime.parse(localDateTime).toInstant(ZoneOffset.UTC),
             ZoneId.of("UTC"));
         return new WeeklyQuestRecommendationService(
-            null, null, null, null, new QuestPeriod(clock), clock).remainingDays();
+            null, null, null, null, null, new QuestPeriod(clock)).remainingDays();
     }
 }

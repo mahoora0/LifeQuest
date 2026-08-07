@@ -76,3 +76,34 @@ class QuestRecommendationResult {
     );
   }
 }
+
+/// 주간 AI 슬롯 상태. 추천을 시작하기 **전에** 물어본다.
+///
+/// 이것 없이는 두 가지가 어긋난다. 이미 받은 사용자가 추천 화면까지 들어가
+/// LLM 비용을 쓰고 마지막에 409를 만나고, 여행 폼이 기본 2일을 고른 채
+/// 논리적 일요일(남은 1일)에 제출해 검증 실패를 본다.
+class WeeklyAiQuestStatus {
+  const WeeklyAiQuestStatus({
+    required this.available,
+    required this.remainingDays,
+    this.reason,
+  });
+
+  final bool available;
+
+  /// 이번 주기에 남은 논리적 일수(최소 1). 여행 기간 상한이다.
+  final int remainingDays;
+
+  /// 받을 수 없는 이유 코드. 받을 수 있으면 null.
+  final String? reason;
+
+  factory WeeklyAiQuestStatus.fromJson(Object? body) {
+    final j = asMap(body);
+    return WeeklyAiQuestStatus(
+      available: j['available'] == true,
+      // 서버가 최소 1을 보장하지만, 못 읽었을 때 0으로 두면 모든 기간이 잠긴다.
+      remainingDays: asInt(j['remainingDays']) ?? 7,
+      reason: asString(j['reason']),
+    );
+  }
+}

@@ -40,6 +40,14 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
       customInterests = TextEditingController(),
       additional = TextEditingController();
   int? selectedDays = 2;
+
+  /// 고를 수 있는 최대 기간. build에서 서버 상태로 갱신한다.
+  ///
+  /// 일반 여행 추천은 계속 14일까지 지원하므로 그때는 서버 계약과 같은 14다.
+  /// 주간 모드에서만 이번 주에 남은 일수로 좁아진다. **상태 조회가 실패하면 14로
+  /// 두고 서버 검증에 맡긴다** — 앱이 임의로 좁히면 실제로는 고를 수 있는 기간을
+  /// 영구히 막아버린다.
+  int _maxDays = 14;
   int? selectedBudget = 200000;
   int companions = 1;
   final selectedInterests = <String>{};
@@ -125,7 +133,17 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => RecommendationForm(
+  Widget build(BuildContext context) {
+    // 주간 모드에서만 상한이 좁아진다. 기본값 2일을 그대로 두면 논리적 일요일
+    // (남은 1일)에 아무것도 바꾸지 않고 제출한 사용자가 검증 실패를 본다.
+    _maxDays = widget.weekly
+        ? (ref.watch(weeklyAiQuestStatusProvider).value?.remainingDays ?? 14)
+        : 14;
+    // 상한이 줄면 고른 값도 따라 내린다. 안 내리면 선택 칩이 목록에서 사라진 채
+    // 옛 값이 그대로 제출된다.
+    if ((selectedDays ?? 0) > _maxDays) selectedDays = _maxDays;
+
+    return RecommendationForm(
     title: '여행 추천 조건',
     children: [
       TextField(
@@ -136,13 +154,18 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
       RecommendationChoiceSection<int?>(
         label: '기간',
         selected: selectedDays,
-        options: const [
-          RecommendationOption(1, '당일'),
-          RecommendationOption(2, '1박 2일'),
-          RecommendationOption(3, '2박 3일'),
-          RecommendationOption(4, '3박 4일'),
-          RecommendationOption(7, '일주일'),
-          RecommendationOption(null, '직접 입력'),
+        // 주간 모드에서는 이번 주에 남은 일수를 넘는 선택지를 아예 빼둔다. 서버가
+        // 어차피 거절하므로 남겨두면 눌러보고 오류를 보는 길만 생긴다.
+        options: [
+          for (final option in const [
+            RecommendationOption(1, '당일'),
+            RecommendationOption(2, '1박 2일'),
+            RecommendationOption(3, '2박 3일'),
+            RecommendationOption(4, '3박 4일'),
+            RecommendationOption(7, '일주일'),
+          ])
+            if (option.value <= _maxDays) option,
+          const RecommendationOption(null, '직접 입력'),
         ],
         onSelected: (value) => setState(() => selectedDays = value),
         child: selectedDays == null
@@ -150,10 +173,10 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
                 controller: customDays,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '기간 직접 입력',
                   suffixText: '일',
-                  helperText: '1~14일',
+                  helperText: '1~$_maxDays일',
                 ),
               )
             : null,
@@ -206,5 +229,6 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
       ),
       LqButton(label: '3개 추천받기', busy: busy, onPressed: submit),
     ],
-  );
+    );
+  }
 }
