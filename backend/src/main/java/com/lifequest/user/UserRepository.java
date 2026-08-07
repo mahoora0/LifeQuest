@@ -1,6 +1,7 @@
 package com.lifequest.user;
 
 import java.util.Optional;
+import java.time.Instant;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Query("""
+            select u from User u
+            where lower(u.nickname) like lower(concat('%', :query, '%'))
+               or lower(u.email) like lower(concat('%', :query, '%'))
+            """)
+    Page<User> searchForAdmin(@Param("query") String query, Pageable pageable);
+
+    long countByCreatedAtGreaterThanEqual(Instant from);
+
+    Page<User> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     Optional<User> findByEmailIgnoreCase(String email);
 

@@ -52,4 +52,10 @@ public interface UserDailyQuestRepository extends JpaRepository<UserDailyQuest, 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT udq FROM UserDailyQuest udq WHERE udq.id = :id")
     Optional<UserDailyQuest> findByIdForUpdate(@Param("id") Long id);
+
+    long countByUserId(Long userId);
+
+    long countByUserIdAndStatus(Long userId, com.lifequest.quest.domain.DailyQuestStatus status);
+
+    List<UserDailyQuest> findTop10ByUserIdOrderByAssignedDateDescIdDesc(Long userId);
 }

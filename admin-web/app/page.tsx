@@ -1,178 +1,105 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect, @next/next/no-img-element */
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
-type Quest = {
-  id: number;
-  title: string;
-  description?: string | null;
-  grade: "NORMAL" | "RARE" | "EPIC" | "LEGENDARY";
-  cadence: "DAILY" | "WEEKLY" | "ONCE";
-  completionType: "SELF_REPORT" | "GPS";
-  expReward: number;
-  placeName?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  radiusM?: number | null;
-  active: boolean;
+type PageKey = "dashboard" | "quests" | "rewards" | "users";
+type Quest = { id:number; title:string; description?:string; grade:"NORMAL"|"RARE"|"EPIC"|"LEGENDARY"; cadence:"DAILY"|"WEEKLY"; completionType:"SELF_REPORT"|"LOCATION"; expReward:number; placeName?:string; latitude?:number; longitude?:number; radiusM?:number; active:boolean };
+type Reward = { id:number; level:number; rewardType:"TITLE"|"PROFILE_ITEM"; rewardRefId:number; rewardCode:string; rewardName:string; description?:string };
+type Catalog = { titles:{id:number;code:string;name:string}[]; profileItems:{id:number;code:string;name:string;itemType:string}[] };
+type Dashboard = { totalUsers:number; activeQuests:number; totalQuests:number; totalCompletions:number; todayCompletions:number; totalExpGranted:number; dailyQuests:number; weeklyQuests:number; recentUsers:{id:number;nickname:string;email:string;level:number;createdAt:string}[]; recentCompletions:{userId:number;nickname:string;questId:number;questTitle:string;expReward:number;completedAt:string}[]; recentExp:{userId:number;nickname:string;sourceType:string;amount:number;createdAt:string}[]; popularQuests:{questId:number;title:string;completions:number}[] };
+type UserRow = { id:number; nickname:string; email:string; profileImageUrl?:string; level:number; totalExp:number; createdAt:string; role:"USER"|"ADMIN" };
+type UserPage = { content:UserRow[]; page:number; size:number; totalElements:number; totalPages:number; stats:{totalUsers:number;todayJoined:number;averageLevel:number} };
+type UserDetail = UserRow & { representativeTitle?:string; representativeBadge?:string; completedQuestCount:number; assignedQuestCount:number; recentQuests:{assignmentId:number;questId:number;title:string;cadence?:string;expReward:number;status:string;assignedDate:string;completedAt?:string}[]; recentExp:{id:number;sourceType:string;sourceId:number;description:string;amount:number;createdAt:string}[] };
+type Draft = Omit<Quest,"id">;
+
+const emptyDraft:Draft = { title:"", description:"", grade:"NORMAL", cadence:"DAILY", completionType:"SELF_REPORT", expReward:10, active:true };
+const rewardsByGrade = { NORMAL:[5,20,10], RARE:[15,40,25], EPIC:[30,80,50], LEGENDARY:[60,200,100] } as const;
+const pageCopy:Record<PageKey,{eyebrow:string;title:string;description:string}> = {
+  dashboard:{eyebrow:"SERVICE OVERVIEW",title:"대시보드",description:"LifeQuest 서비스의 전체 운영 현황을 확인합니다."},
+  quests:{eyebrow:"QUEST OPERATIONS",title:"퀘스트 관리",description:"모험가에게 제공할 일간·주간 퀘스트를 등록하고 관리합니다."},
+  rewards:{eyebrow:"GROWTH REWARDS",title:"레벨별 보상",description:"레벨 달성 시 지급되는 칭호와 프로필 아이템을 관리합니다."},
+  users:{eyebrow:"USER OPERATIONS",title:"사용자 관리",description:"LifeQuest 사용자의 가입 정보와 활동 현황을 확인합니다."},
 };
 
-type Draft = Omit<Quest, "id">;
-
-const emptyDraft: Draft = {
-  title: "",
-  description: "",
-  grade: "NORMAL",
-  cadence: "DAILY",
-  completionType: "SELF_REPORT",
-  expReward: 10,
-  active: true,
-  placeName: "",
-  latitude: null,
-  longitude: null,
-  radiusM: 100,
-};
-
-const apiBase = "/api/backend";
-
-async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function api<T>(path:string, init:RequestInit = {}):Promise<T> {
   const token = typeof window === "undefined" ? null : sessionStorage.getItem("lq-admin-token");
-  const response = await fetch(`${apiBase}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
-    },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.error?.message || `요청에 실패했습니다 (${response.status})`);
-  }
+  const response = await fetch(`/api/backend${path}`, { ...init, headers:{ "Content-Type":"application/json", ...(token?{Authorization:`Bearer ${token}`} : {}), ...init.headers } });
+  const body = await response.json().catch(()=>null);
+  if (!response.ok || body?.success === false) throw new Error(body?.error?.message || `요청 실패 (${response.status})`);
   return (body?.data ?? body) as T;
 }
 
 export default function Home() {
-  const [token, setToken] = useState<string | null>(null);
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
-  const [editing, setEditing] = useState<Quest | null | "new">(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const page = await api<{ content: Quest[] }>("/admin/quests?page=0&size=100");
-      setQuests(page.content);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "목록을 불러오지 못했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem("lq-admin-token");
-    if (saved) setToken(saved);
-  }, []);
-
-  useEffect(() => {
-    if (token) void load();
-  }, [token, load]);
-
-  const visible = useMemo(() => quests.filter((quest) => {
-    const matchesQuery = `${quest.title} ${quest.description || ""}`.toLowerCase().includes(query.toLowerCase());
-    const matchesFilter = filter === "ALL" || (filter === "ACTIVE" ? quest.active : !quest.active);
-    return matchesQuery && matchesFilter;
-  }), [quests, query, filter]);
-
-  if (!token) return <Login onSuccess={(next) => { sessionStorage.setItem("lq-admin-token", next); setToken(next); }} />;
-
-  return (
-    <main className="shell">
-      <aside className="sidebar">
-        <div className="brand"><span className="brandMark">LQ</span><div><strong>LifeQuest</strong><small>ADMIN CONSOLE</small></div></div>
-        <nav aria-label="관리 메뉴">
-          <button className="navItem active"><span>◆</span> 퀘스트 관리</button>
-          <button className="navItem" disabled><span>◇</span> 레벨 보상 <em>준비 중</em></button>
-        </nav>
-        <button className="logout" onClick={() => { sessionStorage.removeItem("lq-admin-token"); setToken(null); }}>로그아웃</button>
-      </aside>
-
-      <section className="content">
-        <header className="topbar">
-          <div><p className="eyebrow">QUEST OPERATIONS</p><h1>퀘스트 관리</h1><p>모험가에게 배정할 퀘스트를 등록하고 운영 상태를 관리합니다.</p></div>
-          <button className="primary" onClick={() => setEditing("new")}><span>＋</span> 새 퀘스트</button>
-        </header>
-
-        <div className="stats">
-          <Stat label="전체 퀘스트" value={quests.length} tone="ink" />
-          <Stat label="활성" value={quests.filter((q) => q.active).length} tone="green" />
-          <Stat label="비활성" value={quests.filter((q) => !q.active).length} tone="sand" />
-        </div>
-
-        <section className="panel">
-          <div className="toolbar">
-            <label className="search"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="퀘스트 이름 검색" /></label>
-            <div className="segments" aria-label="상태 필터">
-              {(["ALL", "ACTIVE", "INACTIVE"] as const).map((value) => <button key={value} className={filter === value ? "selected" : ""} onClick={() => setFilter(value)}>{value === "ALL" ? "전체" : value === "ACTIVE" ? "활성" : "비활성"}</button>)}
-            </div>
-          </div>
-
-          {error && <div className="errorBanner"><span>{error}</span><button onClick={() => void load()}>다시 시도</button></div>}
-          {loading ? <div className="empty">퀘스트를 불러오는 중입니다…</div> : visible.length === 0 ? <div className="empty">조건에 맞는 퀘스트가 없습니다.</div> : (
-            <div className="tableWrap"><table><thead><tr><th>퀘스트</th><th>등급</th><th>주기</th><th>인증</th><th>보상</th><th>상태</th><th><span className="srOnly">작업</span></th></tr></thead>
-              <tbody>{visible.map((quest) => <tr key={quest.id}><td><strong>{quest.title}</strong><small>{quest.description || "설명 없음"}</small></td><td><Badge value={quest.grade} /></td><td>{quest.cadence}</td><td>{quest.completionType === "GPS" ? `GPS · ${quest.placeName || "장소"}` : "직접 완료"}</td><td><b>{quest.expReward} EXP</b></td><td><span className={`status ${quest.active ? "on" : "off"}`}>{quest.active ? "활성" : "비활성"}</span></td><td><button className="edit" onClick={() => setEditing(quest)}>수정</button></td></tr>)}</tbody>
-            </table></div>
-          )}
-        </section>
-      </section>
-
-      {editing && <QuestModal quest={editing === "new" ? null : editing} onClose={() => setEditing(null)} onSaved={async () => { setEditing(null); await load(); }} />}
-    </main>
-  );
+  const [token,setToken] = useState<string|null>(null);
+  const [page,setPage] = useState<PageKey>("dashboard");
+  useEffect(()=>{ const saved=sessionStorage.getItem("lq-admin-token"); if(saved)setToken(saved); const hash=location.hash.slice(1) as PageKey; if(pageCopy[hash])setPage(hash); },[]);
+  useEffect(()=>{ if(token) history.replaceState(null,"",`#${page}`); },[page,token]);
+  if(!token) return <Login onSuccess={(next)=>{sessionStorage.setItem("lq-admin-token",next);setToken(next);}}/>;
+  const logout=()=>{sessionStorage.removeItem("lq-admin-token");setToken(null);};
+  return <main className="shell"><Sidebar page={page} onSelect={setPage} onLogout={logout}/><section className="content">
+    {page==="dashboard"&&<DashboardPage/>}{page==="quests"&&<QuestPage/>}{page==="rewards"&&<RewardPage/>}{page==="users"&&<UsersPage/>}
+  </section></main>;
 }
 
-function Login({ onSuccess }: { onSuccess: (token: string) => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
-    try {
-      const result = await api<{ accessToken: string }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-      onSuccess(result.accessToken);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "로그인에 실패했습니다"); }
-    finally { setBusy(false); }
-  }
-  return <main className="loginPage"><section className="loginCard"><div className="loginArt"><span className="brandMark large">LQ</span><p>작은 퀘스트가<br />큰 모험을 만듭니다.</p></div><form onSubmit={submit}><p className="eyebrow">LIFEQUEST ADMIN</p><h1>관리자 로그인</h1><p className="muted">ADMIN 권한 계정으로 로그인하세요.</p><label>이메일<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@lifequest.kr" /></label><label>비밀번호<input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8자 이상 입력" /></label>{error && <p className="formError">{error}</p>}<button className="primary full" disabled={busy}>{busy ? "확인 중…" : "관리자 콘솔 입장"}</button></form></section></main>;
+function Sidebar({page,onSelect,onLogout}:{page:PageKey;onSelect:(p:PageKey)=>void;onLogout:()=>void}) {
+  const menus:[PageKey,string,string][]=[["dashboard","대시보드","⌂"],["quests","퀘스트 관리","⚑"],["rewards","레벨별 보상","◆"],["users","사용자 관리","♟"]];
+  return <aside className="sidebar"><div className="brand"><img src="/logo-char.png" alt="LifeQuest 캐릭터 로고"/><div><strong>LifeQuest</strong><small>ADMIN CONSOLE</small></div></div><nav aria-label="관리 메뉴">{menus.map(([key,label,icon])=><button key={key} className={`navItem ${page===key?"active":""}`} onClick={()=>onSelect(key)}><span>{icon}</span>{label}</button>)}</nav><button className="logout" onClick={onLogout}>로그아웃</button></aside>;
 }
 
-function QuestModal({ quest, onClose, onSaved }: { quest: Quest | null; onClose: () => void; onSaved: () => void }) {
-  const [draft, setDraft] = useState<Draft>(quest ? { ...quest } : emptyDraft);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }));
-  async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
-    try {
-      const payload = { ...draft, placeName: draft.completionType === "GPS" ? draft.placeName : null, latitude: draft.completionType === "GPS" ? draft.latitude : null, longitude: draft.completionType === "GPS" ? draft.longitude : null, radiusM: draft.completionType === "GPS" ? draft.radiusM : null };
-      await api(quest ? `/admin/quests/${quest.id}` : "/admin/quests", { method: quest ? "PATCH" : "POST", body: JSON.stringify(payload) });
-      onSaved();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "저장하지 못했습니다"); }
-    finally { setBusy(false); }
-  }
-  async function deactivate() {
-    if (!quest || !confirm("이 퀘스트를 비활성화할까요? 기존 기록은 보존됩니다.")) return;
-    setBusy(true); try { await api(`/admin/quests/${quest.id}`, { method: "DELETE" }); onSaved(); } catch (reason) { setError(reason instanceof Error ? reason.message : "삭제하지 못했습니다"); } finally { setBusy(false); }
-  }
-  return <div className="modalBackdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header><div><p className="eyebrow">QUEST EDITOR</p><h2 id="modal-title">{quest ? "퀘스트 수정" : "새 퀘스트 등록"}</h2></div><button className="close" onClick={onClose} aria-label="닫기">×</button></header><form onSubmit={submit}><div className="grid"><label className="span2">퀘스트 이름<input required maxLength={100} value={draft.title} onChange={(e) => set("title", e.target.value)} /></label><label className="span2">설명<textarea maxLength={500} rows={3} value={draft.description || ""} onChange={(e) => set("description", e.target.value)} /></label><Select label="등급" value={draft.grade} options={["NORMAL", "RARE", "EPIC", "LEGENDARY"]} onChange={(v) => set("grade", v as Draft["grade"])} /><Select label="주기" value={draft.cadence} options={["DAILY", "WEEKLY", "ONCE"]} onChange={(v) => set("cadence", v as Draft["cadence"])} /><Select label="완료 방식" value={draft.completionType} options={["SELF_REPORT", "GPS"]} onChange={(v) => set("completionType", v as Draft["completionType"])} /><label>EXP 보상<input type="number" min="1" required value={draft.expReward} onChange={(e) => set("expReward", Number(e.target.value))} /></label>{draft.completionType === "GPS" && <><label className="span2">장소명<input required value={draft.placeName || ""} onChange={(e) => set("placeName", e.target.value)} /></label><label>위도<input type="number" step="any" required value={draft.latitude ?? ""} onChange={(e) => set("latitude", Number(e.target.value))} /></label><label>경도<input type="number" step="any" required value={draft.longitude ?? ""} onChange={(e) => set("longitude", Number(e.target.value))} /></label><label>인증 반경(m)<input type="number" min="1" required value={draft.radiusM ?? ""} onChange={(e) => set("radiusM", Number(e.target.value))} /></label></>}</div>{error && <p className="formError">{error}</p>}<footer>{quest?.active && <button type="button" className="danger" onClick={() => void deactivate()}>비활성화</button>}<span /><button type="button" className="secondary" onClick={onClose}>취소</button><button className="primary" disabled={busy}>{busy ? "저장 중…" : "저장"}</button></footer></form></section></div>;
-}
+function Header({page,action}:{page:PageKey;action?:React.ReactNode}) { const copy=pageCopy[page]; return <header className="topbar"><div><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.description}</p></div>{action}</header>; }
+function Loading({text="데이터를 불러오는 중입니다…"}:{text?:string}) { return <div className="empty">{text}</div>; }
+function ErrorBox({message,retry}:{message:string;retry:()=>void}) { return <div className="errorBanner"><span>{message}</span><button onClick={retry}>다시 시도</button></div>; }
+function Stat({label,value,tone="ink"}:{label:string;value:string|number;tone?:string}) { return <article className={`stat ${tone}`}><small>{label}</small><strong>{value}</strong></article>; }
+const number=(value:number)=>value.toLocaleString("ko-KR"); const date=(value?:string)=>value?new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",year:"numeric"}).format(new Date(value)):"—";
 
-function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) { return <label>{label}<select value={value} onChange={(e) => onChange(e.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select></label>; }
-function Stat({ label, value, tone }: { label: string; value: number; tone: string }) { return <article className={`stat ${tone}`}><small>{label}</small><strong>{value}</strong></article>; }
-function Badge({ value }: { value: Quest["grade"] }) { return <span className={`badge ${value.toLowerCase()}`}>{value}</span>; }
+function DashboardPage() {
+  const [data,setData]=useState<Dashboard|null>(null); const [error,setError]=useState("");
+  const load=useCallback(()=>{setError("");api<Dashboard>("/admin/dashboard").then(setData).catch(e=>setError(e.message));},[]); useEffect(load,[load]);
+  return <><Header page="dashboard"/>{error&&<ErrorBox message={error} retry={load}/>} {!data?<Loading/>:<>
+    <div className="stats kpi6"><Stat label="전체 사용자" value={number(data.totalUsers)}/><Stat label="활성 퀘스트" value={number(data.activeQuests)} tone="green"/><Stat label="전체 퀘스트" value={number(data.totalQuests)}/><Stat label="누적 완료" value={number(data.totalCompletions)} tone="sand"/><Stat label="오늘 완료" value={number(data.todayCompletions)} tone="green"/><Stat label="누적 지급 EXP" value={number(data.totalExpGranted)} tone="sand"/></div>
+    <div className="dashboardGrid"><section className="panel summaryPanel"><PanelTitle title="퀘스트 현황"/><div className="questSplit"><div><b>{data.dailyQuests}</b><span>일간 퀘스트</span></div><div><b>{data.weeklyQuests}</b><span>주간 퀘스트</span></div><div><b>—</b><span>협동은 그룹 도메인에서 관리</span></div></div></section><section className="panel"><PanelTitle title="인기 퀘스트 TOP 5"/><RankList items={data.popularQuests.map(q=>({title:q.title,meta:`${q.completions}회 완료`}))}/></section>
+      <section className="panel"><PanelTitle title="최근 퀘스트 완료"/><ActivityList items={data.recentCompletions.map(x=>({title:x.questTitle,meta:`${x.nickname} · +${x.expReward} EXP`,date:x.completedAt}))}/></section>
+      <section className="panel"><PanelTitle title="최근 가입 사용자"/><ActivityList items={data.recentUsers.map(x=>({title:x.nickname,meta:`${x.email} · Lv.${x.level}`,date:x.createdAt}))}/></section>
+      <section className="panel wide"><PanelTitle title="최근 EXP 획득"/><ActivityList items={data.recentExp.map(x=>({title:x.nickname,meta:`${x.sourceType} · +${x.amount} EXP`,date:x.createdAt}))}/></section>
+    </div></>}</>;
+}
+function PanelTitle({title}:{title:string}){return <h2 className="panelTitle">{title}</h2>}
+function ActivityList({items}:{items:{title:string;meta:string;date:string}[]}){return items.length?<ul className="activityList">{items.map((x,i)=><li key={`${x.title}-${i}`}><div><strong>{x.title}</strong><small>{x.meta}</small></div><time>{date(x.date)}</time></li>)}</ul>:<div className="miniEmpty">아직 기록이 없습니다.</div>}
+function RankList({items}:{items:{title:string;meta:string}[]}){return items.length?<ol className="rankList">{items.map((x,i)=><li key={x.title}><b>{i+1}</b><span>{x.title}<small>{x.meta}</small></span></li>)}</ol>:<div className="miniEmpty">완료 데이터가 쌓이면 순위가 표시됩니다.</div>}
+
+function QuestPage(){
+  const [quests,setQuests]=useState<Quest[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[query,setQuery]=useState(""),[status,setStatus]=useState("ALL"),[cadence,setCadence]=useState("ALL"),[editing,setEditing]=useState<Quest|null|"new">(null);
+  const load=useCallback(()=>{setLoading(true);setError("");api<{content:Quest[]}>("/admin/quests?page=0&size=100").then(x=>setQuests(x.content)).catch(e=>setError(e.message)).finally(()=>setLoading(false));},[]);useEffect(load,[load]);
+  const visible=useMemo(()=>quests.filter(q=>(`${q.title} ${q.description||""}`.toLowerCase().includes(query.toLowerCase()))&&(status==="ALL"||(status==="ACTIVE"?q.active:!q.active))&&(cadence==="ALL"||q.cadence===cadence)),[quests,query,status,cadence]);
+  return <><Header page="quests" action={<button className="primary" onClick={()=>setEditing("new")}>새 퀘스트</button>}/><div className="stats"><Stat label="전체 퀘스트" value={quests.length}/><Stat label="활성" value={quests.filter(q=>q.active).length} tone="green"/><Stat label="비활성" value={quests.filter(q=>!q.active).length} tone="sand"/></div><section className="panel"><div className="toolbar"><label className="search"><span className="srOnly">퀘스트 검색</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="퀘스트 이름 검색"/></label><Filter value={cadence} onChange={setCadence} options={[["ALL","전체 유형"],["DAILY","일간"],["WEEKLY","주간"]]}/><Filter value={status} onChange={setStatus} options={[["ALL","전체 상태"],["ACTIVE","활성"],["INACTIVE","비활성"]]}/></div>{error&&<ErrorBox message={error} retry={load}/>} {loading?<Loading/>:visible.length===0?<Loading text="조건에 맞는 퀘스트가 없습니다."/>:<div className="tableWrap"><table><thead><tr><th>퀘스트</th><th>유형</th><th>등급</th><th>인증</th><th>EXP</th><th>상태</th><th>관리</th></tr></thead><tbody>{visible.map(q=><tr key={q.id}><td><strong>{q.title}</strong><small>{q.description||"설명 없음"}</small></td><td>{q.cadence==="DAILY"?"일간":"주간"}</td><td><Badge value={q.grade}/></td><td>{q.completionType==="LOCATION"?"위치 인증":"직접 완료"}</td><td><b>{q.expReward}</b></td><td><Status active={q.active}/></td><td><button className="edit" onClick={()=>setEditing(q)}>수정</button></td></tr>)}</tbody></table></div>}</section>{editing&&<QuestModal quest={editing==="new"?null:editing} onClose={()=>setEditing(null)} onSaved={()=>{setEditing(null);load();}}/>}</>;
+}
+function RewardPage(){
+  const [items,setItems]=useState<Reward[]>([]),[catalog,setCatalog]=useState<Catalog|null>(null),[error,setError]=useState(""),[editing,setEditing]=useState<Reward|null|"new">(null);
+  const load=useCallback(()=>{setError("");Promise.all([api<Reward[]>("/admin/level-rewards"),api<Catalog>("/admin/level-rewards/catalog")]).then(([r,c])=>{setItems(r);setCatalog(c);}).catch(e=>setError(e.message));},[]);useEffect(load,[load]);
+  return <><Header page="rewards" action={<button className="primary" onClick={()=>setEditing("new")}>새 레벨 보상</button>}/><div className="stats"><Stat label="등록된 레벨 보상" value={items.length}/><Stat label="보상 레벨" value={new Set(items.map(x=>x.level)).size} tone="green"/><Stat label="가장 높은 보상 레벨" value={items.length?`Lv.${Math.max(...items.map(x=>x.level))}`:"—"} tone="sand"/></div><section className="panel">{error&&<ErrorBox message={error} retry={load}/>} {!catalog?<Loading/>:items.length===0?<Loading text="등록된 레벨 보상이 없습니다."/>:<div className="tableWrap"><table><thead><tr><th>달성 레벨</th><th>보상</th><th>유형</th><th>설명</th><th>관리</th></tr></thead><tbody>{items.map(x=><tr key={x.id}><td><strong className="levelText">Lv.{x.level}</strong></td><td><strong>{x.rewardName}</strong><small>{x.rewardCode}</small></td><td><span className="rewardType">{x.rewardType==="TITLE"?"칭호":"프로필 아이템"}</span></td><td>{x.description||"—"}</td><td><button className="edit" onClick={()=>setEditing(x)}>수정</button></td></tr>)}</tbody></table></div>}</section>{editing&&catalog&&<RewardModal reward={editing==="new"?null:editing} catalog={catalog} onClose={()=>setEditing(null)} onSaved={()=>{setEditing(null);load();}}/>}</>;
+}
+function UsersPage(){
+  const [data,setData]=useState<UserPage|null>(null),[error,setError]=useState(""),[query,setQuery]=useState(""),[search,setSearch]=useState(""),[page,setPage]=useState(0),[detail,setDetail]=useState<UserDetail|null>(null);
+  const load=useCallback(()=>{setError("");api<UserPage>(`/admin/users?query=${encodeURIComponent(search)}&page=${page}&size=20`).then(setData).catch(e=>setError(e.message));},[search,page]);useEffect(load,[load]);
+  const submit=(e:FormEvent)=>{e.preventDefault();setPage(0);setSearch(query.trim());}; const open=(id:number)=>api<UserDetail>(`/admin/users/${id}`).then(setDetail).catch(e=>setError(e.message));
+  return <><Header page="users"/>{data&&<div className="stats"><Stat label="전체 사용자" value={data.stats.totalUsers}/><Stat label="오늘 가입" value={data.stats.todayJoined} tone="green"/><Stat label="활성 기준" value="가입 사용자"/><Stat label="평균 레벨" value={`Lv.${data.stats.averageLevel.toFixed(1)}`} tone="sand"/></div>}<section className="panel"><form className="toolbar" onSubmit={submit}><label className="search"><span className="srOnly">사용자 검색</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="닉네임 또는 이메일 검색"/></label><button className="secondary compact">검색</button></form>{error&&<ErrorBox message={error} retry={load}/>} {!data?<Loading/>:data.content.length===0?<Loading text="조건에 맞는 사용자가 없습니다."/>:<><div className="tableWrap"><table><thead><tr><th>사용자</th><th>이메일</th><th>역할</th><th>레벨</th><th>EXP</th><th>가입일</th><th>관리</th></tr></thead><tbody>{data.content.map(u=><tr key={u.id}><td><div className="userCell"><Avatar user={u}/><strong>{u.nickname}</strong></div></td><td>{u.email}</td><td><span className="rewardType">{u.role}</span></td><td>Lv.{u.level}</td><td>{number(u.totalExp)}</td><td>{date(u.createdAt)}</td><td><button className="edit" onClick={()=>void open(u.id)}>상세</button></td></tr>)}</tbody></table></div><Pagination page={data.page} total={data.totalPages} onChange={setPage}/></>}</section>{detail&&<UserModal user={detail} onClose={()=>setDetail(null)}/>}</>;
+}
+function Avatar({user}:{user:Pick<UserRow,"nickname"|"profileImageUrl">}){return user.profileImageUrl?<img className="avatar" src={user.profileImageUrl} alt=""/>:<span className="avatar fallback">{user.nickname.slice(0,1)}</span>}
+function Pagination({page,total,onChange}:{page:number;total:number;onChange:(p:number)=>void}){if(total<=1)return null;return <nav className="pagination" aria-label="페이지 이동"><button disabled={page===0} onClick={()=>onChange(page-1)}>이전</button><span>{page+1} / {total}</span><button disabled={page+1>=total} onClick={()=>onChange(page+1)}>다음</button></nav>}
+
+function Login({onSuccess}:{onSuccess:(token:string)=>void}){const[email,setEmail]=useState(""),[password,setPassword]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const x=await api<{accessToken:string}>("/auth/login",{method:"POST",body:JSON.stringify({email,password})});onSuccess(x.accessToken);}catch(reason){setError(reason instanceof Error?reason.message:"로그인 실패");}finally{setBusy(false)}}return <main className="loginPage"><section className="loginCard"><div className="loginArt"><img src="/logo-char.png" alt="LifeQuest 캐릭터 로고"/><p>작은 퀘스트가<br/>큰 모험을 만듭니다.</p></div><form onSubmit={submit}><p className="eyebrow">LIFEQUEST ADMIN</p><h1>관리자 로그인</h1><p className="muted">ADMIN 권한 계정으로 로그인하세요.</p><label>이메일<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@lifequest.kr"/></label><label>비밀번호<input type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p className="formError">{error}</p>}<button className="primary full" disabled={busy}>{busy?"확인 중…":"관리자 콘솔 입장"}</button></form></section></main>}
+
+function QuestModal({quest,onClose,onSaved}:{quest:Quest|null;onClose:()=>void;onSaved:()=>void}){const[draft,setDraft]=useState<Draft>(quest?{...quest}:emptyDraft),[error,setError]=useState(""),[busy,setBusy]=useState(false);const set=<K extends keyof Draft>(key:K,value:Draft[K])=>setDraft(x=>({...x,[key]:value}));async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const payload={...draft,placeName:draft.completionType==="LOCATION"?draft.placeName:null,latitude:draft.completionType==="LOCATION"?draft.latitude:null,longitude:draft.completionType==="LOCATION"?draft.longitude:null,radiusM:draft.completionType==="LOCATION"?draft.radiusM:null};await api(quest?`/admin/quests/${quest.id}`:"/admin/quests",{method:quest?"PATCH":"POST",body:JSON.stringify(payload)});onSaved();}catch(reason){setError(reason instanceof Error?reason.message:"저장 실패");}finally{setBusy(false)}}async function deactivate(){if(!quest||!confirm("비활성화할까요?"))return;await api(`/admin/quests/${quest.id}`,{method:"DELETE"});onSaved()}return <Modal title={quest?"퀘스트 수정":"새 퀘스트 등록"} onClose={onClose}><form onSubmit={submit}><div className="grid"><Field label="퀘스트 이름" wide><input required value={draft.title} onChange={e=>set("title",e.target.value)}/></Field><Field label="설명" wide><textarea rows={3} value={draft.description||""} onChange={e=>set("description",e.target.value)}/></Field><Select label="등급" value={draft.grade} options={["NORMAL","RARE","EPIC","LEGENDARY"]} onChange={v=>{const grade=v as Draft["grade"];setDraft(x=>({...x,grade,expReward:rewardsByGrade[grade][2]}));}}/><Select label="유형" value={draft.cadence} options={["DAILY","WEEKLY"]} onChange={v=>set("cadence",v as Draft["cadence"])}/><Select label="인증 방식" value={draft.completionType} options={["SELF_REPORT","LOCATION"]} onChange={v=>set("completionType",v as Draft["completionType"])}/><Field label="EXP 보상"><input type="number" min={1} value={draft.expReward} onChange={e=>set("expReward",Number(e.target.value))}/></Field>{draft.completionType==="LOCATION"&&<><Field label="장소명" wide><input required value={draft.placeName||""} onChange={e=>set("placeName",e.target.value)}/></Field><Field label="위도"><input type="number" step="any" required value={draft.latitude??""} onChange={e=>set("latitude",Number(e.target.value))}/></Field><Field label="경도"><input type="number" step="any" required value={draft.longitude??""} onChange={e=>set("longitude",Number(e.target.value))}/></Field><Field label="인증 반경(m)"><input type="number" min={1} required value={draft.radiusM??""} onChange={e=>set("radiusM",Number(e.target.value))}/></Field></>}</div>{error&&<p className="formError">{error}</p>}<ModalFooter>{quest?.active&&<button type="button" className="danger" onClick={()=>void deactivate()}>비활성화</button>}<span/><button type="button" className="secondary" onClick={onClose}>취소</button><button className="primary" disabled={busy}>저장</button></ModalFooter></form></Modal>}
+
+function RewardModal({reward,catalog,onClose,onSaved}:{reward:Reward|null;catalog:Catalog;onClose:()=>void;onSaved:()=>void}){const[level,setLevel]=useState(reward?.level||1),[type,setType]=useState<"TITLE"|"PROFILE_ITEM">(reward?.rewardType||"TITLE"),[ref,setRef]=useState(reward?.rewardRefId||catalog.titles[0]?.id||0),[description,setDescription]=useState(reward?.description||""),[error,setError]=useState("");const options=type==="TITLE"?catalog.titles:catalog.profileItems;useEffect(()=>{if(!options.some(x=>x.id===ref))setRef(options[0]?.id||0)},[type,options,ref]);async function submit(e:FormEvent){e.preventDefault();setError("");try{await api(reward?`/admin/level-rewards/${reward.id}`:"/admin/level-rewards",{method:reward?"PATCH":"POST",body:JSON.stringify({level,rewardType:type,rewardRefId:ref,description})});onSaved()}catch(reason){setError(reason instanceof Error?reason.message:"저장 실패")}}async function remove(){if(!reward||!confirm("이 보상을 삭제할까요?"))return;await api(`/admin/level-rewards/${reward.id}`,{method:"DELETE"});onSaved()}return <Modal title={reward?"레벨 보상 수정":"새 레벨 보상"} onClose={onClose}><form onSubmit={submit}><div className="grid"><Field label="달성 레벨"><input type="number" min={1} required value={level} onChange={e=>setLevel(Number(e.target.value))}/></Field><Select label="보상 유형" value={type} options={["TITLE","PROFILE_ITEM"]} onChange={v=>setType(v as typeof type)}/><Field label="보상" wide><select value={ref} onChange={e=>setRef(Number(e.target.value))}>{options.map(x=><option key={x.id} value={x.id}>{x.name} · {x.code}</option>)}</select></Field><Field label="보상 설명" wide><textarea rows={3} value={description} onChange={e=>setDescription(e.target.value)}/></Field></div>{error&&<p className="formError">{error}</p>}<ModalFooter>{reward&&<button type="button" className="danger" onClick={()=>void remove()}>삭제</button>}<span/><button type="button" className="secondary" onClick={onClose}>취소</button><button className="primary">저장</button></ModalFooter></form></Modal>}
+
+function UserModal({user,onClose}:{user:UserDetail;onClose:()=>void}){return <Modal title="사용자 상세" onClose={onClose} large><div className="userHero"><Avatar user={user}/><div><h3>{user.nickname} <small>{user.role}</small></h3><p>{user.email}</p><span>가입일 {date(user.createdAt)}</span></div></div><div className="detailStats"><Stat label="현재 레벨" value={`Lv.${user.level}`}/><Stat label="누적 EXP" value={number(user.totalExp)} tone="green"/><Stat label="완료 퀘스트" value={user.completedQuestCount}/><Stat label="진행 중" value={user.assignedQuestCount} tone="sand"/></div><div className="identityGrid"><p><b>대표 칭호</b>{user.representativeTitle||"미설정"}</p><p><b>대표 배지</b>{user.representativeBadge||"미설정"}</p></div><PanelTitle title="최근 퀘스트 활동"/>{user.recentQuests.length?<div className="tableWrap"><table><thead><tr><th>퀘스트</th><th>유형</th><th>EXP</th><th>상태</th><th>날짜</th></tr></thead><tbody>{user.recentQuests.map(x=><tr key={x.assignmentId}><td><strong>{x.title}</strong></td><td>{x.cadence||"—"}</td><td>+{x.expReward}</td><td>{x.status}</td><td>{date(x.completedAt||x.assignedDate)}</td></tr>)}</tbody></table></div>:<div className="miniEmpty">퀘스트 기록이 없습니다.</div>}<PanelTitle title="최근 EXP 기록"/><ActivityList items={user.recentExp.map(x=>({title:x.description,meta:`${x.sourceType} · +${x.amount} EXP`,date:x.createdAt}))}/></Modal>}
+
+function Modal({title,onClose,large=false,children}:{title:string;onClose:()=>void;large?:boolean;children:React.ReactNode}){return <div className="modalBackdrop" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className={`modal ${large?"large":""}`} role="dialog" aria-modal="true"><header><div><p className="eyebrow">LIFEQUEST ADMIN</p><h2>{title}</h2></div><button className="close" onClick={onClose} aria-label="닫기">×</button></header><div className="modalBody">{children}</div></section></div>}
+function ModalFooter({children}:{children:React.ReactNode}){return <footer>{children}</footer>}
+function Field({label,wide=false,children}:{label:string;wide?:boolean;children:React.ReactNode}){return <label className={wide?"span2":""}>{label}{children}</label>}
+function Select({label,value,options,onChange}:{label:string;value:string;options:string[];onChange:(v:string)=>void}){return <Field label={label}><select value={value} onChange={e=>onChange(e.target.value)}>{options.map(x=><option key={x}>{x}</option>)}</select></Field>}
+function Filter({value,onChange,options}:{value:string;onChange:(v:string)=>void;options:[string,string][]}){return <select className="filterSelect" value={value} onChange={e=>onChange(e.target.value)}>{options.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>}
+function Badge({value}:{value:Quest["grade"]}){return <span className={`badge ${value.toLowerCase()}`}>{value}</span>}
+function Status({active}:{active:boolean}){return <span className={`status ${active?"on":"off"}`}>{active?"활성":"비활성"}</span>}

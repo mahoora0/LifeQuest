@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.repository.QuestRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +22,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
+@Transactional
 class AdminQuestIntegrationTests {
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
 
     @Autowired MockMvc mockMvc;
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired QuestRepository questRepository;
+    @PersistenceContext EntityManager entityManager;
 
     @Test
     void normalUserCannotAccessAdminQuestApis() throws Exception {
@@ -89,6 +94,34 @@ class AdminQuestIntegrationTests {
     }
 
     @Test
+    void activeAdminQuestAppearsInExistingUsersTodayListImmediately() throws Exception {
+        Account user = account("quest_viewer", false);
+        Account admin = account("quest_publisher", true);
+
+        mockMvc.perform(get("/api/quests/today")
+                        .header("Authorization", bearer(user.token())))
+                .andExpect(status().isOk());
+
+        MvcResult created = mockMvc.perform(post("/api/admin/quests")
+                        .header("Authorization", bearer(admin.token()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Published admin quest","description":"Visible immediately",
+                                 "grade":"NORMAL","cadence":"DAILY",
+                                 "completionType":"SELF_REPORT","expReward":10}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number questId = JsonPath.read(created.getResponse().getContentAsString(), "$.data.id");
+
+        mockMvc.perform(get("/api/quests/today")
+                        .header("Authorization", bearer(user.token())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.quests[?(@.questId == %d)]".formatted(
+                        questId.longValue())).exists());
+    }
+
+    @Test
     void adminQuestValidationChecksGradeRewardAndLocationFields() throws Exception {
         Account admin = account("검증관리자", true);
 
@@ -126,6 +159,7 @@ class AdminQuestIntegrationTests {
                 .andExpect(status().isCreated());
         if (admin) {
             jdbcTemplate.update("UPDATE users SET role = 'ADMIN' WHERE email = ?", email);
+            entityManager.clear();
         }
         MvcResult login = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
