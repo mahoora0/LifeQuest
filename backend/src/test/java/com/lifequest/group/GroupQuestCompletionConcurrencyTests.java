@@ -11,6 +11,7 @@ import com.lifequest.group.dto.GroupQuestResponse;
 import com.lifequest.group.dto.GroupResponse;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,9 @@ class GroupQuestCompletionConcurrencyTests {
     @Autowired GroupMembershipService memberships;
     @Autowired GroupQuestService quests;
     @Autowired JdbcTemplate jdbc;
+    // 서비스는 Asia/Seoul 고정 Clock을 쓴다. JVM 기본 시간대로 일정을 잡으면
+    // UTC 러너에서 9시간 과거가 되어 예약 검증에 걸린다.
+    @Autowired Clock clock;
 
     @Test
     void concurrentCompletionRewardsEachParticipantOnlyOnce() throws Exception {
@@ -46,10 +50,10 @@ class GroupQuestCompletionConcurrencyTests {
         GroupMemberResponse pending = memberships.requestJoin(group.id(), member.getId());
         memberships.respondJoin(group.id(), owner.getId(), pending.memberId(), true);
         GroupQuestResponse quest = quests.create(group.id(), owner.getId(), new CreateGroupQuestRequest(
-            "동시 공동 완료", "한 번만 지급되어야 합니다", "서울", LocalDateTime.now().plusHours(1)));
+            "동시 공동 완료", "한 번만 지급되어야 합니다", "서울", now().plusHours(1)));
         quests.apply(group.id(), member.getId(), quest.id());
         jdbc.update("update group_quests set scheduled_at=? where id=?",
-            LocalDateTime.now().minusMinutes(1), quest.id());
+            now().minusMinutes(1), quest.id());
 
         CountDownLatch ready = new CountDownLatch(2);
         Callable<GroupQuestStatus> complete = () -> {
@@ -71,6 +75,8 @@ class GroupQuestCompletionConcurrencyTests {
             Integer.class, member.getId(), quest.id());
         assertThat(grants).isEqualTo(1);
     }
+
+    private LocalDateTime now() { return LocalDateTime.now(clock); }
 
     private void unlockCoop(User... unlockedUsers) {
         for (User user : unlockedUsers) {
