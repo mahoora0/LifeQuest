@@ -38,12 +38,15 @@ class LqRewardBadge extends StatelessWidget {
   );
 
   /// 퀘스트 분류 태그.
+  ///
+  /// 글자 크기를 다른 뱃지와 같게 둔다(시안은 태그만 12였다). 목록 행에서
+  /// `EXP 35`·`일간`·`위치`가 한 줄에 서므로, 1pt라도 다르면 높이가 어긋나
+  /// 줄이 들쭉날쭉해진다. 같은 크기면 글꼴 배율이 커져도 함께 늘어난다.
   factory LqRewardBadge.tag(LqTagPalette palette) => LqRewardBadge(
     label: palette.label,
     background: palette.background,
     foreground: LqColors.textPrimary,
     border: palette.border,
-    fontSize: 12,
   );
 
   final String label;
