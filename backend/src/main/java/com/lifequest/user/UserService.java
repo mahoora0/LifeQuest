@@ -24,11 +24,12 @@ import com.lifequest.profile.ProfileItemRepository;
 import com.lifequest.profile.ProfileImageStorage;
 import com.lifequest.profile.UserProfileItem;
 import com.lifequest.profile.UserProfileItemRepository;
+import com.lifequest.profile.UserCharacterAccessory;
+import com.lifequest.profile.UserCharacterAccessoryRepository;
 import com.lifequest.profile.UserTitle;
 import com.lifequest.profile.UserTitleRepository;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ public class UserService {
     private final AvatarCharacterRepository characterRepository;
     private final UserTitleRepository userTitleRepository;
     private final UserProfileItemRepository userProfileItemRepository;
+    private final UserCharacterAccessoryRepository userCharacterAccessoryRepository;
     private final ProfileItemRepository profileItemRepository;
     private final LevelRewardRepository levelRewardRepository;
     private final ProfileImageStorage profileImageStorage;
@@ -58,6 +60,7 @@ public class UserService {
             AvatarCharacterRepository characterRepository,
             UserTitleRepository userTitleRepository,
             UserProfileItemRepository userProfileItemRepository,
+            UserCharacterAccessoryRepository userCharacterAccessoryRepository,
             ProfileItemRepository profileItemRepository,
             LevelRewardRepository levelRewardRepository,
             ProfileImageStorage profileImageStorage,
@@ -66,6 +69,7 @@ public class UserService {
         this.characterRepository = characterRepository;
         this.userTitleRepository = userTitleRepository;
         this.userProfileItemRepository = userProfileItemRepository;
+        this.userCharacterAccessoryRepository = userCharacterAccessoryRepository;
         this.profileItemRepository = profileItemRepository;
         this.levelRewardRepository = levelRewardRepository;
         this.profileImageStorage = profileImageStorage;
@@ -136,29 +140,31 @@ public class UserService {
             throw new BusinessException(ErrorCode.CHARACTER_LOCKED);
         }
         user.selectCharacter(character);
+        user.selectAccessory(userCharacterAccessoryRepository
+                .findByUserIdAndCharacterId(userId, characterId)
+                .map(UserCharacterAccessory::getAccessory)
+                .orElse(null));
         return UserProfileResponse.from(user);
     }
 
     @Transactional(readOnly = true)
     public AccessoryCollectionResponse getAccessories(Long userId) {
         User user = getUser(userId);
-        List<AccessoryResponse> accessories = userAccessoryResponses(user);
+        List<AccessoryResponse> accessories = accessoryResponses();
         return new AccessoryCollectionResponse(
                 accessories,
                 user.getSelectedAccessory() == null
                         ? null
-                        : user.getSelectedAccessory().getId());
+                        : user.getSelectedAccessory().getId(),
+                userCharacterAccessoryRepository.findAllByUserId(userId).stream()
+                        .collect(Collectors.toMap(
+                                equipped -> equipped.getCharacter().getId(),
+                                equipped -> equipped.getAccessory().getId())));
     }
 
-    private List<AccessoryResponse> userAccessoryResponses(User user) {
+    private List<AccessoryResponse> accessoryResponses() {
         List<ProfileItem> accessories = profileItemRepository
                 .findAllByItemTypeOrderById(ProfileItem.ItemType.OUTFIT);
-        Set<Long> ownedIds = userProfileItemRepository
-                .findAllByUserIdOrderByAcquiredAtDesc(user.getId()).stream()
-                .filter(owned -> owned.getProfileItem().getItemType()
-                        == ProfileItem.ItemType.OUTFIT)
-                .map(owned -> owned.getProfileItem().getId())
-                .collect(Collectors.toSet());
         Map<Long, Integer> requiredLevels = levelRewardRepository
                 .findAllByRewardTypeOrderByLevelAscIdAsc(
                         LevelReward.RewardType.PROFILE_ITEM).stream()
@@ -172,24 +178,36 @@ public class UserService {
                 .map(item -> AccessoryResponse.from(
                         item,
                         requiredLevels.get(item.getId()),
-                        ownedIds.contains(item.getId())))
+                        true))
                 .toList();
     }
 
     @Transactional
     public UserProfileResponse selectAccessory(Long userId, Long accessoryId) {
         User user = getUser(userId);
+        AvatarCharacter character = user.getSelectedCharacter();
+        if (character == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+        var equipped = userCharacterAccessoryRepository
+                .findByUserIdAndCharacterId(userId, character.getId());
         if (accessoryId == null) {
+            equipped.ifPresent(userCharacterAccessoryRepository::delete);
             user.selectAccessory(null);
             return UserProfileResponse.from(user);
         }
 
-        UserProfileItem owned = userProfileItemRepository
-                .findByUserIdAndProfileItemId(userId, accessoryId)
-                .filter(item -> item.getProfileItem().getItemType()
+        ProfileItem accessory = profileItemRepository.findById(accessoryId)
+                .filter(item -> item.getItemType()
                         == ProfileItem.ItemType.OUTFIT)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
-        user.selectAccessory(owned.getProfileItem());
+        if (equipped.isPresent()) {
+            equipped.get().changeAccessory(accessory);
+        } else {
+            userCharacterAccessoryRepository.save(
+                    new UserCharacterAccessory(user, character, accessory));
+        }
+        user.selectAccessory(accessory);
         return UserProfileResponse.from(user);
     }
 

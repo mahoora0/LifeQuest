@@ -98,4 +98,17 @@ void main() {
 
     expect(level.remainingExp, 250);
   });
+
+  test('캐릭터별 착용 액세서리를 파싱한다', () {
+    final collection = AccessoryCollection.fromJson({
+      'accessories': [
+        {'id': 4, 'code': 'APRON', 'name': '앞치마'},
+        {'id': 5, 'code': 'EXPLORER_HAT', 'name': '탐험가 모자'},
+      ],
+      'selectedAccessoryId': 5,
+      'selectedAccessoryIdsByCharacter': {'1': 4, '2': 5},
+    });
+
+    expect(collection.selectedAccessoryIdsByCharacter, {1: 4, 2: 5});
+  });
 }

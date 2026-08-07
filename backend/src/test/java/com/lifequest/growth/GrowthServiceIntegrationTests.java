@@ -64,6 +64,19 @@ class GrowthServiceIntegrationTests {
                 .containsExactly("나침반 배지", "새싹 배지");
         assertThat(userService.getAccessories(user.getId()).accessories())
                 .filteredOn("unlocked", true)
-                .isEmpty();
+                .hasSize(14);
+
+        userService.selectAccessory(user.getId(), 4L);
+        growthService.grantExp(user.getId(), "QUEST_COMPLETION", 9002L, 650);
+        assertThat(userService.selectCharacter(user.getId(), 2L).selectedAccessory())
+                .isNull();
+        userService.selectAccessory(user.getId(), 5L);
+
+        assertThat(userService.selectCharacter(user.getId(), 1L).selectedAccessory().id())
+                .isEqualTo(4L);
+        assertThat(userService.getAccessories(user.getId())
+                .selectedAccessoryIdsByCharacter())
+                .containsEntry(1L, 4L)
+                .containsEntry(2L, 5L);
     }
 }

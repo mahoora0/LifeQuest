@@ -23,8 +23,7 @@ class _CharacterSelectionScreenState
     extends ConsumerState<CharacterSelectionScreen> {
   int? _selectedId;
   int? _busyId;
-  int? _selectedAccessoryId;
-  bool _accessoryChanged = false;
+  final Map<int, int?> _accessoryOverrides = {};
   bool _accessoryBusy = false;
   int? _pendingAccessoryId;
 
@@ -49,10 +48,14 @@ class _CharacterSelectionScreenState
     }
   }
 
-  Future<void> _selectAccessory(AvatarAccessory? accessory) async {
+  Future<void> _selectAccessory(
+    AvatarAccessory? accessory,
+    int characterId,
+  ) async {
     final nextId = accessory?.id;
     if (_accessoryBusy ||
-        (_accessoryChanged && _selectedAccessoryId == nextId)) {
+        (_accessoryOverrides.containsKey(characterId) &&
+            _accessoryOverrides[characterId] == nextId)) {
       return;
     }
     setState(() {
@@ -65,8 +68,7 @@ class _CharacterSelectionScreenState
           .selectAccessory(nextId);
       if (!mounted) return;
       setState(() {
-        _selectedAccessoryId = updated.selectedAccessory?.id;
-        _accessoryChanged = true;
+        _accessoryOverrides[characterId] = updated.selectedAccessory?.id;
         _accessoryBusy = false;
         _pendingAccessoryId = null;
       });
@@ -86,18 +88,22 @@ class _CharacterSelectionScreenState
     }
   }
 
-  Future<void> _previewAccessory(AvatarAccessory accessory) async {
+  Future<void> _previewAccessory(
+    AvatarAccessory accessory,
+    AvatarCharacter character,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: LqColors.ink.withValues(alpha: 0.45),
       builder: (dialogContext) => _AccessoryPreviewDialog(
         accessory: accessory,
+        character: character,
         onCancel: () => Navigator.of(dialogContext).pop(false),
         onConfirm: () => Navigator.of(dialogContext).pop(true),
       ),
     );
     if (confirmed == true && mounted) {
-      await _selectAccessory(accessory);
+      await _selectAccessory(accessory, character.id);
     }
   }
 
@@ -128,11 +134,21 @@ class _CharacterSelectionScreenState
             value: accessories,
             onRetry: () => ref.invalidate(accessoryCollectionProvider),
             data: (collection) {
-              final selectedAccessoryId = _accessoryChanged
-                  ? _selectedAccessoryId
-                  : collection.selectedAccessoryId;
-              final selectedAccessory = collection.accessories
-                  .where((item) => item.id == selectedAccessoryId)
+              final equippedByCharacter = <int, int?>{
+                ...collection.selectedAccessoryIdsByCharacter,
+                ..._accessoryOverrides,
+              };
+              if (selectedId != null &&
+                  !equippedByCharacter.containsKey(selectedId) &&
+                  collection.selectedAccessoryId != null) {
+                equippedByCharacter[selectedId] =
+                    collection.selectedAccessoryId;
+              }
+              final selectedAccessoryId = selectedId == null
+                  ? null
+                  : equippedByCharacter[selectedId];
+              final selectedCharacter = characterItems
+                  .where((item) => item.id == selectedId)
                   .firstOrNull;
               return CustomScrollView(
                 slivers: [
@@ -155,11 +171,14 @@ class _CharacterSelectionScreenState
                       itemCount: characterItems.length,
                       itemBuilder: (context, index) {
                         final character = characterItems[index];
+                        final accessoryId =
+                            equippedByCharacter[character.id];
+                        final characterAccessory = collection.accessories
+                            .where((item) => item.id == accessoryId)
+                            .firstOrNull;
                         return _CharacterChoice(
                           character: character,
-                          accessoryCode: character.id == selectedId
-                              ? selectedAccessory?.code
-                              : null,
+                          accessoryCode: characterAccessory?.code,
                           selected: character.id == selectedId,
                           busy: character.id == _busyId,
                           onTap: character.unlocked
@@ -202,9 +221,17 @@ class _CharacterSelectionScreenState
                               _accessoryBusy &&
                               _pendingAccessoryId == accessoryId,
                           onTap: unlocked
-                              ? accessory == null
-                                    ? () => _selectAccessory(null)
-                                    : () => _previewAccessory(accessory)
+                              ? selectedCharacter == null
+                                    ? null
+                                    : accessory == null
+                                    ? () => _selectAccessory(
+                                        null,
+                                        selectedCharacter.id,
+                                      )
+                                    : () => _previewAccessory(
+                                        accessory,
+                                        selectedCharacter,
+                                      )
                               : null,
                         );
                       },
@@ -415,11 +442,13 @@ class _AccessoryChoice extends StatelessWidget {
 class _AccessoryPreviewDialog extends StatelessWidget {
   const _AccessoryPreviewDialog({
     required this.accessory,
+    required this.character,
     required this.onCancel,
     required this.onConfirm,
   });
 
   final AvatarAccessory accessory;
+  final AvatarCharacter character;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
 
@@ -446,13 +475,16 @@ class _AccessoryPreviewDialog extends StatelessWidget {
                 border: Border.all(color: LqColors.borderMuted, width: 1.6),
               ),
               child: LqImage(
-                LqAssets.characterWithAccessory('ROOKIE', accessory.code),
+                LqAssets.characterWithAccessory(
+                  character.code,
+                  accessory.code,
+                ),
                 width: 204,
                 height: 204,
               ),
             ),
             const SizedBox(height: 8),
-            Text('루키 착용 미리보기', style: LqText.caption),
+            Text('${character.name} 착용 미리보기', style: LqText.caption),
             const SizedBox(height: 16),
             Row(
               children: [
