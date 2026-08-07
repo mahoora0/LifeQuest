@@ -149,10 +149,13 @@ class WeeklyAiQuestSlotGuardTests {
         // 구 규칙으로 만들어진 상태를 재현한다 — 자동 주간 3개
         fillWeeklyAssignments(userId, 3);
 
-        weeklyPlace(token)
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.error.code").value("WEEKLY_AI_SLOT_UNAVAILABLE"));
-        verifyNoInteractions(provider);
+        MvcResult result = weeklyPlace(token).andExpect(status().isOk()).andReturn();
+        mockMvc.perform(claim(token, firstCandidateId(result))).andExpect(status().isOk());
+
+        assertThat(userDailyQuestRepository.findByUserIdAndAssignedDate(
+            userId, questPeriod.create(QuestCadence.WEEKLY).getStartAt()))
+            .as("기존 주간 퀘스트와 AI 주간 퀘스트는 서로 다른 슬롯이다")
+            .hasSize(4);
     }
 
     /** 자동 2개인 정상 상태에서는 그대로 받을 수 있다 — 상한이 정상 경로를 막으면 안 된다. */
