@@ -19,7 +19,8 @@ class GroupListScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const LqHeader(title: '내 그룹'),
+            // 탭 루트 화면이라 뒤로가기를 두지 않는다.
+            const LqHeader(title: '내 그룹', showBack: false),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(

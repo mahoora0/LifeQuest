@@ -10,20 +10,24 @@ import 'package:life_quest/features/quest/presentation/quest_route_args.dart';
 import 'package:life_quest/features/quest/presentation/widgets/quest_rows.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/presentation/date_labels.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 
-/// 퀘스트 목록 필터 — 일간·주간·협동 기준.
+/// 퀘스트 목록 필터 — 일간·주간·그룹 기준.
 ///
 /// "전체" 칩은 두지 않는다. 진입 시 [daily]가 선택되고 항상 하나의 주기만 켜져 있다.
 /// 위치 인증 여부는 필터가 아니라 카드 우측의 보조 뱃지로 남는다 — 주기와 완료 방식은
 /// 별개의 축이라 한 축으로 다른 축을 대신할 수 없다.
+///
+/// [coop]의 화면 이름은 "그룹"이다. 값 이름과 서버 `QuestFeature.COOP`은 그대로 두고
+/// 라벨만 바꾼다 — 식별자까지 건드리면 서버 enum과 어긋난다.
 enum _QuestFilter {
   daily(QuestCadence.daily, '일간', 1),
   weekly(QuestCadence.weekly, '주간', 3),
-  coop(null, '협동', 5);
+  coop(null, '그룹', 5);
 
   const _QuestFilter(this.cadence, this.label, this.requiredLevel);
 
@@ -69,7 +73,7 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
       _QuestFilter.weekly => levelValue?.unlocks.weekly.unlocked ?? false,
       _QuestFilter.coop => levelValue?.unlocks.coop.unlocked ?? false,
     };
-    // 잠긴 협동 탭에서는 목록 요청 자체를 보내지 않는다. 해금 안내만 그린다.
+    // 잠긴 그룹 탭에서는 목록 요청 자체를 보내지 않는다. 해금 안내만 그린다.
     final AsyncValue<List<GroupQuest>>? coopQuests =
         _filter == _QuestFilter.coop && unlocked
         ? ref.watch(myCoopGroupQuestsProvider)
@@ -92,15 +96,10 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
             // 헤더에 검색을 두지 않는다. 목록이 3~8개인 화면에 검색이 있으면
             // 데이터가 더 많아 보이는 오해를 주고, 이번 범위에 검색 기능이
             // 없어 눌러도 아무 일이 없는 컨트롤이 된다.
-            LqHeader(
-              title: '퀘스트 목록',
-              showBack: false,
-              trailing: LqIconButton(
-                icon: Icons.auto_awesome,
-                semanticLabel: 'AI 퀘스트 추천',
-                onTap: () => context.push('/quest-recommendations'),
-              ),
-            ),
+            // AI 추천은 헤더에서 빼고 주간 탭의 AI 슬롯 카드 한 곳으로만 들어간다.
+            // 목록 상단에 상시 노출되면 주기별 목록을 보러 온 화면에서 다른 흐름을
+            // 권하는 컨트롤이 된다.
+            const LqHeader(title: '퀘스트 목록', showBack: false),
             Padding(
               padding: const EdgeInsets.fromLTRB(LqSpacing.screen, 0, 0, 6),
               child: Align(
@@ -126,7 +125,7 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
                   ? LqAsyncView<List<GroupQuest>>(
                       value: coopQuests!,
                       isEmpty: (quests) => quests.isEmpty,
-                      emptyMessage: '참여할 수 있는 협동 퀘스트가 없어요',
+                      emptyMessage: '참여할 수 있는 그룹 퀘스트가 없어요',
                       onRetry: () => ref.invalidate(myCoopGroupQuestsProvider),
                       data: (quests) => _CoopQuestList(
                         quests: quests,
@@ -243,7 +242,7 @@ class _CoopQuestList extends StatelessWidget {
                 style: LqText.caption,
               ),
               Text(
-                '참여 ${quest.participantCount}명 · ${quest.scheduledAt.month}/${quest.scheduledAt.day} ${quest.scheduledAt.hour.toString().padLeft(2, '0')}:${quest.scheduledAt.minute.toString().padLeft(2, '0')}',
+                '${quest.participantLabel} · ${questDateTimeLabel(quest.scheduledAt)}',
                 style: LqText.caption,
               ),
               if (quest.isParticipating) Text('참여 신청 완료', style: LqText.label),

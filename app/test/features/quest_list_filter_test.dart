@@ -12,7 +12,7 @@ import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 
-/// 퀘스트 목록(S-08)은 일간·주간·협동으로 나뉘며 레벨 해금 정책을 따른다.
+/// 퀘스트 목록(S-08)은 일간·주간·그룹으로 나뉘며 레벨 해금 정책을 따른다.
 void main() {
   Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
     await tester.pumpWidget(
@@ -44,12 +44,15 @@ void main() {
     await pumpList(tester);
 
     // 일간은 칩 하나와 보이는 두 행의 주기 뱃지로 세 번 잡힌다.
-    // 주간·협동은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
+    // 주간·그룹은 해당 행이 걸러졌으므로 칩으로만 잡힌다.
     expect(find.text('일간'), findsNWidgets(3));
     expect(find.text('주간'), findsOneWidget);
-    expect(find.text('협동'), findsOneWidget);
+    expect(find.text('그룹'), findsOneWidget);
     // "전체"가 없으므로 기본 선택이 반드시 하나 있어야 한다.
     expect(find.text('전체'), findsNothing);
+
+    // AI 추천 진입점은 헤더에서 빠지고 주간 탭의 AI 슬롯 카드만 남는다.
+    expect(find.byIcon(Icons.auto_awesome), findsNothing);
 
     expect(find.text('일간 퀘스트 · 2개'), findsOneWidget);
     expect(find.text('물 여덟 잔 마시기'), findsOneWidget);
@@ -90,16 +93,16 @@ void main() {
     expect(find.text('현재 Lv. 1'), findsOneWidget);
   });
 
-  testWidgets('Lv.5 협동 탭은 내가 속한 그룹 퀘스트를 표시한다', (tester) async {
+  testWidgets('Lv.5 그룹 탭은 내가 속한 그룹 퀘스트를 표시한다', (tester) async {
     await pumpList(tester);
 
-    await tester.tap(find.text('협동'));
+    await tester.tap(find.text('그룹'));
     await tester.pumpAndSettle();
 
-    expect(find.text('협동 퀘스트 · 1개'), findsOneWidget);
+    expect(find.text('그룹 퀘스트 · 1개'), findsOneWidget);
     expect(find.text('한강 공동 산책'), findsOneWidget);
     expect(find.text('주말 탐험대 · 여의도 한강공원'), findsOneWidget);
-    expect(find.text('참여 2명 · 8/9 19:00'), findsOneWidget);
+    expect(find.text('참여 2명 · 8월 9일 19:00'), findsOneWidget);
     expect(find.text('참여 신청 완료'), findsOneWidget);
   });
 }

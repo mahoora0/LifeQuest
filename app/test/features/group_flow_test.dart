@@ -212,9 +212,30 @@ void main() {
     await tester.tap(find.text('저장'));
     await tester.pumpAndSettle();
 
+    // 최대 인원은 비워 둘 수 있고, 그때는 정원 없이 저장한다.
     expect(repository.savedQuestTitles, ['한강 야경 산책']);
     expect(repository.savedScheduledAt.single.isAfter(DateTime.now()), isTrue);
+    expect(repository.savedMaxParticipants, [null]);
     expect(find.text('저장 퀘스트 41'), findsOneWidget);
+  });
+
+  testWidgets('그룹 퀘스트 최대 인원은 2~100명만 저장한다', (tester) async {
+    final repository = _FakeGroupRepository();
+    await _pump(tester, const GroupQuestFormScreen(groupId: 1), repository);
+
+    await tester.enterText(find.widgetWithText(TextField, '제목'), '한강 야경 산책');
+    await tester.enterText(find.widgetWithText(TextField, '설명'), '함께 한강을 걸어요');
+    await tester.enterText(find.widgetWithText(TextField, '장소'), '여의도 한강공원');
+    await tester.enterText(find.widgetWithText(TextField, '최대 인원'), '1');
+    await tester.tap(find.text('저장'));
+    await tester.pump();
+    expect(repository.savedQuestTitles, isEmpty);
+    expect(find.text('최대 인원은 2~100명 사이로 적어 주세요'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, '최대 인원'), '4');
+    await tester.tap(find.text('저장'));
+    await tester.pumpAndSettle();
+    expect(repository.savedMaxParticipants, [4]);
   });
 
   testWidgets('그룹 퀘스트를 취소하면 편집 동작이 사라지고 취소 상태를 표시한다', (tester) async {
@@ -257,6 +278,21 @@ void main() {
     expect(find.text('참여 신청'), findsOneWidget);
   });
 
+  testWidgets('정원이 찬 그룹 퀘스트는 신청 버튼을 비활성으로 두고 인원을 함께 보여준다', (tester) async {
+    final repository = _FakeGroupRepository(full: true);
+    await _pump(
+      tester,
+      const GroupQuestDetailScreen(groupId: 1, questId: 41),
+      repository,
+    );
+
+    expect(find.text('참여 2/2명 · 공동 완료 시 40 EXP'), findsOneWidget);
+    expect(find.text('정원이 찼어요'), findsOneWidget);
+    await tester.tap(find.text('정원이 찼어요'));
+    await tester.pumpAndSettle();
+    expect(repository.appliedQuestIds, isEmpty);
+  });
+
   testWidgets('시작 후 그룹장이 공동 완료하면 참여자 EXP 지급 상태를 표시한다', (tester) async {
     final repository = _FakeGroupRepository(started: true);
     await _pump(
@@ -291,10 +327,16 @@ Future<void> _pump(
 }
 
 class _FakeGroupRepository extends GroupRepository {
-  _FakeGroupRepository({this.archived = false, this.started = false})
-    : super(Dio());
+  _FakeGroupRepository({
+    this.archived = false,
+    this.started = false,
+    this.full = false,
+  }) : super(Dio());
   final bool archived;
   final bool started;
+
+  /// 정원 2명이 모두 찬 퀘스트를 내려준다.
+  final bool full;
   int createCalls = 0;
   String? createdName;
   int? createdMaxMembers;
@@ -307,6 +349,7 @@ class _FakeGroupRepository extends GroupRepository {
   final sentContents = <String>[];
   final savedQuestTitles = <String>[];
   final savedScheduledAt = <DateTime>[];
+  final savedMaxParticipants = <int?>[];
   final cancelledQuestIds = <int>[];
   final appliedQuestIds = <int>[];
   final withdrawnQuestIds = <int>[];
@@ -393,6 +436,8 @@ class _FakeGroupRepository extends GroupRepository {
     scheduledAt: started
         ? DateTime.now().subtract(const Duration(hours: 1))
         : null,
+    maxParticipants: full ? 2 : null,
+    participantCount: full ? 2 : null,
     participation: completedQuestIds.contains(questId)
         ? GroupQuestParticipationStatus.rewarded
         : appliedQuestIds.contains(questId) &&
@@ -409,9 +454,11 @@ class _FakeGroupRepository extends GroupRepository {
     required String description,
     required String placeName,
     required DateTime scheduledAt,
+    int? maxParticipants,
   }) async {
     savedQuestTitles.add(title);
     savedScheduledAt.add(scheduledAt);
+    savedMaxParticipants.add(maxParticipants);
     return _quest(title: title);
   }
 
@@ -550,6 +597,8 @@ GroupQuest _quest({
   GroupQuestStatus status = GroupQuestStatus.published,
   DateTime? scheduledAt,
   GroupQuestParticipationStatus? participation,
+  int? maxParticipants,
+  int? participantCount,
 }) => GroupQuest(
   id: 41,
   groupId: 1,
@@ -560,7 +609,8 @@ GroupQuest _quest({
   placeName: '여의도 한강공원',
   scheduledAt: scheduledAt ?? DateTime.now().add(const Duration(days: 2)),
   status: status,
-  participantCount: participation == null ? 0 : 1,
+  participantCount: participantCount ?? (participation == null ? 0 : 1),
+  maxParticipants: maxParticipants,
   myParticipationStatus: participation,
   participants: participation == null
       ? const []

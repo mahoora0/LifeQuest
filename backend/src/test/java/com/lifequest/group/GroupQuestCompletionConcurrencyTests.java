@@ -50,7 +50,7 @@ class GroupQuestCompletionConcurrencyTests {
         GroupMemberResponse pending = memberships.requestJoin(group.id(), member.getId());
         memberships.respondJoin(group.id(), owner.getId(), pending.memberId(), true);
         GroupQuestResponse quest = quests.create(group.id(), owner.getId(), new CreateGroupQuestRequest(
-            "동시 공동 완료", "한 번만 지급되어야 합니다", "서울", now().plusHours(1)));
+            "동시 공동 완료", "한 번만 지급되어야 합니다", "서울", now().plusHours(1),null));
         quests.apply(group.id(), member.getId(), quest.id());
         jdbc.update("update group_quests set scheduled_at=? where id=?",
             now().minusMinutes(1), quest.id());
