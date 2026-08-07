@@ -106,8 +106,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 // `?tab=weekly`로 주간 탭을 지정해 들어올 수 있다. AI 퀘스트를
                 // 받은 직후 목록으로 돌아올 때 일간 탭이 뜨면 방금 받은 퀘스트가
                 // 보이지 않아 실패한 것처럼 읽힌다.
-                builder: (context, state) =>
-                    QuestListScreen(initialTab: state.uri.queryParameters['tab']),
+                builder: (context, state) => QuestListScreen(
+                  initialTab: state.uri.queryParameters['tab'],
+                ),
               ),
             ],
           ),

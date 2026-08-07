@@ -28,6 +28,7 @@ class QuestRecommendationRepository {
       throw ApiException.from(e);
     }
   }
+
   Future<QuestRecommendationResult> _post(
     String path,
     Map<String, dynamic> data,

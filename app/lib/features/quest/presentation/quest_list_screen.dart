@@ -156,7 +156,8 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
     final weekly = quests
         .where((q) => q.quest.cadence == QuestCadence.weekly)
         .toList();
-    return weekly.length < _weeklySlots && !weekly.any((q) => q.quest.isAiGenerated);
+    return weekly.length < _weeklySlots &&
+        !weekly.any((q) => q.quest.isAiGenerated);
   }
 
   Future<void> _openDetail(DailyQuest dailyQuest) async {
@@ -297,10 +298,7 @@ class _WeeklyAiSlotCard extends StatelessWidget {
             children: [
               Text('나만의 주간 퀘스트', style: LqText.cardTitle),
               const SizedBox(height: 2),
-              Text(
-                'AI가 상황에 맞춰 추천해요 · 주 1회',
-                style: LqText.caption,
-              ),
+              Text('AI가 상황에 맞춰 추천해요 · 주 1회', style: LqText.caption),
             ],
           ),
         ),

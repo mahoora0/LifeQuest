@@ -28,7 +28,12 @@ void main() {
   group('주간 모드 경로 분기', () {
     testWidgets('주간 모드는 weekly 경로로 추천을 요청한다', (tester) async {
       final repository = _FakeRecommendationRepository();
-      await _pumpForm(tester, repository, '/quest-recommendations/place', weekly: true);
+      await _pumpForm(
+        tester,
+        repository,
+        '/quest-recommendations/place',
+        weekly: true,
+      );
 
       await tester.enterText(
         find.widgetWithText(TextField, '지역 (예: 서울 성수동)'),
@@ -58,9 +63,17 @@ void main() {
 
     testWidgets('여행도 주간 모드에서 weekly 경로로 간다', (tester) async {
       final repository = _FakeRecommendationRepository();
-      await _pumpForm(tester, repository, '/quest-recommendations/travel', weekly: true);
+      await _pumpForm(
+        tester,
+        repository,
+        '/quest-recommendations/travel',
+        weekly: true,
+      );
 
-      await tester.enterText(find.widgetWithText(TextField, '여행지 (예: 부산)'), '부산');
+      await tester.enterText(
+        find.widgetWithText(TextField, '여행지 (예: 부산)'),
+        '부산',
+      );
       await _submit(tester);
 
       expect(repository.weeklyTravelCalls, 1);
@@ -142,7 +155,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('이번 주 퀘스트는 이미 받았어요. 다음 주에 새로 받을 수 있어요.'), findsOneWidget);
+      expect(
+        find.text('이번 주 퀘스트는 이미 받았어요. 다음 주에 새로 받을 수 있어요.'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('장소 추천'));
       await tester.pumpAndSettle();
       expect(find.text('들어오면 안 되는 화면'), findsNothing);
@@ -266,18 +282,19 @@ void main() {
   });
 }
 
-Quest _aiQuest({required String placeName, required String completionGuide}) => Quest(
-  id: 42,
-  title: 'AI로 고른 주간 퀘스트',
-  description: '가까운 전시를 하나 골라 다녀오세요',
-  completionType: QuestCompletionType.selfReport,
-  expReward: 40,
-  cadence: QuestCadence.weekly,
-  grade: 'RARE',
-  createdBy: 'AI',
-  placeName: placeName,
-  completionGuide: completionGuide,
-);
+Quest _aiQuest({required String placeName, required String completionGuide}) =>
+    Quest(
+      id: 42,
+      title: 'AI로 고른 주간 퀘스트',
+      description: '가까운 전시를 하나 골라 다녀오세요',
+      completionType: QuestCompletionType.selfReport,
+      expReward: 40,
+      cadence: QuestCadence.weekly,
+      grade: 'RARE',
+      createdBy: 'AI',
+      placeName: placeName,
+      completionGuide: completionGuide,
+    );
 
 Future<void> _pumpDetail(WidgetTester tester, Quest quest) async {
   final router = GoRouter(

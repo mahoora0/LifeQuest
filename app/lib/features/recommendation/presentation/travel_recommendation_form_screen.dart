@@ -144,91 +144,91 @@ class _State extends ConsumerState<TravelRecommendationFormScreen> {
     if ((selectedDays ?? 0) > _maxDays) selectedDays = _maxDays;
 
     return RecommendationForm(
-    title: '여행 추천 조건',
-    children: [
-      TextField(
-        controller: destination,
-        maxLength: 100,
-        decoration: const InputDecoration(labelText: '여행지 (예: 부산)'),
-      ),
-      RecommendationChoiceSection<int?>(
-        label: '기간',
-        selected: selectedDays,
-        // 주간 모드에서는 이번 주에 남은 일수를 넘는 선택지를 아예 빼둔다. 서버가
-        // 어차피 거절하므로 남겨두면 눌러보고 오류를 보는 길만 생긴다.
-        options: [
-          for (final option in const [
-            RecommendationOption(1, '당일'),
-            RecommendationOption(2, '1박 2일'),
-            RecommendationOption(3, '2박 3일'),
-            RecommendationOption(4, '3박 4일'),
-            RecommendationOption(7, '일주일'),
-          ])
-            if (option.value <= _maxDays) option,
-          const RecommendationOption(null, '직접 입력'),
-        ],
-        onSelected: (value) => setState(() => selectedDays = value),
-        child: selectedDays == null
-            ? TextField(
-                controller: customDays,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: '기간 직접 입력',
-                  suffixText: '일',
-                  helperText: '1~$_maxDays일',
-                ),
-              )
-            : null,
-      ),
-      RecommendationChoiceSection<int?>(
-        label: '1인 예산',
-        selected: selectedBudget,
-        options: const [
-          RecommendationOption(100000, '10만원 이하'),
-          RecommendationOption(200000, '20만원 이하'),
-          RecommendationOption(300000, '30만원 이하'),
-          RecommendationOption(500000, '50만원 이하'),
-          RecommendationOption(1000000, '100만원 이하'),
-          RecommendationOption(null, '직접 입력'),
-        ],
-        onSelected: (value) => setState(() => selectedBudget = value),
-        child: selectedBudget == null
-            ? TextField(
-                controller: customBudget,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: '1인 예산 직접 입력',
-                  suffixText: '원',
-                ),
-              )
-            : null,
-      ),
-      RecommendationCompanionStepper(
-        value: companions,
-        onChanged: (value) => setState(() => companions = value),
-      ),
-      RecommendationInterestPicker(
-        options: _interestOptions,
-        selected: selectedInterests,
-        onToggle: toggleInterest,
-        showCustomInput: showCustomInterests,
-        onCustomInputChanged: (value) =>
-            setState(() => showCustomInterests = value),
-        customController: customInterests,
-      ),
-      TextField(
-        controller: additional,
-        maxLength: 500,
-        maxLines: 3,
-        decoration: const InputDecoration(
-          labelText: '원하는 조건이 더 있나요? (선택)',
-          hintText: '예: 대중교통으로 이동 가능한 활동 위주',
+      title: '여행 추천 조건',
+      children: [
+        TextField(
+          controller: destination,
+          maxLength: 100,
+          decoration: const InputDecoration(labelText: '여행지 (예: 부산)'),
         ),
-      ),
-      LqButton(label: '3개 추천받기', busy: busy, onPressed: submit),
-    ],
+        RecommendationChoiceSection<int?>(
+          label: '기간',
+          selected: selectedDays,
+          // 주간 모드에서는 이번 주에 남은 일수를 넘는 선택지를 아예 빼둔다. 서버가
+          // 어차피 거절하므로 남겨두면 눌러보고 오류를 보는 길만 생긴다.
+          options: [
+            for (final option in const [
+              RecommendationOption(1, '당일'),
+              RecommendationOption(2, '1박 2일'),
+              RecommendationOption(3, '2박 3일'),
+              RecommendationOption(4, '3박 4일'),
+              RecommendationOption(7, '일주일'),
+            ])
+              if (option.value <= _maxDays) option,
+            const RecommendationOption(null, '직접 입력'),
+          ],
+          onSelected: (value) => setState(() => selectedDays = value),
+          child: selectedDays == null
+              ? TextField(
+                  controller: customDays,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: '기간 직접 입력',
+                    suffixText: '일',
+                    helperText: '1~$_maxDays일',
+                  ),
+                )
+              : null,
+        ),
+        RecommendationChoiceSection<int?>(
+          label: '1인 예산',
+          selected: selectedBudget,
+          options: const [
+            RecommendationOption(100000, '10만원 이하'),
+            RecommendationOption(200000, '20만원 이하'),
+            RecommendationOption(300000, '30만원 이하'),
+            RecommendationOption(500000, '50만원 이하'),
+            RecommendationOption(1000000, '100만원 이하'),
+            RecommendationOption(null, '직접 입력'),
+          ],
+          onSelected: (value) => setState(() => selectedBudget = value),
+          child: selectedBudget == null
+              ? TextField(
+                  controller: customBudget,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    labelText: '1인 예산 직접 입력',
+                    suffixText: '원',
+                  ),
+                )
+              : null,
+        ),
+        RecommendationCompanionStepper(
+          value: companions,
+          onChanged: (value) => setState(() => companions = value),
+        ),
+        RecommendationInterestPicker(
+          options: _interestOptions,
+          selected: selectedInterests,
+          onToggle: toggleInterest,
+          showCustomInput: showCustomInterests,
+          onCustomInputChanged: (value) =>
+              setState(() => showCustomInterests = value),
+          customController: customInterests,
+        ),
+        TextField(
+          controller: additional,
+          maxLength: 500,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: '원하는 조건이 더 있나요? (선택)',
+            hintText: '예: 대중교통으로 이동 가능한 활동 위주',
+          ),
+        ),
+        LqButton(label: '3개 추천받기', busy: busy, onPressed: submit),
+      ],
     );
   }
 }
