@@ -38,28 +38,51 @@ class LqRewardBadge extends StatelessWidget {
   );
 
   /// 퀘스트 분류 태그.
+  ///
+  /// 글자 크기를 다른 뱃지와 같게 둔다(시안은 태그만 12였다). 목록 행에서
+  /// `EXP 35`·`일간`·`위치`가 한 줄에 서므로, 1pt라도 다르면 높이가 어긋나
+  /// 줄이 들쭉날쭉해진다. 같은 크기면 글꼴 배율이 커져도 함께 늘어난다.
   factory LqRewardBadge.tag(LqTagPalette palette) => LqRewardBadge(
     label: palette.label,
     background: palette.background,
     foreground: LqColors.textPrimary,
     border: palette.border,
-    fontSize: 12,
   );
 
   final String label;
   final Color background;
   final Color foreground;
   final Color? border;
+
+  /// 글자 크기. 테두리 몫은 아래에서 상쇄하지만 **글자 크기 차이는 상쇄하지
+  /// 않는다** — 한 줄에 나란히 놓는 뱃지끼리는 같은 값을 줘야 높이가 맞는다.
+  /// 다른 값을 주는 곳(완료 결과 14, 비밀 업적 모달 13)은 모두 그 줄에서
+  /// 크기가 같은 것들끼리만 서 있다.
   final double fontSize;
+
+  /// 테두리 두께. 이 만큼이 뱃지 바깥에 더해진다.
+  static const _borderWidth = 1.6;
+
+  /// 테두리를 포함한 상하 여백. 테두리가 있는 뱃지는 그 몫을 패딩에서 빼
+  /// 외곽 높이를 맞춘다 — `EXP 35`(테두리 없음)와 `위치 인증`(테두리 있음)이
+  /// 나란히 놓이므로, 같은 패딩을 주면 테두리가 있는 쪽만 3.2 더 커진다.
+  static const _verticalInset = 5.8;
 
   @override
   Widget build(BuildContext context) {
+    final hasBorder = border != null;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+      padding: EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: hasBorder ? _verticalInset - _borderWidth : _verticalInset,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: LqShape.pillRadius,
-        border: border == null ? null : Border.all(color: border!, width: 1.6),
+        border: hasBorder
+            ? Border.all(color: border!, width: _borderWidth)
+            : null,
       ),
       child: Text(
         label,
