@@ -52,14 +52,29 @@ class LqRewardBadge extends StatelessWidget {
   final Color? border;
   final double fontSize;
 
+  /// 테두리 두께. 이 만큼이 뱃지 바깥에 더해진다.
+  static const _borderWidth = 1.6;
+
+  /// 테두리를 포함한 상하 여백. 테두리가 있는 뱃지는 그 몫을 패딩에서 빼
+  /// 외곽 높이를 맞춘다 — `EXP 35`(테두리 없음)와 `위치 인증`(테두리 있음)이
+  /// 나란히 놓이므로, 같은 패딩을 주면 테두리가 있는 쪽만 3.2 더 커진다.
+  static const _verticalInset = 5.8;
+
   @override
   Widget build(BuildContext context) {
+    final hasBorder = border != null;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2.5),
+      padding: EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: hasBorder ? _verticalInset - _borderWidth : _verticalInset,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: LqShape.pillRadius,
-        border: border == null ? null : Border.all(color: border!, width: 1.6),
+        border: hasBorder
+            ? Border.all(color: border!, width: _borderWidth)
+            : null,
       ),
       child: Text(
         label,
