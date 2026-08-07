@@ -11,6 +11,9 @@ import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 ///
 /// 행은 시안대로 각자 `divider` 테두리를 두른 카드다. 배경은 지정하지 않고
 /// 부모 카드의 `surfaceCard`를 그대로 쓴다 — 테두리만으로 경계를 만든다.
+///
+/// 좌측 아이콘 타일은 목록(S-08)과 같은 [_IconTile]이다. 퀘스트별 그림은
+/// 서버가 주지 않으므로(`QUESTS.icon`이 스키마에 없다) 제목 첫 글자를 쓴다.
 class HomeQuestRow extends StatelessWidget {
   const HomeQuestRow({
     super.key,
@@ -44,11 +47,13 @@ class HomeQuestRow extends StatelessWidget {
         borderColor: LqColors.divider,
         radius: LqShape.tileRadius,
         shadow: false,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
         onTap: onTap,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            _IconTile(title: quest.title),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,12 +65,13 @@ class HomeQuestRow extends StatelessWidget {
                     style: LqText.cardTitle.copyWith(
                       fontSize: 16,
                       height: 1.1,
+                      fontWeight: FontWeight.w500,
                       // 완료한 줄은 취소선과 함께 글자도 한 단계 물린다.
                       color: completed ? LqColors.textSecondary : null,
                       decoration: completed ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 7),
                   Wrap(
                     spacing: 5,
                     runSpacing: 4,
@@ -247,6 +253,7 @@ class _ExpiredBadge extends StatelessWidget {
   }
 }
 
+/// 행 좌측의 38 정사각 타일 — 홈([HomeQuestRow])과 목록([QuestListRow])이 함께 쓴다.
 class _IconTile extends StatelessWidget {
   const _IconTile({required this.title});
 
