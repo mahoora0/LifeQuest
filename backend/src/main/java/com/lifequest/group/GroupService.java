@@ -58,7 +58,8 @@ public class GroupService {
         GroupMember mine=members.findByGroupIdAndUserId(group.getId(),userId).orElse(null); long count=members.countByGroupIdAndStatus(group.getId(),GroupMemberStatus.ACTIVE);
         long reserved=count+members.countValidInvitations(group.getId(),now());
         List<GroupMemberResponse> memberItems=full?members.findByGroupIdAndStatusOrderByIdAsc(group.getId(),GroupMemberStatus.ACTIVE,Pageable.unpaged()).stream().map(GroupMemberResponse::from).toList():null;
-        List<GroupQuestResponse> recent=full?quests.findRecent(group.getId(),PageRequest.of(0,3)).stream().map(GroupQuestResponse::from).toList():null;
+        boolean coopUnlocked=users.findById(userId).map(user->user.getLevel()>=5).orElse(false);
+        List<GroupQuestResponse> recent=full&&coopUnlocked?quests.findRecent(group.getId(),PageRequest.of(0,3)).stream().map(GroupQuestResponse::from).toList():full?List.of():null;
         return new GroupResponse(group.getId(),group.getName(),group.getDescription(),group.getVisibility(),group.getMaxMembers(),count,group.getStatus(),group.getOwner().getId(),group.getOwner().getNickname(),mine==null?null:mine.getRole(),mine==null?null:mine.getStatus(),group.getStatus()==GroupStatus.ACTIVE&&reserved<group.getMaxMembers(),memberItems,recent,group.getCreatedAt(),group.getUpdatedAt());
     }
     private GroupSummaryResponse summary(Group group,GroupMember mine){long count=members.countByGroupIdAndStatus(group.getId(),GroupMemberStatus.ACTIVE);long reserved=count+members.countValidInvitations(group.getId(),now());return new GroupSummaryResponse(group.getId(),group.getName(),group.getDescription(),(int)count,group.getMaxMembers(),group.getStatus()==GroupStatus.ACTIVE&&reserved<group.getMaxMembers(),mine==null?null:mine.getRole(),mine==null?null:mine.getStatus(),group.getStatus());}

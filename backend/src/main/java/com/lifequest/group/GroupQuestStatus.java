@@ -1,2 +1,2 @@
 package com.lifequest.group;
-public enum GroupQuestStatus { PUBLISHED, CANCELLED }
+public enum GroupQuestStatus { PUBLISHED, COMPLETED, CANCELLED }

@@ -13,5 +13,8 @@ public class GroupQuestController {
     @GetMapping("/{questId}") public ApiResponse<GroupQuestResponse> detail(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId){return ApiResponse.success(service.detail(groupId,uid(jwt),questId));}
     @PatchMapping("/{questId}") public ApiResponse<GroupQuestResponse> update(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId,@Valid @RequestBody UpdateGroupQuestRequest r){return ApiResponse.success(service.update(groupId,uid(jwt),questId,r));}
     @DeleteMapping("/{questId}") public ApiResponse<GroupQuestResponse> cancel(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId){return ApiResponse.success(service.cancel(groupId,uid(jwt),questId));}
+    @PostMapping("/{questId}/participation") public ApiResponse<GroupQuestResponse> apply(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId){return ApiResponse.success(service.apply(groupId,uid(jwt),questId));}
+    @DeleteMapping("/{questId}/participation") public ApiResponse<GroupQuestResponse> withdraw(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId){return ApiResponse.success(service.withdraw(groupId,uid(jwt),questId));}
+    @PostMapping("/{questId}/complete") public ApiResponse<GroupQuestResponse> complete(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@PathVariable Long questId){return ApiResponse.success(service.complete(groupId,uid(jwt),questId));}
     private Long uid(Jwt jwt){return Long.valueOf(jwt.getSubject());}
 }

@@ -30,6 +30,29 @@ final upcomingGroupQuestsProvider =
 final pastGroupQuestsProvider = FutureProvider.family<List<GroupQuest>, int>(
   (ref, id) => ref.watch(groupRepositoryProvider).quests(id, upcoming: false),
 );
+final myCoopGroupQuestsProvider = FutureProvider<List<GroupQuest>>((ref) async {
+  final repository = ref.watch(groupRepositoryProvider);
+  final pages = await Future.wait([
+    repository.myQuests(upcoming: true),
+    repository.myQuests(upcoming: false),
+  ]);
+  final quests = [
+    ...pages[0],
+    ...pages[1],
+  ].where((quest) => quest.status != GroupQuestStatus.cancelled).toList();
+  quests.sort((a, b) {
+    if (a.status == GroupQuestStatus.published &&
+        b.status != GroupQuestStatus.published) {
+      return -1;
+    }
+    if (a.status != GroupQuestStatus.published &&
+        b.status == GroupQuestStatus.published) {
+      return 1;
+    }
+    return a.scheduledAt.compareTo(b.scheduledAt);
+  });
+  return quests;
+});
 final groupChatProvider = Provider.autoDispose.family<GroupChatController, int>(
   (ref, id) {
     final controller = GroupChatController(
