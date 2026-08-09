@@ -1,0 +1,135 @@
+---
+title: LifeQuest ERD
+config:
+  theme: neutral
+  flowchart:
+    curve: basis
+    nodeSpacing: 34
+    rankSpacing: 54
+---
+flowchart LR
+    subgraph AUTH["1. 사용자 / 인증"]
+        U["users<br/><b>PK</b> id"]
+        SA["social_accounts<br/><b>FK</b> user_id"]
+        RT["refresh_tokens<br/><b>FK</b> user_id"]
+        NT["notifications<br/><b>FK</b> user_id"]
+    end
+
+    subgraph PROFILE["2. 프로필 / 성장 / 보상"]
+        AC["avatar_characters"]
+        TI["titles"]
+        PI["profile_items"]
+        UT["user_titles<br/><b>FK</b> user_id, title_id"]
+        UPI["user_profile_items<br/><b>FK</b> user_id, profile_item_id"]
+        UCA["user_character_accessories<br/><b>FK</b> user_id, character_id,<br/>profile_item_id"]
+        LR["level_rewards<br/>polymorphic reward_ref_id"]
+        EL["exp_logs<br/><b>FK</b> user_id"]
+    end
+
+    subgraph QUEST["3. 개인 퀘스트"]
+        Q["quests<br/><b>PK</b> id"]
+        UDQ["user_daily_quests<br/><b>FK</b> quest_id"]
+        QC["quest_completions<br/><b>FK</b> user_daily_quest_id, quest_id"]
+        QAM["quest_assignment_markers"]
+    end
+
+    subgraph AI["4. AI 퀘스트 추천"]
+        QRU["quest_recommendation_daily_usage<br/><b>FK</b> user_id"]
+        QRC["quest_recommendation_candidates<br/><b>FK</b> user_id"]
+        WAQC["weekly_ai_quest_claims<br/><b>FK</b> candidate_id"]
+    end
+
+    subgraph PROOF["5. 퀘스트 인증 광장"]
+        QPP["quest_proof_posts<br/><b>FK</b> user_id, quest_completion_id,<br/>quest_id"]
+        QPH["quest_proof_photos<br/><b>FK</b> post_id"]
+        QPV["quest_proof_votes<br/><b>FK</b> post_id, voter_user_id"]
+        QPC["quest_proof_comments<br/><b>FK</b> post_id, author_user_id"]
+    end
+
+    subgraph LIFEDEX["6. 라이프덱스"]
+        LC["lifedex_categories"]
+        LI["lifedex_items<br/><b>FK</b> category_id"]
+        UL["user_lifedex<br/><b>FK</b> user_id, lifedex_item_id"]
+    end
+
+    subgraph SOCIAL["7. 친구"]
+        FR["friend_requests<br/><b>FK</b> sender_id, receiver_id"]
+        FS["friendships<br/><b>FK</b> user_id, friend_id"]
+    end
+
+    subgraph GROUP["8. 그룹"]
+        G["quest_groups<br/><b>FK</b> owner_user_id"]
+        GM["group_members<br/><b>FK</b> group_id, user_id,<br/>invited_by_user_id"]
+        GCM["group_chat_messages<br/><b>FK</b> group_id, sender_user_id"]
+        GQ["group_quests<br/><b>FK</b> group_id, created_by_user_id"]
+        GQP["group_quest_participants<br/><b>FK</b> group_quest_id, user_id"]
+    end
+
+    U -->|user_id| SA
+    U -->|user_id| RT
+    U -->|user_id| NT
+
+    AC -->|selected_character_id| U
+    TI -->|representative_title_id| U
+    PI -->|representative_badge_id / selected_accessory_id| U
+    U -->|user_id| UT
+    TI -->|title_id| UT
+    U -->|user_id| UPI
+    PI -->|profile_item_id| UPI
+    U -->|user_id| UCA
+    AC -->|character_id| UCA
+    PI -->|profile_item_id| UCA
+    U -->|user_id| EL
+    LR -. reward_type + reward_ref_id .-> TI
+    LR -. reward_type + reward_ref_id .-> PI
+
+    Q -->|quest_id| UDQ
+    UDQ -->|user_daily_quest_id / UNIQUE| QC
+    Q -->|quest_id| QC
+    U -. user_id / no FK .-> UDQ
+    U -. user_id / no FK .-> QC
+    U -. user_id / no FK .-> QAM
+    U -. owner_user_id / no FK .-> Q
+
+    U -->|user_id| QRU
+    U -->|user_id| QRC
+    QRC -->|candidate_id / UNIQUE| WAQC
+    U -. user_id / no FK .-> WAQC
+
+    U -->|user_id| QPP
+    QC -->|quest_completion_id / UNIQUE| QPP
+    Q -->|quest_id| QPP
+    QPP -->|post_id| QPH
+    QPP -->|post_id| QPV
+    QPP -->|post_id| QPC
+    U -->|voter_user_id| QPV
+    U -->|author_user_id| QPC
+
+    LC -->|category_id| LI
+    LI -->|lifedex_item_id| UL
+    U -->|user_id| UL
+    LI -->|lifedex_item_id| Q
+
+    U -->|sender_id| FR
+    U -->|receiver_id| FR
+    U -->|user_id| FS
+    U -->|friend_id| FS
+
+    U -->|owner_user_id| G
+    G -->|group_id| GM
+    U -->|user_id / invited_by_user_id| GM
+    G -->|group_id| GCM
+    U -->|sender_user_id| GCM
+    G -->|group_id| GQ
+    U -->|created_by_user_id| GQ
+    GQ -->|group_quest_id| GQP
+    U -->|user_id| GQP
+
+    classDef core fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172554
+    classDef catalog fill:#ecfdf5,stroke:#059669,color:#064e3b
+    classDef history fill:#fff7ed,stroke:#ea580c,color:#7c2d12
+    class U,Q,G core
+    class AC,TI,PI,LR,LC,LI catalog
+    class EL,QC,QAM,QRU,WAQC,QPP,QPH,QPV,QPC,NT history
+
+    linkStyle default stroke:#64748b,stroke-width:1.5px

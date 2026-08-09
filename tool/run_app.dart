@@ -66,10 +66,6 @@ Future<void> main(List<String> arguments) async {
       device.id,
       '--dart-define=API_BASE_URL=$apiBaseUrl',
       '--dart-define=GOOGLE_SERVER_CLIENT_ID=$googleClientId',
-      // 서버가 아직 없는 구간의 표본을 켠다. 이 런처로 띄울 때만 켜지므로
-      // `flutter build`로 뽑은 산출물에는 표본이 딸려 나가지 않는다.
-      // (CI의 Android job은 `flutter build apk --debug`라 빌드 모드로는 못 가른다.)
-      '--dart-define=LQ_SAMPLES=true',
       ...options.flutterArguments,
     ];
 

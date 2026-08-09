@@ -184,7 +184,15 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nickname = profile.value?.nickname ?? '모험가';
+    final user = profile.value;
+    final nickname = user?.nickname ?? '모험가';
+    final character = user?.selectedCharacter;
+    final characterAsset = character == null
+        ? LqAssets.charWave
+        : LqAssets.characterWithAccessory(
+            character.code,
+            user?.selectedAccessory?.code,
+          );
 
     return Row(
       children: [
@@ -199,7 +207,11 @@ class _Greeting extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const LqImage(LqAssets.charWave, width: 62),
+        LqImage(
+          characterAsset,
+          key: const ValueKey('home-selected-character'),
+          width: 62,
+        ),
       ],
     );
   }
