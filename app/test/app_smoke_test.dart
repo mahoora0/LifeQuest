@@ -23,6 +23,8 @@ import 'package:life_quest/features/proof/data/proof_repository.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
+import 'package:life_quest/shared/widgets/lq_image.dart';
 
 void main() {
   testWidgets('시안 확정 탭 구성을 표시한다', (tester) async {
@@ -90,6 +92,10 @@ void main() {
     expect(find.text('오늘의 퀘스트'), findsOneWidget);
     expect(find.text('오늘 배정된 퀘스트가 없어요'), findsOneWidget);
     expect(find.text('안녕하세요, 테스터님!\n오늘도 멋진 하루가 될 거예요!'), findsOneWidget);
+    final homeCharacter = tester.widget<LqImage>(
+      find.byKey(const ValueKey('home-selected-character')),
+    );
+    expect(homeCharacter.asset, LqAssets.character('ROOKIE'));
     expect(find.text('Lv. 3'), findsOneWidget);
   });
 

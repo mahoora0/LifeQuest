@@ -32,6 +32,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('모각'), findsOneWidget);
+    expect(find.byKey(const ValueKey('unlocked-character-2')), findsOneWidget);
     expect(find.text('새 캐릭터 해금'), findsOneWidget);
   });
 

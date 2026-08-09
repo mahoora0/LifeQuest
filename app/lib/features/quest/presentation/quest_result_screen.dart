@@ -488,7 +488,12 @@ class _LevelUpDialog extends ConsumerWidget {
                     ),
                   for (final character in characterUnlocks)
                     _LevelUpUnlockLine(
-                      icon: Icons.face_rounded,
+                      leading: LqImage(
+                        LqAssets.character(character.code),
+                        key: ValueKey('unlocked-character-${character.id}'),
+                        width: 32,
+                        height: 32,
+                      ),
                       title: character.name,
                       subtitle: '새 캐릭터 해금',
                     ),
@@ -544,12 +549,14 @@ class _LevelUpDialog extends ConsumerWidget {
 
 class _LevelUpUnlockLine extends StatelessWidget {
   const _LevelUpUnlockLine({
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.title,
     required this.subtitle,
-  });
+  }) : assert(icon != null || leading != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String title;
   final String subtitle;
 
@@ -567,7 +574,7 @@ class _LevelUpUnlockLine extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: LqColors.accent),
+            leading ?? Icon(icon, size: 22, color: LqColors.accent),
             const SizedBox(width: 10),
             Expanded(
               child: Column(

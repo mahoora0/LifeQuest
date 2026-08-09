@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/data/json_reader.dart';
-import 'package:life_quest/shared/data/sample_data.dart';
 
 class UserRepository {
   const UserRepository(this._dio);
@@ -70,23 +69,15 @@ class UserRepository {
     return LevelStatus.fromJson(response.data);
   });
 
-  Future<TitleCollection> fetchTitles() {
-    if (LqSampleData.enabled) {
-      return Future.value(_sampleTitles);
-    }
-    return _guard(() async {
-      final response = await _dio.get<dynamic>('/users/me/titles');
-      return TitleCollection.fromJson(response.data);
-    });
-  }
+  Future<TitleCollection> fetchTitles() => _guard(() async {
+    final response = await _dio.get<dynamic>('/users/me/titles');
+    return TitleCollection.fromJson(response.data);
+  });
 
   /// 대표 칭호 설정. 해제는 `titleId = null`.
-  Future<void> updateRepresentativeTitle(int? titleId) {
-    if (LqSampleData.enabled) return Future.value();
-    return _guard(() async {
-      await _dio.patch<dynamic>('/users/me/title', data: {'titleId': titleId});
-    });
-  }
+  Future<void> updateRepresentativeTitle(int? titleId) => _guard(() async {
+    await _dio.patch<dynamic>('/users/me/title', data: {'titleId': titleId});
+  });
 
   Future<BadgeCollection> fetchBadges() => _guard(() async {
     final response = await _dio.get<dynamic>('/users/me/badges');
@@ -112,29 +103,4 @@ class UserRepository {
       throw ApiException.from(error);
     }
   }
-
-  /// 개발 실행에서 대표 지정·해제 동작을 확인하기 위한 최소 칭호 세트.
-  static const _sampleTitles = TitleCollection(
-    representativeTitleId: 1,
-    titles: [
-      UserTitle(
-        id: 1,
-        name: '새내기 모험가',
-        description: '첫 퀘스트를 완료했어요.',
-        sourceType: 'LEVEL',
-      ),
-      UserTitle(
-        id: 2,
-        name: '동네 탐험가',
-        description: '위치 퀘스트를 3번 완료했어요.',
-        sourceType: 'ACHIEVEMENT',
-      ),
-      UserTitle(
-        id: 3,
-        name: '꾸준한 기록가',
-        description: '7일 동안 꾸준히 활동했어요.',
-        sourceType: 'ACHIEVEMENT',
-      ),
-    ],
-  );
 }
