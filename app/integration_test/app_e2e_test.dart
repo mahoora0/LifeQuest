@@ -57,10 +57,6 @@ class _FakeUserRepository extends UserRepository {
   ];
 
   @override
-  Future<BadgeCollection> fetchBadges() async =>
-      const BadgeCollection(badges: [], representativeBadgeId: null);
-
-  @override
   Future<RewardHistory> fetchRewards() async =>
       const RewardHistory(titles: [], profileItems: []);
 
