@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -282,11 +282,12 @@ class _FailingQuestRepository extends QuestRepository {
   _FailingQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async => throw const ApiException(
-    code: 'INTERNAL_SERVER_ERROR',
-    message: '서버 오류가 발생했습니다.',
-    statusCode: 500,
-  );
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
+      throw const ApiException(
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+        statusCode: 500,
+      );
 }
 
 class _FakeUserRepository extends UserRepository {

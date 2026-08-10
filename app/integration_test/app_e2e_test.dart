@@ -71,7 +71,7 @@ class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async =>
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
       const TodayQuests(assignedDate: '2026-08-04', quests: []);
 }
 

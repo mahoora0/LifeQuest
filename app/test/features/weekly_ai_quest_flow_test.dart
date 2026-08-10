@@ -488,16 +488,17 @@ class _QuestFake extends QuestRepository {
   String? lastLocation;
 
   @override
-  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async => TodayQuests(
-    assignedDate: '2026-08-03',
-    quests: [
-      _daily(1, '일간 퀘스트', QuestCadence.daily, null),
-      for (var i = 0; i < legacyWeeklyCount; i++)
-        _daily(10 + i, '자동 주간 $i', QuestCadence.weekly, 'SYSTEM'),
-      if (weeklyAiAssigned)
-        _daily(4, 'AI로 고른 주간 퀘스트', QuestCadence.weekly, 'AI'),
-    ],
-  );
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
+      TodayQuests(
+        assignedDate: '2026-08-03',
+        quests: [
+          _daily(1, '일간 퀘스트', QuestCadence.daily, null),
+          for (var i = 0; i < legacyWeeklyCount; i++)
+            _daily(10 + i, '자동 주간 $i', QuestCadence.weekly, 'SYSTEM'),
+          if (weeklyAiAssigned)
+            _daily(4, 'AI로 고른 주간 퀘스트', QuestCadence.weekly, 'AI'),
+        ],
+      );
 
   @override
   Future<Quest> fetchQuest(int questId) async =>

@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,50 +138,51 @@ class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async => const TodayQuests(
-    assignedDate: '2026-07-27',
-    quests: [
-      DailyQuest(
-        dailyQuestId: 1,
-        status: DailyQuestStatus.assigned,
-        quest: Quest(
-          id: 1,
-          title: '물 여덟 잔 마시기',
-          cadence: QuestCadence.daily,
-          completionType: QuestCompletionType.selfReport,
-          expReward: 10,
-        ),
-      ),
-      DailyQuest(
-        dailyQuestId: 2,
-        status: DailyQuestStatus.assigned,
-        quest: Quest(
-          id: 21,
-          title: '청계천 물길 따라 걷기',
-          cadence: QuestCadence.daily,
-          completionType: QuestCompletionType.location,
-          expReward: 35,
-          placeName: '청계광장',
-          latitude: 37.5696,
-          longitude: 126.9784,
-          radiusM: 100,
-        ),
-      ),
-      DailyQuest(
-        dailyQuestId: 3,
-        status: DailyQuestStatus.assigned,
-        quest: Quest(
-          id: 25,
-          title: '새로운 카페 방문하기',
-          cadence: QuestCadence.weekly,
-          completionType: QuestCompletionType.location,
-          expReward: 40,
-          placeName: '성수동 카페거리',
-          latitude: 37.5445,
-          longitude: 127.0557,
-          radiusM: 100,
-        ),
-      ),
-    ],
-  );
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
+      const TodayQuests(
+        assignedDate: '2026-07-27',
+        quests: [
+          DailyQuest(
+            dailyQuestId: 1,
+            status: DailyQuestStatus.assigned,
+            quest: Quest(
+              id: 1,
+              title: '물 여덟 잔 마시기',
+              cadence: QuestCadence.daily,
+              completionType: QuestCompletionType.selfReport,
+              expReward: 10,
+            ),
+          ),
+          DailyQuest(
+            dailyQuestId: 2,
+            status: DailyQuestStatus.assigned,
+            quest: Quest(
+              id: 21,
+              title: '청계천 물길 따라 걷기',
+              cadence: QuestCadence.daily,
+              completionType: QuestCompletionType.location,
+              expReward: 35,
+              placeName: '청계광장',
+              latitude: 37.5696,
+              longitude: 126.9784,
+              radiusM: 100,
+            ),
+          ),
+          DailyQuest(
+            dailyQuestId: 3,
+            status: DailyQuestStatus.assigned,
+            quest: Quest(
+              id: 25,
+              title: '새로운 카페 방문하기',
+              cadence: QuestCadence.weekly,
+              completionType: QuestCompletionType.location,
+              expReward: 40,
+              placeName: '성수동 카페거리',
+              latitude: 37.5445,
+              longitude: 127.0557,
+              radiusM: 100,
+            ),
+          ),
+        ],
+      );
 }
