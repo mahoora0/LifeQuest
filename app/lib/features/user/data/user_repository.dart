@@ -79,15 +79,6 @@ class UserRepository {
     await _dio.patch<dynamic>('/users/me/title', data: {'titleId': titleId});
   });
 
-  Future<BadgeCollection> fetchBadges() => _guard(() async {
-    final response = await _dio.get<dynamic>('/users/me/badges');
-    return BadgeCollection.fromJson(response.data);
-  });
-
-  Future<void> updateRepresentativeBadge(int? badgeId) => _guard(() async {
-    await _dio.patch<dynamic>('/users/me/badge', data: {'badgeId': badgeId});
-  });
-
   Future<RewardHistory> fetchRewards() => _guard(() async {
     final response = await _dio.get<dynamic>(
       '/users/me/rewards',

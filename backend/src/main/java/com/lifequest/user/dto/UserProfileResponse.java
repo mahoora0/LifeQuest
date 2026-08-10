@@ -9,7 +9,6 @@ public record UserProfileResponse(
         String profileImageUrl,
         String role,
         TitleResponse representativeTitle,
-        ProfileItemResponse representativeBadge,
         CharacterResponse selectedCharacter,
         AccessoryResponse selectedAccessory) {
 
@@ -23,9 +22,6 @@ public record UserProfileResponse(
                 user.getRepresentativeTitle() == null
                         ? null
                         : TitleResponse.from(user.getRepresentativeTitle()),
-                user.getRepresentativeBadge() == null
-                        ? null
-                        : ProfileItemResponse.from(user.getRepresentativeBadge()),
                 user.getSelectedCharacter() == null
                         ? null
                         : CharacterResponse.from(user.getSelectedCharacter()),

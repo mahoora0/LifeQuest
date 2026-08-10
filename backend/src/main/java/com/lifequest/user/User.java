@@ -60,10 +60,6 @@ public class User {
     private Title representativeTitle;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "representative_badge_id")
-    private ProfileItem representativeBadge;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_accessory_id")
     private ProfileItem selectedAccessory;
 
@@ -118,10 +114,6 @@ public class User {
 
     public void selectRepresentativeTitle(Title title) {
         this.representativeTitle = title;
-    }
-
-    public void selectRepresentativeBadge(ProfileItem badge) {
-        this.representativeBadge = badge;
     }
 
     public void selectAccessory(ProfileItem accessory) {
@@ -181,10 +173,6 @@ public class User {
 
     public Title getRepresentativeTitle() {
         return representativeTitle;
-    }
-
-    public ProfileItem getRepresentativeBadge() {
-        return representativeBadge;
     }
 
     public ProfileItem getSelectedAccessory() {

@@ -44,7 +44,7 @@ class AdminLevelRewardIntegrationTests {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.titles.length()").value(3))
-                .andExpect(jsonPath("$.data.profileItems.length()").value(17));
+                .andExpect(jsonPath("$.data.profileItems.length()").value(14));
 
         MvcResult created = mockMvc.perform(post("/api/admin/level-rewards")
                         .header("Authorization", bearer(token))
@@ -62,12 +62,12 @@ class AdminLevelRewardIntegrationTests {
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"level":11,"rewardType":"PROFILE_ITEM","rewardRefId":1,
-                                 "description":"레벨 11 배지"}
+                                {"level":11,"rewardType":"PROFILE_ITEM","rewardRefId":4,
+                                 "description":"레벨 11 액세서리"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.level").value(11))
-                .andExpect(jsonPath("$.data.rewardCode").value("SPROUT_BADGE"));
+                .andExpect(jsonPath("$.data.rewardCode").value("APRON"));
 
         mockMvc.perform(delete("/api/admin/level-rewards/{id}", rewardId.longValue())
                         .header("Authorization", bearer(token)))

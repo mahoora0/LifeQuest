@@ -2,12 +2,10 @@ package com.lifequest.user;
 
 import com.lifequest.common.response.ApiResponse;
 import com.lifequest.user.dto.UpdateProfileRequest;
-import com.lifequest.user.dto.BadgeCollectionResponse;
 import com.lifequest.user.dto.CharacterResponse;
 import com.lifequest.user.dto.CharacterSelectionRequest;
 import com.lifequest.user.dto.AccessoryCollectionResponse;
 import com.lifequest.user.dto.AccessorySelectionRequest;
-import com.lifequest.user.dto.RepresentativeBadgeRequest;
 import com.lifequest.user.dto.RepresentativeTitleRequest;
 import com.lifequest.user.dto.RewardHistoryResponse;
 import com.lifequest.user.dto.TitleCollectionResponse;
@@ -113,19 +111,6 @@ public class UserController {
             @RequestBody RepresentativeTitleRequest request) {
         return ApiResponse.success(
                 userService.selectRepresentativeTitle(userId(jwt), request.titleId()));
-    }
-
-    @GetMapping("/badges")
-    public ApiResponse<BadgeCollectionResponse> badges(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success(userService.getBadges(userId(jwt)));
-    }
-
-    @PatchMapping("/badge")
-    public ApiResponse<UserProfileResponse> selectBadge(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestBody RepresentativeBadgeRequest request) {
-        return ApiResponse.success(
-                userService.selectRepresentativeBadge(userId(jwt), request.badgeId()));
     }
 
     @GetMapping("/rewards")

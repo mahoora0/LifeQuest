@@ -76,10 +76,6 @@ public class RewardService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         userProfileItemRepository.save(new UserProfileItem(
                 user, item, "LEVEL", (long) reward.getLevel()));
-        if (item.getItemType() == ProfileItem.ItemType.BADGE
-                && user.getRepresentativeBadge() == null) {
-            user.selectRepresentativeBadge(item);
-        }
         granted.add(new RewardGrant(
                 LevelReward.RewardType.PROFILE_ITEM.name(), item.getCode(), item.getName()));
     }

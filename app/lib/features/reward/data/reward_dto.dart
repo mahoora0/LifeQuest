@@ -4,7 +4,6 @@ import 'package:life_quest/shared/data/json_reader.dart';
 enum LqRewardKind {
   title('칭호'),
   item('아이템'),
-  badge('배지'),
   currency('재화');
 
   const LqRewardKind(this.label);
@@ -13,7 +12,6 @@ enum LqRewardKind {
 
   static LqRewardKind parse(String? raw) => switch (raw) {
     'ITEM' || 'item' => item,
-    'BADGE' || 'badge' => badge,
     'CURRENCY' || 'currency' => currency,
     _ => title,
   };

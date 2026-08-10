@@ -333,16 +333,6 @@ class _FakeUserRepository extends UserRepository {
       );
 
   @override
-  Future<BadgeCollection> fetchBadges() async => const BadgeCollection(
-    badges: [
-      ProfileItem(id: 1, name: '새싹 배지', sourceType: 'LEVEL'),
-      ProfileItem(id: 2, name: '나침반 배지', sourceType: 'LEVEL'),
-      ProfileItem(id: 3, name: '황금 모험가 배지', sourceType: 'ACHIEVEMENT'),
-    ],
-    representativeBadgeId: 1,
-  );
-
-  @override
   Future<RewardHistory> fetchRewards() async =>
       const RewardHistory(titles: [], profileItems: []);
 

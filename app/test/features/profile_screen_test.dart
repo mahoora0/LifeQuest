@@ -18,7 +18,7 @@ import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
 
-/// 마이페이지는 대표 배지 지정 결과가 돌아와 보이는 화면이고, 서버가 아직 없는
+/// 마이페이지는 대표 칭호 지정 결과가 돌아와 보이는 화면이고, 서버가 아직 없는
 /// 구간(도감·업적)을 오류가 아니라 준비 중으로 알려야 하는 화면이기도 하다.
 void main() {
   Future<void> pumpProfile(WidgetTester tester, {double width = 420}) async {
@@ -134,8 +134,6 @@ class _FakeUserRepository extends UserRepository {
     nickname: '모험가',
     representativeTitle: '길잡이',
     representativeTitleId: 9,
-    representativeBadge: '나침반 배지',
-    representativeBadgeId: 5,
   );
 
   @override
@@ -153,31 +151,12 @@ class _FakeUserRepository extends UserRepository {
     ],
     profileItems: [
       ProfileItem(
-        id: 5,
-        name: '나침반 배지',
-        itemType: 'BADGE',
-        acquiredAt: DateTime(2026, 7, 26),
-      ),
-      ProfileItem(
         id: 4,
         name: '이름표',
         itemType: 'NAMEPLATE',
         acquiredAt: DateTime(2026, 7, 22),
       ),
     ],
-  );
-
-  /// 대표(id 5)를 일부러 마지막에 둬서 미리보기 정렬이 필요한 상태를 만든다.
-  @override
-  Future<BadgeCollection> fetchBadges() async => const BadgeCollection(
-    badges: [
-      ProfileItem(id: 1, name: '새싹 배지'),
-      ProfileItem(id: 2, name: '별빛 배지'),
-      ProfileItem(id: 3, name: '숲길 배지'),
-      ProfileItem(id: 4, name: '달빛 배지'),
-      ProfileItem(id: 5, name: '나침반 배지'),
-    ],
-    representativeBadgeId: 5,
   );
 
   @override

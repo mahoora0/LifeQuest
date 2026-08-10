@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 public class ProfileItem {
 
     public enum ItemType {
-        BACKGROUND, FRAME, BADGE, OUTFIT
+        BACKGROUND, FRAME, OUTFIT
     }
 
     @Id

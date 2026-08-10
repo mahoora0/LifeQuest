@@ -119,10 +119,10 @@ class _AchievementTab extends ConsumerWidget {
       value: overview,
       isEmpty: (value) => value.isEmpty,
       emptyMessage: '아직 등록된 업적이 없어요',
-      // 업적 목록만 서버가 없고 칭호·배지는 조회된다. 첫 탭이 오류로 막히면
+      // 업적 목록만 서버가 없고 칭호는 조회된다. 첫 탭이 오류로 막히면
       // 동작하는 두 탭까지 함께 죽은 것처럼 보이므로 그쪽으로 안내한다.
       notReadyMessage: '업적 목록은 아직 준비 중이에요',
-      notReadyHint: '칭호·배지 탭은 지금도 확인할 수 있어요.',
+      notReadyHint: '칭호는 지금도 확인할 수 있어요.',
       onRetry: () => ref.invalidate(achievementOverviewProvider),
       data: (value) {
         final visible = value.achievements.where(filter.matches).toList();

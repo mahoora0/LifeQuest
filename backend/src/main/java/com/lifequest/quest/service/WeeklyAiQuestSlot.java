@@ -2,7 +2,6 @@ package com.lifequest.quest.service;
 
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.quest.domain.QuestCadence;
-import com.lifequest.quest.repository.UserDailyQuestRepository;
 import com.lifequest.quest.repository.WeeklyAiQuestClaimRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,17 +30,12 @@ public class WeeklyAiQuestSlot {
      * 주간이 4개가 된다. <b>이 불변식은 서버가 지켜야 한다</b> — 앱이 카드를 감추는 것만으로는
      * API를 직접 부르는 경로가 남는다.
      */
-    public static final int WEEKLY_SLOTS = 3;
-
     private final WeeklyAiQuestClaimRepository claims;
-    private final UserDailyQuestRepository assignments;
     private final QuestPeriod questPeriod;
 
     public WeeklyAiQuestSlot(WeeklyAiQuestClaimRepository claims,
-                             UserDailyQuestRepository assignments,
                              QuestPeriod questPeriod) {
         this.claims = claims;
-        this.assignments = assignments;
         this.questPeriod = questPeriod;
     }
 
@@ -65,9 +59,6 @@ public class WeeklyAiQuestSlot {
 
         if (claims.existsByUserIdAndPeriodStart(userId, periodStart)) {
             return Availability.blockedBy(ErrorCode.WEEKLY_AI_QUEST_ALREADY_CLAIMED);
-        }
-        if (assignments.countByCadence(userId, periodStart, QuestCadence.WEEKLY) >= WEEKLY_SLOTS) {
-            return Availability.blockedBy(ErrorCode.WEEKLY_AI_SLOT_UNAVAILABLE);
         }
         return Availability.available();
     }

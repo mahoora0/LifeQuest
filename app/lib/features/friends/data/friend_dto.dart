@@ -222,7 +222,8 @@ class JourneySide {
     int? lifedexCollected,
     int? achievements,
     int? streakDays,
-    int lifedexTotal = 100,
+    this.achievementTotal = 0,
+    this.lifedexTotal = 0,
   }) : completedQuestCount = completedQuestCount ?? achievements ?? 0,
        visitedPlaceCount = visitedPlaceCount ?? lifedexCollected ?? 0;
 
@@ -230,23 +231,30 @@ class JourneySide {
   final int totalExp;
   final int completedQuestCount;
   final int visitedPlaceCount;
+  final int achievementTotal;
+  final int lifedexTotal;
 
   factory JourneySide.fromJson(Map<String, dynamic> json) => JourneySide(
     level: asInt(json['level']) ?? 1,
     totalExp: asInt(json['totalExp']) ?? 0,
-    completedQuestCount: asInt(json['completedQuestCount']) ?? 0,
-    visitedPlaceCount: asInt(json['visitedPlaceCount']) ?? 0,
+    completedQuestCount:
+        asInt(
+          pick(json, [
+            'completedQuestCount',
+            'achievements',
+            'achievementCount',
+          ]),
+        ) ??
+        0,
+    visitedPlaceCount:
+        asInt(
+          pick(json, ['visitedPlaceCount', 'lifedexCollected', 'lifedexCount']),
+        ) ??
+        0,
+    achievementTotal:
+        asInt(pick(json, ['achievementTotal', 'totalAchievementCount'])) ?? 0,
+    lifedexTotal: asInt(pick(json, ['lifedexTotal', 'totalLifedexCount'])) ?? 0,
   );
-}
-
-/// 동료의 대표 배지 한 칸.
-class JourneyBadge {
-  const JourneyBadge({required this.name, this.iconAsset});
-
-  final String name;
-
-  /// 번들 아이콘 경로. 없으면 이름 첫 글자로 그린다(마이페이지 배지 칸과 같은 방식).
-  final String? iconAsset;
 }
 
 /// S-21 동료 여정 비교 (`GET /api/friends/{userId}/journey`).
@@ -258,7 +266,6 @@ class FriendJourney {
     required this.friend,
     this.titleLine,
     this.cheered = false,
-    this.badges = const [],
   });
 
   final int userId;
@@ -270,7 +277,6 @@ class FriendJourney {
   final bool cheered;
   final JourneySide me;
   final JourneySide friend;
-  final List<JourneyBadge> badges;
 
   FriendJourney copyWith({bool? cheered}) => FriendJourney(
     userId: userId,
@@ -279,7 +285,6 @@ class FriendJourney {
     cheered: cheered ?? this.cheered,
     me: me,
     friend: friend,
-    badges: badges,
   );
 
   factory FriendJourney.fromJson(Object? body) {
@@ -293,12 +298,6 @@ class FriendJourney {
       cheered: asBool(pick(json, ['cheered', 'cheeredToday'])),
       me: JourneySide.fromJson(asMap(json['me'])),
       friend: JourneySide.fromJson(asMap(pick(json, ['friend', 'other']))),
-      badges: [
-        if (asString(json['representativeBadge']) case final badge?)
-          JourneyBadge(name: badge),
-        for (final badge in asMapList(json['badges']))
-          JourneyBadge(name: asString(pick(badge, ['name', 'label'])) ?? '배지'),
-      ],
     );
   }
 }

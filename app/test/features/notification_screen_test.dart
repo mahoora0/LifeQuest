@@ -12,6 +12,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 알림 목록 + 설정 (화면맵 2d).
 void main() {
+  test('서버가 집계한 전체 미읽음 수를 페이지 항목 수보다 우선한다', () {
+    final feed = LqNotificationFeed.fromJson({
+      'content': [
+        {
+          'id': 1,
+          'kind': 'FRIEND_REQUEST',
+          'title': '친구 요청',
+          'timeLabel': '방금',
+          'read': false,
+        },
+      ],
+      'unreadCount': 103,
+    });
+
+    expect(feed.items, hasLength(1));
+    expect(feed.unreadCount, 103);
+  });
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('백엔드 알림 목록과 친구 수락 종류를 해석한다', () {

@@ -3,7 +3,6 @@ package com.lifequest.user;
 import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.user.dto.UpdateProfileRequest;
-import com.lifequest.user.dto.BadgeCollectionResponse;
 import com.lifequest.user.dto.CharacterResponse;
 import com.lifequest.user.dto.AccessoryCollectionResponse;
 import com.lifequest.user.dto.AccessoryResponse;
@@ -231,35 +230,6 @@ public class UserService {
             UserTitle owned = userTitleRepository.findByUserIdAndTitleId(userId, titleId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
             user.selectRepresentativeTitle(owned.getTitle());
-        }
-        return UserProfileResponse.from(user);
-    }
-
-    @Transactional(readOnly = true)
-    public BadgeCollectionResponse getBadges(Long userId) {
-        User user = getUser(userId);
-        List<ProfileItemResponse> badges = userProfileItemRepository
-                .findAllByUserIdOrderByAcquiredAtDesc(userId).stream()
-                .filter(owned -> owned.getProfileItem().getItemType() == ProfileItem.ItemType.BADGE)
-                .map(ProfileItemResponse::from)
-                .toList();
-        return new BadgeCollectionResponse(
-                badges,
-                user.getRepresentativeBadge() == null
-                        ? null
-                        : user.getRepresentativeBadge().getId());
-    }
-
-    @Transactional
-    public UserProfileResponse selectRepresentativeBadge(Long userId, Long badgeId) {
-        User user = getUser(userId);
-        if (badgeId == null) {
-            user.selectRepresentativeBadge(null);
-        } else {
-            UserProfileItem owned = userProfileItemRepository.findByUserIdAndProfileItemId(userId, badgeId)
-                    .filter(item -> item.getProfileItem().getItemType() == ProfileItem.ItemType.BADGE)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
-            user.selectRepresentativeBadge(owned.getProfileItem());
         }
         return UserProfileResponse.from(user);
     }

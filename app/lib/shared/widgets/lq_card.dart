@@ -38,7 +38,7 @@ class LqCard extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final AlignmentGeometry? alignment;
 
-  /// 카드 상단 제목 띠. 시안의 성장 기록·내 배지·나의 기록이 모두 이 구조를 쓴다.
+  /// 카드 상단 제목 띠. 시안의 성장 기록·나의 기록이 모두 이 구조를 쓴다.
   final String? header;
 
   /// 제목 띠 우측에 붙는 보조 요소("더보기 ›" 같은).

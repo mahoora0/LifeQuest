@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,20 +104,6 @@ void main() {
     });
   });
 
-  group('빈 이름이 화면을 죽이지 않는다', () {
-    testWidgets('배지 이름이 비어 있어도 여정 화면이 그려진다', (tester) async {
-      // `''.characters.first`는 StateError를 던진다. 서버가 이름을 빈 문자열로
-      // 주는 것은 이 앱의 마스킹 규약이라 실제로 올 수 있는 값이다.
-      await pumpJourney(
-        tester,
-        _SpyFriendRepository(badges: const [JourneyBadge(name: '')]),
-      );
-
-      expect(tester.takeException(), isNull);
-      expect(find.text('나란히 보기'), findsOneWidget);
-    });
-  });
-
   group('디자인 프레임에서 넘치지 않는다', () {
     testWidgets('20자 닉네임이 카드 제목 띠를 넘치게 하지 않는다', (tester) async {
       useDesignFrame(tester);
@@ -125,28 +111,6 @@ void main() {
       await pumpJourney(
         tester,
         _SpyFriendRepository(nickname: '가나다라마바사아자차카타파하가나다라마바'),
-      );
-
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('배지가 여러 개여도 카드가 넘치지 않는다', (tester) async {
-      useDesignFrame(tester);
-      // 개수는 서버가 정한다 — 한 줄에 고정하면 일정 개수부터 반드시 넘친다.
-      await pumpJourney(
-        tester,
-        _SpyFriendRepository(
-          badges: const [
-            JourneyBadge(name: '가'),
-            JourneyBadge(name: '나'),
-            JourneyBadge(name: '다'),
-            JourneyBadge(name: '라'),
-            JourneyBadge(name: '마'),
-            JourneyBadge(name: '바'),
-            JourneyBadge(name: '사'),
-            JourneyBadge(name: '아'),
-          ],
-        ),
       );
 
       expect(tester.takeException(), isNull);
@@ -336,15 +300,10 @@ void main() {
 }
 
 class _SpyFriendRepository extends FriendRepository {
-  _SpyFriendRepository({
-    this.responseUserId = 7,
-    this.nickname = '하늘',
-    this.badges = const [JourneyBadge(name: '새벽의 개척자')],
-  });
+  _SpyFriendRepository({this.responseUserId = 7, this.nickname = '하늘'});
 
   final int responseUserId;
   final String nickname;
-  final List<JourneyBadge> badges;
 
   final unfriended = <int>[];
   final cheered = <int>[];
@@ -360,7 +319,6 @@ class _SpyFriendRepository extends FriendRepository {
       lifedexCollected: 51,
       achievements: 31,
     ),
-    badges: badges,
   );
 
   @override

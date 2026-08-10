@@ -65,32 +65,3 @@ class TitleCollectionNotifier extends AsyncNotifier<TitleCollection> {
     }
   }
 }
-
-final badgeCollectionProvider =
-    AsyncNotifierProvider<BadgeCollectionNotifier, BadgeCollection>(
-      BadgeCollectionNotifier.new,
-    );
-
-class BadgeCollectionNotifier extends AsyncNotifier<BadgeCollection> {
-  @override
-  Future<BadgeCollection> build() {
-    return ref.watch(userRepositoryProvider).fetchBadges();
-  }
-
-  Future<void> select(int badgeId) async {
-    final current = state.value;
-    if (current == null) return;
-
-    final next = current.representativeBadgeId == badgeId ? null : badgeId;
-    state = AsyncData(
-      BadgeCollection(badges: current.badges, representativeBadgeId: next),
-    );
-    try {
-      await ref.read(userRepositoryProvider).updateRepresentativeBadge(next);
-      ref.invalidate(myProfileProvider);
-    } catch (error, stackTrace) {
-      state = AsyncData(current);
-      Error.throwWithStackTrace(error, stackTrace);
-    }
-  }
-}

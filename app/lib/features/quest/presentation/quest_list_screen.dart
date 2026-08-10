@@ -54,8 +54,6 @@ class QuestListScreen extends ConsumerStatefulWidget {
 
 class _QuestListScreenState extends ConsumerState<QuestListScreen> {
   /// 트랙당 슬롯 수. 주간은 이 중 둘만 자동으로 차고 나머지 하나가 AI 슬롯이다.
-  static const _weeklySlots = 3;
-
   /// 진입 시 일간이 선택된다("전체" 칩이 없어 기본값이 반드시 하나 있어야 한다).
   late _QuestFilter _filter = switch (widget.initialTab) {
     'weekly' => _QuestFilter.weekly,
@@ -171,11 +169,9 @@ class _QuestListScreenState extends ConsumerState<QuestListScreen> {
   /// 이번 주 배정이 그렇고, 받아도 서버가 거절할 자리를 권하는 셈이 된다.
   /// 다음 주기부터는 자동이 2개라 자연히 열린다.
   bool _weeklyAiSlotOpen(List<DailyQuest> quests) {
-    final weekly = quests
-        .where((q) => q.quest.cadence == QuestCadence.weekly)
-        .toList();
-    return weekly.length < _weeklySlots &&
-        !weekly.any((q) => q.quest.isAiGenerated);
+    return !quests.any(
+      (q) => q.quest.cadence == QuestCadence.weekly && q.quest.isAiGenerated,
+    );
   }
 
   Future<void> _openDetail(DailyQuest dailyQuest) async {

@@ -155,19 +155,26 @@ void main() {
   });
 
   group('S-21 동료 여정 비교', () {
-    testWidgets('두 사람의 수치를 나란히 보여준다', (tester) async {
+    testWidgets('항목별 카드에서 두 사람의 우세와 차이를 보여준다', (tester) async {
       await pump(tester, const FriendJourneyScreen(userId: 11));
 
       expect(find.text('하늘님의 여정'), findsOneWidget);
-      expect(find.text('나란히 보기'), findsOneWidget);
-      expect(find.text('나 · 하늘'), findsOneWidget);
+      expect(find.text('여정 비교'), findsOneWidget);
       expect(find.text('레벨'), findsOneWidget);
-      expect(find.text('12 · 14'), findsOneWidget);
+      expect(find.text('+2Lv.'), findsOneWidget);
+      expect(find.text('Lv. 12'), findsOneWidget);
+      expect(find.text('Lv. 14'), findsNWidgets(2));
       expect(find.text('누적 EXP'), findsOneWidget);
-      expect(find.text('완료 퀘스트'), findsOneWidget);
-      expect(find.text('24 · 31'), findsOneWidget);
-      expect(find.text('방문 장소'), findsOneWidget);
-      expect(find.text('42 · 51'), findsOneWidget);
+      expect(find.text('업적'), findsOneWidget);
+      expect(find.text('+7개'), findsOneWidget);
+      expect(find.text('24개'), findsOneWidget);
+      expect(find.text('31개'), findsOneWidget);
+      expect(find.text('도감'), findsOneWidget);
+      expect(find.text('+9개'), findsOneWidget);
+      expect(find.text('42개'), findsOneWidget);
+      expect(find.text('51개'), findsOneWidget);
+      expect(find.text('사용 중인 칭호'), findsOneWidget);
+      expect(find.text('하늘 · 새벽의 개척자'), findsOneWidget);
     });
 
     testWidgets('연속 달성은 서버 판정 전까지 칸째 감춘다', (tester) async {
@@ -181,8 +188,14 @@ void main() {
     testWidgets('이미 응원했으면 응원 버튼이 잠긴다', (tester) async {
       await pump(tester, const FriendJourneyScreen(userId: 11));
 
-      // 되돌릴 수 없는 단방향 동작이라 다시 누를 수 있으면 안 된다.
       expect(find.text('응원함 ✓'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('오늘은 응원했어요'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // 되돌릴 수 없는 단방향 동작이라 다시 누를 수 있으면 안 된다.
       expect(find.text('오늘은 응원했어요'), findsOneWidget);
       expect(find.text('응원 보내기'), findsNothing);
     });
@@ -258,6 +271,5 @@ class _FakeFriendRepository extends FriendRepository {
       achievements: 31,
       streakDays: 9,
     ),
-    badges: [JourneyBadge(name: '새벽의 개척자')],
   );
 }

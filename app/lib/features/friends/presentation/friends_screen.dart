@@ -54,8 +54,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               showBack: false,
               trailing: LqIconButton(
                 icon: Icons.person_add_alt,
-                size: 26,
-                iconSize: 15,
+                size: 32,
+                iconSize: 18,
                 semanticLabel: '동료 찾기',
                 onTap: () => context.push('/friends/search'),
               ),
@@ -251,7 +251,7 @@ class _IntroCard extends StatelessWidget {
               friendCount == 0
                   ? '아직 친구가 없어요.\n친구 코드를 나누고 함께 모험해요!'
                   : '친구 $friendCount명이 오늘도 모험 중!\n응원하면 서로 EXP 5!',
-              style: LqText.bodySm,
+              style: LqText.bodySm.copyWith(fontSize: 14),
             ),
           ),
         ],
@@ -277,7 +277,7 @@ class _FriendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LqCard(
       radius: LqShape.rowRadius,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       onTap: onOpen,
       child: Row(
         children: [
@@ -341,7 +341,7 @@ class _CheerButton extends StatelessWidget {
             child: Text(
               cheered ? '응원함 ✓' : '응원',
               style: LqText.badge.copyWith(
-                fontSize: 13,
+                fontSize: 11,
                 color: cheered ? LqColors.goldText : LqColors.primary,
               ),
             ),
@@ -410,6 +410,7 @@ class _FriendCodeCard extends StatelessWidget {
             LqStatePill(
               label: '복사',
               tone: LqPillTone.quiet,
+              fontSize: 11,
               onTap: () => _copy(context, myCode!),
             )
           else
@@ -727,30 +728,11 @@ class _RankRow extends StatelessWidget {
       radius: LqShape.tileRadius,
       background: entry.isMe ? _selfRowBackground : LqColors.surfaceTile,
       borderColor: entry.isMe ? LqColors.ink : LqColors.divider,
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
       onTap: onOpen,
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _medalColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: LqColors.ink,
-                width: LqShape.borderWidth,
-              ),
-            ),
-            child: Text(
-              '${entry.rank}',
-              style: LqText.badge.copyWith(
-                fontSize: 14,
-                color: LqColors.goldText,
-              ),
-            ),
-          ),
+          _RankCircle(rank: entry.rank, color: _medalColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -778,6 +760,47 @@ class _RankRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RankCircle extends StatelessWidget {
+  const _RankCircle({required this.rank, required this.color});
+
+  final int rank;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '$rank',
+            textAlign: TextAlign.center,
+            strutStyle: const StrutStyle(
+              fontSize: 11,
+              height: 1,
+              forceStrutHeight: true,
+            ),
+            style: LqText.badge.copyWith(
+              fontSize: 11,
+              height: 1,
+              color: LqColors.goldText,
+            ),
+          ),
+        ),
       ),
     );
   }

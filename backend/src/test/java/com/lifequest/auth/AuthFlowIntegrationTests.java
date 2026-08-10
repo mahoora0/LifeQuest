@@ -134,12 +134,6 @@ class AuthFlowIntegrationTests {
                 .andExpect(jsonPath("$.data.titles[0].name").value("새내기 모험가"))
                 .andExpect(jsonPath("$.data.representativeTitleId").value(1));
 
-        mockMvc.perform(get("/api/users/me/badges")
-                        .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.badges[0].name").value("새싹 배지"))
-                .andExpect(jsonPath("$.data.representativeBadgeId").value(1));
-
         mockMvc.perform(patch("/api/users/me/title")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -158,24 +152,6 @@ class AuthFlowIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.representativeTitle.name")
                         .value("새내기 모험가"));
-
-        mockMvc.perform(patch("/api/users/me/badge")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"badgeId":null}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.representativeBadge").doesNotExist());
-
-        mockMvc.perform(patch("/api/users/me/badge")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"badgeId":1}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.representativeBadge.name").value("새싹 배지"));
 
         MockMultipartFile profileImage = new MockMultipartFile(
                 "file", "profile.png", "image/png", new byte[] {1, 2, 3});
@@ -204,15 +180,6 @@ class AuthFlowIntegrationTests {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("INVALID_PROFILE_IMAGE"));
-
-        mockMvc.perform(patch("/api/users/me/badge")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"badgeId":2}
-                                """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
 
         MvcResult reissue = mockMvc.perform(post("/api/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)
