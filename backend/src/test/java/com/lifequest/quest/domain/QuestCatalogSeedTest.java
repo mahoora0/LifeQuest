@@ -90,7 +90,7 @@ class QuestCatalogSeedTest {
                 LongStream.rangeClosed(BASE_SEED_LAST_ID + 1, EXTENDED_SEED_LAST_ID).boxed().toList());
     }
 
-    /** V33 지역·템플릿 LOCATION 시드(69~103). */
+    /** V33 지역·템플릿 LOCATION 시드({@link #LOCATION_SEED_FIRST_ID}~{@link #LAST_SEED_ID}). */
     private List<Quest> locationSeededQuests() {
         return questRepository.findAllById(
                 LongStream.rangeClosed(LOCATION_SEED_FIRST_ID, LAST_SEED_ID).boxed().toList());
@@ -101,7 +101,8 @@ class QuestCatalogSeedTest {
         assertEquals(LAST_SEED_ID - FIRST_SEED_ID + 1, seededQuests().size(),
                 "id 1~%d가 모두 있어야 한다 — 1~42는 업적의 target_quest_id가 참조하고, "
                         .formatted(LAST_SEED_ID)
-                        + "43~68은 슬롯 등급 결손을(V22), 69~103은 지역·템플릿 결손을(V33) 메운다");
+                        + "43~%d은 슬롯 등급 결손을(V22), %d~%d은 지역·템플릿 결손을(V33) 메운다"
+                                .formatted(EXTENDED_SEED_LAST_ID, LOCATION_SEED_FIRST_ID, LAST_SEED_ID));
     }
 
     /**
@@ -311,11 +312,11 @@ class QuestCatalogSeedTest {
                 .toList();
 
         for (Map.Entry<String, double[]> city : cities.entrySet()) {
-            List<Quest> inCity = located;
-
             for (QuestCadence cadence : QuestCadence.values()) {
+                // 반경이 트랙마다 다르므로 도시로 좁히는 것도 트랙 안에서 해야 한다 —
+                // 바깥에서 한 번 좁혀 두면 두 트랙이 같은 반경을 쓰게 된다
                 double radiusM = cadence == QuestCadence.WEEKLY ? WEEKLY_RADIUS_M : DAILY_RADIUS_M;
-                long grades = inCity.stream()
+                long grades = located.stream()
                         .filter(quest -> quest.getCadence() == cadence)
                         .filter(quest -> withinCity(quest, city.getValue(), radiusM))
                         .map(Quest::getGrade)
