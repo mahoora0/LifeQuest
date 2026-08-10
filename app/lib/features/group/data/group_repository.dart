@@ -5,6 +5,9 @@ import 'package:life_quest/shared/data/json_reader.dart';
 
 class GroupRepository {
   const GroupRepository(this._dio);
+
+  static const _pageSize = 50;
+
   final Dio _dio;
   Future<T> _guard<T>(Future<T> Function() run) async {
     try {
@@ -123,13 +126,8 @@ class GroupRepository {
     );
   });
   Future<List<GroupMember>> _members(String path) => _guard(() async {
-    final r = await _dio.get<dynamic>(
-      path,
-      queryParameters: {'page': 0, 'size': 50},
-    );
-    return asMapList(
-      asMap(r.data)['content'],
-    ).map(GroupMember.fromJson).toList();
+    final content = await _allPages(path);
+    return content.map(GroupMember.fromJson).toList();
   });
   Future<GroupMessagePage> messages(int id, {int? beforeId, int? afterId}) =>
       _guard(() async {
@@ -159,32 +157,51 @@ class GroupRepository {
   );
   Future<List<GroupQuest>> quests(int id, {required bool upcoming}) =>
       _guard(() async {
-        final r = await _dio.get<dynamic>(
+        final content = await _allPages(
           '/groups/$id/quests',
-          queryParameters: {
-            'scope': upcoming ? 'UPCOMING' : 'PAST',
-            'page': 0,
-            'size': 50,
-          },
+          queryParameters: {'scope': upcoming ? 'UPCOMING' : 'PAST'},
         );
-        return asMapList(
-          asMap(r.data)['content'],
-        ).map(GroupQuest.fromJson).toList();
+        return content.map(GroupQuest.fromJson).toList();
       });
   Future<List<GroupQuest>> myQuests({required bool upcoming}) =>
       _guard(() async {
-        final r = await _dio.get<dynamic>(
+        final content = await _allPages(
           '/group-quests/me',
-          queryParameters: {
-            'scope': upcoming ? 'UPCOMING' : 'PAST',
-            'page': 0,
-            'size': 50,
-          },
+          queryParameters: {'scope': upcoming ? 'UPCOMING' : 'PAST'},
         );
-        return asMapList(
-          asMap(r.data)['content'],
-        ).map(GroupQuest.fromJson).toList();
+        return content.map(GroupQuest.fromJson).toList();
       });
+
+  /// 화면이 페이지 UI를 제공하지 않는 그룹 목록은 서버의 모든 페이지를 모은다.
+  ///
+  /// 첫 응답에서 전체 페이지 수를 확인한 뒤 나머지를 병렬로 요청한다. [Future.wait]는
+  /// 입력 순서대로 결과를 돌려주므로 서버 페이지 순서도 그대로 유지된다.
+  Future<List<Map<String, dynamic>>> _allPages(
+    String path, {
+    Map<String, dynamic> queryParameters = const {},
+  }) async {
+    Future<Map<String, dynamic>> fetchPage(int page) async {
+      final response = await _dio.get<dynamic>(
+        path,
+        queryParameters: {...queryParameters, 'page': page, 'size': _pageSize},
+      );
+      return asMap(response.data);
+    }
+
+    final first = await fetchPage(0);
+    final totalPages = asInt(first['totalPages']) ?? 1;
+    final result = <Map<String, dynamic>>[...asMapList(first['content'])];
+    if (totalPages <= 1) return result;
+
+    final remaining = await Future.wait([
+      for (var page = 1; page < totalPages; page++) fetchPage(page),
+    ]);
+    for (final page in remaining) {
+      result.addAll(asMapList(page['content']));
+    }
+    return result;
+  }
+
   Future<GroupQuest> quest(int id, int questId) => _guard(
     () async => GroupQuest.fromJson(
       asMap((await _dio.get<dynamic>('/groups/$id/quests/$questId')).data),
