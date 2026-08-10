@@ -74,6 +74,16 @@ class Member4DataFlowIntegrationTests {
                 .andExpect(jsonPath("$.data.level").value(2))
                 .andExpect(jsonPath("$.data.totalExp").value(150));
 
+        mockMvc.perform(get("/api/users/me/quests/history")
+                        .header("Authorization", bearer(adventurer.token()))
+                        .queryParam("page", "0")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].expReward").value(150))
+                .andExpect(jsonPath("$.data.content[0].completedAt").isNotEmpty());
+
         mockMvc.perform(get("/api/users/me/rewards")
                         .header("Authorization", bearer(adventurer.token())))
                 .andExpect(status().isOk())

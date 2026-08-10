@@ -12,14 +12,17 @@ public class LifedexService implements CollectionService {
     private final LifedexCategoryRepository categoryRepository;
     private final LifedexItemRepository itemRepository;
     private final UserLifedexRepository userLifedexRepository;
+    private final AchievementService achievementService;
 
     LifedexService(
             LifedexCategoryRepository categoryRepository,
             LifedexItemRepository itemRepository,
-            UserLifedexRepository userLifedexRepository) {
+            UserLifedexRepository userLifedexRepository,
+            AchievementService achievementService) {
         this.categoryRepository = categoryRepository;
         this.itemRepository = itemRepository;
         this.userLifedexRepository = userLifedexRepository;
+        this.achievementService = achievementService;
     }
 
     @Transactional(readOnly = true)
@@ -57,20 +60,17 @@ public class LifedexService implements CollectionService {
     @Transactional
     public CollectionOutcome evaluateOnQuestCompletion(
             Long userId, Long questId, Long lifedexItemId, Long questCompletionId) {
-        if (lifedexItemId == null) {
-            return CollectionOutcome.none();
+        List<CollectionOutcome.Entry> newLifedexItems = new java.util.ArrayList<>();
+        if (lifedexItemId != null) {
+            itemRepository.findById(lifedexItemId).ifPresent(item -> {
+                if (userLifedexRepository.insertIfAbsent(userId, lifedexItemId) > 0) {
+                    newLifedexItems.add(new CollectionOutcome.Entry(
+                            item.getId(), item.getName(), false, null));
+                }
+            });
         }
-
-        return itemRepository.findById(lifedexItemId)
-                .map(item -> {
-                    if (userLifedexRepository.insertIfAbsent(userId, lifedexItemId) == 0) {
-                        return CollectionOutcome.none();
-                    }
-                    CollectionOutcome.Entry entry = new CollectionOutcome.Entry(
-                            item.getId(), item.getName(), false, null);
-                    return new CollectionOutcome(List.of(entry), List.of());
-                })
-                .orElseGet(CollectionOutcome::none);
+        List<CollectionOutcome.Entry> newAchievements = achievementService.evaluate(userId);
+        return new CollectionOutcome(List.copyOf(newLifedexItems), newAchievements);
     }
 
     private Set<Long> ownedIds(Long userId) {

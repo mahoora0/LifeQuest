@@ -11,6 +11,8 @@ import com.lifequest.user.dto.RewardHistoryResponse;
 import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.user.dto.FriendCodeResponse;
+import com.lifequest.quest.dto.QuestHistoryPageResponse;
+import com.lifequest.quest.service.QuestHistoryService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +34,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
+    private final QuestHistoryService questHistoryService;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            QuestHistoryService questHistoryService) {
         this.userService = userService;
+        this.questHistoryService = questHistoryService;
     }
 
     @GetMapping
@@ -122,15 +128,12 @@ public class UserController {
     }
 
     @GetMapping("/quests/history")
-    public ApiResponse<Map<String, Object>> questHistory(
+    public ApiResponse<QuestHistoryPageResponse> questHistory(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(Map.of(
-                "content", List.of(),
-                "page", page,
-                "size", size,
-                "totalElements", 0));
+        return ApiResponse.success(
+                questHistoryService.history(userId(jwt), page, size));
     }
 
     private Long userId(Jwt jwt) {

@@ -42,6 +42,7 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
 
     _markCompleted(dailyQuestId);
     ref.invalidate(levelStatusProvider);
+    ref.invalidate(questHistoryProvider);
     return result.withQuestTitle(_titleOf(dailyQuestId));
   }
 

@@ -90,7 +90,9 @@ class QuestCompletionContractTests {
             .andExpect(jsonPath("$.data.completionId").isNumber())
             .andExpect(jsonPath("$.data.location.distanceM").isNotEmpty())
             .andExpect(jsonPath("$.data.growth.rewards[*].code")
-                .value(hasItem("QUEST_FIRST_STEP")));
+                .value(hasItem("QUEST_FIRST_STEP")))
+            .andExpect(jsonPath("$.data.collection.newAchievements[*].name")
+                .value(hasItems("모험의 발자국 I", "도시 탐험가 I")));
     }
 
     @Test
