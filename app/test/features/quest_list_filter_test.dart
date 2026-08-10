@@ -12,6 +12,8 @@ import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 
+import '../support/stub_location_service.dart';
+
 /// 퀘스트 목록(S-08)은 일간·주간·그룹으로 나뉘며 레벨 해금 정책을 따른다.
 void main() {
   Future<void> pumpList(WidgetTester tester, {int level = 5}) async {
@@ -19,6 +21,7 @@ void main() {
       ProviderScope(
         key: UniqueKey(),
         overrides: [
+          stubLocation,
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           groupRepositoryProvider.overrideWithValue(_FakeGroupRepository()),
           levelStatusProvider.overrideWith(
@@ -135,7 +138,7 @@ class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async => const TodayQuests(
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async => const TodayQuests(
     assignedDate: '2026-07-27',
     quests: [
       DailyQuest(

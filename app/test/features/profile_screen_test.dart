@@ -18,6 +18,8 @@ import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/features/user/data/user_repository.dart';
 
+import '../support/stub_location_service.dart';
+
 /// 마이페이지는 대표 칭호 지정 결과가 돌아와 보이는 화면이고, 서버가 아직 없는
 /// 구간(도감·업적)을 오류가 아니라 준비 중으로 알려야 하는 화면이기도 하다.
 void main() {
@@ -31,6 +33,7 @@ void main() {
         // 앱과 같은 재시도 정책을 써야 404가 즉시 실패로 확정된다.
         retry: lqProviderRetry,
         overrides: [
+          stubLocation,
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           lifedexRepositoryProvider.overrideWithValue(_FakeLifedexRepository()),

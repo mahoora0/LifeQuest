@@ -26,11 +26,14 @@ import 'package:life_quest/features/user/data/user_repository.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 
+import 'support/stub_location_service.dart';
+
 void main() {
   testWidgets('시안 확정 탭 구성을 표시한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           storedAuthSessionProvider.overrideWith(
             (ref) async => AuthSession.authenticated,
           ),
@@ -58,6 +61,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           storedAuthSessionProvider.overrideWith(
             (ref) async => AuthSession.unauthenticated,
           ),
@@ -77,6 +81,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           storedAuthSessionProvider.overrideWith(
             (ref) async => AuthSession.authenticated,
           ),
@@ -103,6 +108,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           storedAuthSessionProvider.overrideWith(
             (ref) async => AuthSession.authenticated,
           ),
@@ -128,6 +134,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
           proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
@@ -163,6 +170,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           questRepositoryProvider.overrideWithValue(_FakeQuestRepository()),
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
           proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
@@ -192,6 +200,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
           proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
@@ -219,6 +228,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           userRepositoryProvider.overrideWithValue(_FakeUserRepository()),
           proofRepositoryProvider.overrideWithValue(_FakeProofRepository()),
         ],
@@ -263,7 +273,7 @@ class _FakeQuestRepository extends QuestRepository {
   _FakeQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async =>
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
       const TodayQuests(assignedDate: '2026-07-24', quests: []);
 }
 
@@ -272,7 +282,7 @@ class _FailingQuestRepository extends QuestRepository {
   _FailingQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async => throw const ApiException(
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async => throw const ApiException(
     code: 'INTERNAL_SERVER_ERROR',
     message: '서버 오류가 발생했습니다.',
     statusCode: 500,

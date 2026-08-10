@@ -177,6 +177,9 @@ class _FakeLocationService implements LocationService {
   Future<Position> getCurrentPosition() => throw UnimplementedError();
 
   @override
+  Future<Position?> getLastKnownPosition() async => null;
+
+  @override
   Future<bool> isServiceEnabled() async => true;
 
   @override
@@ -202,6 +205,10 @@ class _BrokenLocationService implements LocationService {
 
   @override
   Future<Position> getCurrentPosition() => throw UnimplementedError();
+
+  @override
+  Future<Position?> getLastKnownPosition() =>
+      throw Exception('MissingPluginException');
 
   @override
   Future<bool> isServiceEnabled() async => false;
