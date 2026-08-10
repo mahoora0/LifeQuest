@@ -69,6 +69,7 @@ void main() {
       final repository = _SpyFriendRepository();
       await pumpJourney(tester, repository, userId: 7);
 
+      await tester.scrollUntilVisible(find.text('친구 삭제'), 200);
       await tester.tap(find.text('친구 삭제'));
       await tester.pumpAndSettle();
       expect(find.textContaining('다시 함께하려면 친구 요청을 새로 보내야 해요.'), findsOneWidget);
@@ -85,6 +86,7 @@ void main() {
       final repository = _SpyFriendRepository(responseUserId: 0);
       await pumpJourney(tester, repository, userId: 7);
 
+      await tester.scrollUntilVisible(find.text('친구 삭제'), 200);
       await tester.tap(find.text('친구 삭제'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('친구 삭제').last);
@@ -97,6 +99,7 @@ void main() {
       final repository = _SpyFriendRepository(responseUserId: 0);
       await pumpJourney(tester, repository, userId: 7);
 
+      await tester.scrollUntilVisible(find.text('응원 보내기'), 200);
       await tester.tap(find.text('응원 보내기'));
       await tester.pumpAndSettle();
 
