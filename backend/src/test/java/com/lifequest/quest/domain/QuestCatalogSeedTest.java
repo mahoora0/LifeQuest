@@ -42,8 +42,21 @@ class QuestCatalogSeedTest {
     private static final long FIRST_SEED_ID = 1L;
     private static final long BASE_SEED_LAST_ID = 42L;
 
-    /** V22 확장분의 마지막 id. 추가는 계속 뒤에 붙는다(V22 머리말). */
-    private static final long LAST_SEED_ID = 68L;
+    /** V22 확장분(SELF_REPORT)의 마지막 id. */
+    private static final long EXTENDED_SEED_LAST_ID = 68L;
+
+    /** V33 지역·템플릿 LOCATION 시드의 첫 id. 추가는 계속 뒤에 붙는다(V6 머리말). */
+    private static final long LOCATION_SEED_FIRST_ID = 69L;
+
+    /** 마지막 시드 id. 카탈로그를 늘렸으면 이 값도 함께 올린다. */
+    private static final long LAST_SEED_ID = 105L;
+
+    /**
+     * 배정이 후보를 좁히는 거리(m). {@code QuestAssignmentCreator}와 같은 값이며 트랙마다 다르다.
+     * 시드가 이 반경을 전제로 짜였으므로 여기서도 같은 기준으로 재야 실제 배정과 같은 것을 본다.
+     */
+    private static final double DAILY_RADIUS_M = 15_000;
+    private static final double WEEKLY_RADIUS_M = 50_000;
 
     /** docs/05-business-rules.md §2의 등급별 EXP 범위. */
     private static final Map<QuestGrade, int[]> EXP_RANGE = new EnumMap<>(Map.of(
@@ -74,14 +87,21 @@ class QuestCatalogSeedTest {
 
     private List<Quest> extendedSeededQuests() {
         return questRepository.findAllById(
-                LongStream.rangeClosed(BASE_SEED_LAST_ID + 1, LAST_SEED_ID).boxed().toList());
+                LongStream.rangeClosed(BASE_SEED_LAST_ID + 1, EXTENDED_SEED_LAST_ID).boxed().toList());
+    }
+
+    /** V33 지역·템플릿 LOCATION 시드(69~103). */
+    private List<Quest> locationSeededQuests() {
+        return questRepository.findAllById(
+                LongStream.rangeClosed(LOCATION_SEED_FIRST_ID, LAST_SEED_ID).boxed().toList());
     }
 
     @Test
     void 시드_퀘스트가_id_누락_없이_전부_적재된다() {
         assertEquals(LAST_SEED_ID - FIRST_SEED_ID + 1, seededQuests().size(),
-                "id 1~68이 모두 있어야 한다 — 1~42는 업적의 target_quest_id가 참조하고, "
-                        + "43~68은 슬롯 등급 결손을 메우려고 V22이 넣었다");
+                "id 1~%d가 모두 있어야 한다 — 1~42는 업적의 target_quest_id가 참조하고, "
+                        .formatted(LAST_SEED_ID)
+                        + "43~68은 슬롯 등급 결손을(V22), 69~103은 지역·템플릿 결손을(V33) 메운다");
     }
 
     /**
@@ -251,6 +271,115 @@ class QuestCatalogSeedTest {
                     quest.getTitle() + ": V22은 SELF_REPORT만 넣기로 했다 — "
                             + "LOCATION 결손은 반경 확대·지역 분산 중 방향이 정해진 뒤 별도 마이그레이션이다");
         }
+    }
+
+    /**
+     * V33은 전부 LOCATION이다. 지역·템플릿 결손을 메우려고 넣은 것이므로 SELF_REPORT가 섞이면
+     * 그 목적이 조용히 흐려진 것이다.
+     */
+    @Test
+    void 지역_시드는_전부_위치_인증이다() {
+        for (Quest quest : locationSeededQuests()) {
+            assertTrue(quest.isLocationBased(),
+                    quest.getTitle() + ": V33은 LOCATION만 넣기로 했다 — "
+                            + "SELF_REPORT 결손은 V22이 이미 메웠다");
+        }
+    }
+
+    /**
+     * <b>도시마다 등급이 갖춰져 있어야 한다.</b> 배정이 사용자 주변으로 후보를 좁히므로
+     * (V32·V33), 좁힌 뒤의 등급 분포를 정하는 것은 카탈로그 전체가 아니라 그 도시의 구성이다.
+     * 한 도시에 한 등급뿐이면 그 지역 사용자의 슬롯 A는 매번 같은 등급이 된다 — 카탈로그 전체로
+     * 세면 골고루 보이므로 전체 분포만 재는 검사로는 이 결손이 드러나지 않는다.
+     *
+     * <p>도시는 좌표로 묶는다. 시드에 지역 컬럼이 없고, 있다 해도 판정에 쓰이는 것은 좌표라
+     * 그쪽을 기준으로 재야 실제 배정과 같은 것을 본다.
+     */
+    @Test
+    void 도시마다_일간_주간_등급이_고루_갖춰져_있다() {
+        Map<String, double[]> cities = Map.of(
+                "서울", new double[] {37.5665, 126.9780},
+                "부산", new double[] {35.1796, 129.0756},
+                "대구", new double[] {35.8714, 128.6014},
+                "인천", new double[] {37.4563, 126.7052},
+                "대전", new double[] {36.3504, 127.3845},
+                "광주", new double[] {35.1595, 126.8526});
+
+        List<Quest> located = seededQuests().stream()
+                .filter(Quest::isLocationBased)
+                .filter(quest -> !quest.isLocationTemplate())
+                .toList();
+
+        for (Map.Entry<String, double[]> city : cities.entrySet()) {
+            List<Quest> inCity = located;
+
+            for (QuestCadence cadence : QuestCadence.values()) {
+                double radiusM = cadence == QuestCadence.WEEKLY ? WEEKLY_RADIUS_M : DAILY_RADIUS_M;
+                long grades = inCity.stream()
+                        .filter(quest -> quest.getCadence() == cadence)
+                        .filter(quest -> withinCity(quest, city.getValue(), radiusM))
+                        .map(Quest::getGrade)
+                        .distinct()
+                        .count();
+
+                assertTrue(grades >= 2,
+                        "%s의 %s LOCATION 등급이 %d종뿐이다 — 그 지역 사용자의 슬롯 A가 한 등급에 묶인다"
+                                .formatted(city.getKey(), cadence, grades));
+            }
+        }
+    }
+
+    /**
+     * 템플릿은 좌표를 배정 시점에 받는다. 그래도 행에는 좌표가 있어야 하고
+     * ({@code ck_quests_location_verifiable}), 그 자리표가 시드된 도시 근처면 안 된다.
+     *
+     * <p>자리표가 서울에 있으면, override가 빠지는 버그가 생겨도 서울 사용자에게는 정상으로
+     * 보인다 — 결함이 일부 사용자에게만 드러나면 재현이 어렵고 원인도 가려진다.
+     */
+    @Test
+    void 템플릿_자리표_좌표는_어느_도시에서도_멀다() {
+        List<Quest> templates = seededQuests().stream()
+                .filter(Quest::isLocationTemplate)
+                .toList();
+
+        assertFalse(templates.isEmpty(),
+                "템플릿이 없으면 시드된 도시 밖 사용자는 위치 퀘스트를 받지 못한다");
+
+        List<Quest> real = seededQuests().stream()
+                .filter(Quest::isLocationBased)
+                .filter(quest -> !quest.isLocationTemplate())
+                .toList();
+
+        for (Quest template : templates) {
+            assertTrue(template.isLocationBased(),
+                    template.getTitle() + ": 템플릿인데 LOCATION이 아니다");
+
+            for (Quest place : real) {
+                double distance = meters(
+                        template.getLatitude().doubleValue(), template.getLongitude().doubleValue(),
+                        place.getLatitude().doubleValue(), place.getLongitude().doubleValue());
+                assertTrue(distance > WEEKLY_RADIUS_M,
+                        "%s의 자리표가 %s에서 %.0fkm뿐이다 — 판정 반경(%.0fkm) 안이라 override가 빠져도 "
+                                .formatted(template.getTitle(), place.getPlaceName(),
+                                        distance / 1000, WEEKLY_RADIUS_M / 1000)
+                                + "그 지역 사용자에게는 정상으로 보인다");
+            }
+        }
+    }
+
+    private static boolean withinCity(Quest quest, double[] center, double radiusM) {
+        return meters(center[0], center[1],
+                quest.getLatitude().doubleValue(), quest.getLongitude().doubleValue()) <= radiusM;
+    }
+
+    private static double meters(double lat1, double lon1, double lat2, double lon2) {
+        double earthRadiusM = 6_371_000;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.pow(Math.sin(dLat / 2), 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.pow(Math.sin(dLon / 2), 2);
+        return earthRadiusM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     @Test
