@@ -21,15 +21,23 @@ const _kindTints = <LqNotificationKind, Color>{
   LqNotificationKind.levelUp: Color(0xFFEADFF3),
 };
 
-/// 알림 목록 + 알림 설정 (화면맵 2d).
-///
-/// 홈 헤더의 알림 벨에서 연다. 설정은 목록 하단에 두고, 마이페이지의 "알림 설정"도
-/// 같은 화면으로 보낸다 — 목록과 설정이 서로를 여는 문을 만들지 않는다.
+/// 홈에서는 알림 기록만, 마이페이지에서는 알림 설정만 보여 준다.
+enum NotificationScreenMode { history, settings }
+
 class NotificationScreen extends ConsumerWidget {
-  const NotificationScreen({super.key});
+  const NotificationScreen({
+    super.key,
+    this.mode = NotificationScreenMode.history,
+  });
+
+  final NotificationScreenMode mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (mode == NotificationScreenMode.settings) {
+      return const _NotificationSettingsScreen();
+    }
+
     final feed = ref.watch(notificationFeedProvider);
     final unread = feed.value?.unreadCount ?? 0;
 
@@ -76,7 +84,7 @@ class NotificationScreen extends ConsumerWidget {
                             .read(notificationFeedProvider.notifier)
                             .refresh(),
                         notReadyMessage: '알림은 아직 준비 중이에요',
-                        notReadyHint: '알림 설정은 아래에서 미리 정해 둘 수 있어요.',
+                        notReadyHint: '새 알림이 도착하면 이곳에서 확인할 수 있어요.',
                         isEmpty: (value) => value.isEmpty,
                         emptyMessage: '새 소식이 없어요',
                         emptyAsset: LqAssets.charPlainSit,
@@ -93,8 +101,6 @@ class NotificationScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const _SettingsCard(),
                   ],
                 ),
               ),
@@ -141,7 +147,37 @@ class NotificationScreen extends ConsumerWidget {
   }
 }
 
-const _shellRootRoutes = {'/', '/quests', '/map', '/friends', '/profile'};
+class _NotificationSettingsScreen extends StatelessWidget {
+  const _NotificationSettingsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: LqColors.surfacePanel,
+      body: const SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            LqHeader(title: '알림 설정'),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  LqSpacing.screen,
+                  4,
+                  LqSpacing.screen,
+                  24,
+                ),
+                child: _SettingsCard(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const _shellRootRoutes = {'/', '/quests', '/groups', '/friends', '/profile'};
 
 /// "모두 읽음" — 읽지 않은 것이 없으면 비활성으로 남긴다.
 class _MarkAllReadButton extends StatelessWidget {
@@ -281,7 +317,7 @@ class _Leading extends StatelessWidget {
   }
 }
 
-/// 알림 설정 — 목록 하단에 붙는다.
+/// 마이페이지에서 여는 알림 설정 카드.
 class _SettingsCard extends ConsumerWidget {
   const _SettingsCard();
 

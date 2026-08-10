@@ -45,7 +45,8 @@ void main() {
 
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('퀘스트'), findsOneWidget);
-    expect(find.text('지도'), findsOneWidget);
+    expect(find.text('그룹'), findsOneWidget);
+    expect(find.text('지도'), findsNothing);
     expect(find.text('친구'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
 

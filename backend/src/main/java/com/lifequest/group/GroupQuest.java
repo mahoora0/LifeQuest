@@ -14,13 +14,15 @@ public class GroupQuest {
     @Column(name="scheduled_at",nullable=false) private LocalDateTime scheduledAt;
     @Enumerated(EnumType.STRING) @Column(nullable=false,length=20) private GroupQuestStatus status;
     @Column(name="exp_reward",nullable=false) private int expReward;
+    /** 최대 참여 인원. null이면 정원 없음 — 이 필드가 생기기 전 퀘스트가 그렇다. */
+    @Column(name="max_participants") private Integer maxParticipants;
     @Column(name="completed_at") private LocalDateTime completedAt;
     @Column(name="created_at",nullable=false,updatable=false) private LocalDateTime createdAt;
     @Column(name="updated_at",nullable=false) private LocalDateTime updatedAt;
     protected GroupQuest() {}
-    public GroupQuest(Group group,User createdBy,String title,String description,String placeName,LocalDateTime scheduledAt,LocalDateTime now){this.group=group;this.createdBy=createdBy;this.title=title;this.description=description;this.placeName=placeName;this.scheduledAt=scheduledAt;this.status=GroupQuestStatus.PUBLISHED;this.expReward=COOP_EXP_REWARD;this.createdAt=now;this.updatedAt=now;}
-    public void update(String title,String description,String placeName,LocalDateTime scheduledAt,LocalDateTime now){this.title=title;this.description=description;this.placeName=placeName;this.scheduledAt=scheduledAt;this.updatedAt=now;}
+    public GroupQuest(Group group,User createdBy,String title,String description,String placeName,LocalDateTime scheduledAt,Integer maxParticipants,LocalDateTime now){this.group=group;this.createdBy=createdBy;this.title=title;this.description=description;this.placeName=placeName;this.scheduledAt=scheduledAt;this.maxParticipants=maxParticipants;this.status=GroupQuestStatus.PUBLISHED;this.expReward=COOP_EXP_REWARD;this.createdAt=now;this.updatedAt=now;}
+    public void update(String title,String description,String placeName,LocalDateTime scheduledAt,Integer maxParticipants,LocalDateTime now){this.title=title;this.description=description;this.placeName=placeName;this.scheduledAt=scheduledAt;this.maxParticipants=maxParticipants;this.updatedAt=now;}
     public void cancel(LocalDateTime now){status=GroupQuestStatus.CANCELLED;updatedAt=now;}
     public void complete(LocalDateTime now){status=GroupQuestStatus.COMPLETED;completedAt=now;updatedAt=now;}
-    public Long getId(){return id;} public Group getGroup(){return group;} public User getCreatedBy(){return createdBy;} public String getTitle(){return title;} public String getDescription(){return description;} public String getPlaceName(){return placeName;} public LocalDateTime getScheduledAt(){return scheduledAt;} public GroupQuestStatus getStatus(){return status;} public int getExpReward(){return expReward;} public LocalDateTime getCompletedAt(){return completedAt;} public LocalDateTime getCreatedAt(){return createdAt;} public LocalDateTime getUpdatedAt(){return updatedAt;}
+    public Long getId(){return id;} public Group getGroup(){return group;} public User getCreatedBy(){return createdBy;} public String getTitle(){return title;} public String getDescription(){return description;} public String getPlaceName(){return placeName;} public LocalDateTime getScheduledAt(){return scheduledAt;} public GroupQuestStatus getStatus(){return status;} public int getExpReward(){return expReward;} public Integer getMaxParticipants(){return maxParticipants;} public LocalDateTime getCompletedAt(){return completedAt;} public LocalDateTime getCreatedAt(){return createdAt;} public LocalDateTime getUpdatedAt(){return updatedAt;}
 }

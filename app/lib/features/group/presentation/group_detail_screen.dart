@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/group/application/group_providers.dart';
 import 'package:life_quest/features/group/data/group_dto.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/presentation/date_labels.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
@@ -208,8 +209,10 @@ class _QuestSection extends ConsumerWidget {
                               ],
                             ),
                           ),
+                          // `8/8`처럼 슬래시로 줄이지 않는다 — 바로 위 카드의
+                          // `1/10명`(멤버 수/정원)과 섞여 인원수로 읽힌다.
                           Text(
-                            '${quest.scheduledAt.month}/${quest.scheduledAt.day}',
+                            questDateLabel(quest.scheduledAt),
                             style: LqText.label,
                           ),
                         ],

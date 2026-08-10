@@ -46,7 +46,7 @@ class GroupFlowIntegrationTests {
         assertThat(sent.content()).isEqualTo("토요일에 만나요");
         assertThat(chat.get(created.id(),owner.getId(),null,null,50).messages()).extracting(GroupMessageResponse::id).containsExactly(sent.id());
 
-        GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("한강 야경 산책","함께 한강을 산책해요","여의도 한강공원",now().plusDays(2)));
+        GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("한강 야경 산책","함께 한강을 산책해요","여의도 한강공원",now().plusDays(2),null));
         assertThat(quests.list(created.id(),member.getId(),GroupQuestScope.UPCOMING,0,20).content()).hasSize(1);
         assertThat(quests.cancel(created.id(),owner.getId(),quest.id()).status()).isEqualTo(GroupQuestStatus.CANCELLED);
 
@@ -87,7 +87,7 @@ class GroupFlowIntegrationTests {
 
         assertError(()->chat.get(created.id(),outsider.getId(),null,null,20),ErrorCode.GROUP_ACCESS_DENIED);
         assertError(()->chat.send(created.id(),outsider.getId(),"침입 메시지"),ErrorCode.GROUP_ACCESS_DENIED);
-        assertError(()->quests.create(created.id(),outsider.getId(),new CreateGroupQuestRequest("권한 없는 일정","등록할 수 없습니다","서울",now().plusDays(1))),ErrorCode.GROUP_OWNER_REQUIRED);
+        assertError(()->quests.create(created.id(),outsider.getId(),new CreateGroupQuestRequest("권한 없는 일정","등록할 수 없습니다","서울",now().plusDays(1),null)),ErrorCode.GROUP_OWNER_REQUIRED);
         assertError(()->memberships.leave(created.id(),owner.getId()),ErrorCode.OWNER_CANNOT_LEAVE);
         assertError(()->groups.transferOwner(created.id(),owner.getId(),outsider.getId()),ErrorCode.INVALID_OWNER_TRANSFER);
     }
@@ -131,7 +131,7 @@ class GroupFlowIntegrationTests {
         assertError(()->groups.detail(created.id(),outsider.getId()),ErrorCode.GROUP_NOT_FOUND);
         assertError(()->chat.send(created.id(),owner.getId(),"보관 후 메시지"),ErrorCode.GROUP_ARCHIVED);
         assertError(()->groups.update(created.id(),owner.getId(),new UpdateGroupRequest("변경 불가","보관 상태",GroupVisibility.PUBLIC,3)),ErrorCode.GROUP_ARCHIVED);
-        assertError(()->quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("변경 불가","보관 상태","서울",now().plusDays(1))),ErrorCode.GROUP_ARCHIVED);
+        assertError(()->quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("변경 불가","보관 상태","서울",now().plusDays(1),null)),ErrorCode.GROUP_ARCHIVED);
     }
 
     @Test
@@ -139,14 +139,14 @@ class GroupFlowIntegrationTests {
         User owner=user("questOwner");
         unlockCoop(owner);
         GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest("일정 그룹","일정 상태를 검증합니다",GroupVisibility.PUBLIC,3));
-        GroupQuestResponse cancelled=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("취소할 일정","취소 후 변경 불가","서울숲",now().plusDays(2)));
+        GroupQuestResponse cancelled=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("취소할 일정","취소 후 변경 불가","서울숲",now().plusDays(2),null));
         quests.cancel(created.id(),owner.getId(),cancelled.id());
 
-        UpdateGroupQuestRequest update=new UpdateGroupQuestRequest("변경 일정","변경 설명","성수동",now().plusDays(3));
+        UpdateGroupQuestRequest update=new UpdateGroupQuestRequest("변경 일정","변경 설명","성수동",now().plusDays(3),null);
         assertError(()->quests.update(created.id(),owner.getId(),cancelled.id(),update),ErrorCode.GROUP_QUEST_CANCELLED);
         assertError(()->quests.cancel(created.id(),owner.getId(),cancelled.id()),ErrorCode.GROUP_QUEST_CANCELLED);
 
-        GroupQuestResponse started=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("시작한 일정","시작 후 변경 불가","한강",now().plusDays(1)));
+        GroupQuestResponse started=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest("시작한 일정","시작 후 변경 불가","한강",now().plusDays(1),null));
         jdbc.update("update group_quests set scheduled_at=? where id=?",now().minusMinutes(1),started.id());
         assertError(()->quests.update(created.id(),owner.getId(),started.id(),update),ErrorCode.GROUP_QUEST_ALREADY_STARTED);
         assertError(()->quests.cancel(created.id(),owner.getId(),started.id()),ErrorCode.GROUP_QUEST_ALREADY_STARTED);
@@ -233,7 +233,7 @@ class GroupFlowIntegrationTests {
         }
 
         GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest(
-                "한강 공동 산책","참여자와 함께 완료합니다","한강",now().plusHours(2)));
+                "한강 공동 산책","참여자와 함께 완료합니다","한강",now().plusHours(2),null));
         assertThat(quests.listMine(member.getId(),GroupQuestScope.UPCOMING,0,20).content())
                 .extracting(GroupQuestResponse::id).contains(quest.id());
         assertThat(quests.apply(created.id(),owner.getId(),quest.id()).myParticipationStatus())
@@ -271,7 +271,7 @@ class GroupFlowIntegrationTests {
         GroupMemberResponse pending=memberships.requestJoin(created.id(),member.getId());
         memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
         GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest(
-                "레벨 제한 원정","레벨 제한 설명","서울",now().plusHours(1)));
+                "레벨 제한 원정","레벨 제한 설명","서울",now().plusHours(1),null));
 
         assertError(()->quests.apply(created.id(),member.getId(),quest.id()),ErrorCode.QUEST_FEATURE_LOCKED);
         unlockCoop(member);
@@ -280,6 +280,45 @@ class GroupFlowIntegrationTests {
         jdbc.update("update group_quests set scheduled_at=? where id=?",now().minusMinutes(1),quest.id());
         assertError(()->quests.apply(created.id(),member.getId(),quest.id()),ErrorCode.GROUP_QUEST_PARTICIPATION_CLOSED);
         assertError(()->quests.complete(created.id(),owner.getId(),quest.id()),ErrorCode.GROUP_QUEST_NO_PARTICIPANTS);
+    }
+
+    @Test
+    void groupQuestCapacityBlocksApplyAndShrink() {
+        User owner=user("capOwner"); User first=user("capFirst"); User second=user("capSecond");
+        unlockCoop(owner,first,second);
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest(
+                "정원 원정대","정원이 찬 뒤 신청을 막습니다",GroupVisibility.PUBLIC,5));
+        for(User joiner:new User[]{first,second}){
+            GroupMemberResponse pending=memberships.requestJoin(created.id(),joiner.getId());
+            memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
+        }
+
+        GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest(
+                "정원 2명 산책","두 명까지만 신청받습니다","한강",now().plusHours(2),2));
+        assertThat(quest.maxParticipants()).isEqualTo(2);
+
+        quests.apply(created.id(),owner.getId(),quest.id());
+        assertThat(quests.apply(created.id(),first.getId(),quest.id()).participantCount()).isEqualTo(2);
+        assertError(()->quests.apply(created.id(),second.getId(),quest.id()),ErrorCode.GROUP_QUEST_FULL);
+
+        // 신청을 취소하면 자리가 열리고, 같은 사람이 다시 신청할 수 있다.
+        quests.withdraw(created.id(),first.getId(),quest.id());
+        assertThat(quests.apply(created.id(),second.getId(),quest.id()).participantCount()).isEqualTo(2);
+
+        // 이미 찬 인원보다 정원을 줄이는 수정은 막는다.
+        UpdateGroupQuestRequest shrink=new UpdateGroupQuestRequest(
+                "정원 2명 산책","정원 축소 시도","한강",now().plusHours(2),null);
+        assertError(()->quests.update(created.id(),owner.getId(),quest.id(),
+                new UpdateGroupQuestRequest("정원 2명 산책","정원 축소 시도","한강",now().plusHours(2),1)),
+                ErrorCode.VALIDATION_FAILED);
+        jdbc.update("update group_quests set max_participants=null where id=?",quest.id());
+        quests.apply(created.id(),first.getId(),quest.id());
+        assertError(()->quests.update(created.id(),owner.getId(),quest.id(),
+                new UpdateGroupQuestRequest("정원 2명 산책","정원 축소 시도","한강",now().plusHours(2),2)),
+                ErrorCode.GROUP_QUEST_CAPACITY_BELOW_APPLIED);
+
+        // 정원을 없애면(null) 인원 제한 없이 신청을 받는다.
+        assertThat(quests.update(created.id(),owner.getId(),quest.id(),shrink).maxParticipants()).isNull();
     }
 
     private LocalDateTime now(){ return LocalDateTime.now(clock); }

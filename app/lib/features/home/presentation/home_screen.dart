@@ -17,7 +17,6 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/error/lq_error_messages.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
-import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
@@ -378,7 +377,8 @@ class _TodayQuestCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          // 시안의 카드는 `gap: 8` — 제목 띠·행·안내 문구가 모두 같은 간격이다.
+          const SizedBox(height: 8),
           ConstrainedBox(
             // 로딩·빈·오류 상태는 카드 안에서 일정한 높이를 차지하게 한다.
             // 고정 높이가 아니라 최소 높이인 이유: 오류 상태는 캐릭터(108) + 문구 +
@@ -400,7 +400,8 @@ class _TodayQuestCard extends ConsumerWidget {
               data: (value) => Column(
                 children: [
                   for (var i = 0; i < value.quests.length; i++) ...[
-                    if (i > 0) const LqDashedDivider(),
+                    // 행이 각자 테두리를 가지므로 구분선 대신 간격만 둔다(시안).
+                    if (i > 0) const SizedBox(height: 8),
                     HomeQuestRow(
                       dailyQuest: value.quests[i],
                       busy: completing.contains(value.quests[i].dailyQuestId),
@@ -408,7 +409,7 @@ class _TodayQuestCard extends ConsumerWidget {
                       onCheck: () => onCheck(value.quests[i]),
                     ),
                   ],
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     '체크해 보세요 — EXP가 바로 올라요',
                     style: LqText.caption,

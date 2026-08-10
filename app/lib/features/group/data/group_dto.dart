@@ -105,6 +105,7 @@ class GroupQuest {
     this.groupName = '그룹',
     this.expReward = 40,
     this.participantCount = 0,
+    this.maxParticipants,
     this.participants = const [],
     this.myParticipationStatus,
     this.completedAt,
@@ -114,6 +115,10 @@ class GroupQuest {
   final DateTime scheduledAt;
   final GroupQuestStatus status;
   final int expReward, participantCount;
+
+  /// 최대 참여 인원. 정원을 두지 않은 퀘스트(이 필드가 생기기 전에 만들어진 것
+  /// 포함)는 null이고, 그때는 인원 제한 없이 신청할 수 있다.
+  final int? maxParticipants;
   final GroupQuestParticipationStatus? myParticipationStatus;
   final List<GroupQuestParticipant> participants;
   final DateTime? completedAt;
@@ -121,6 +126,15 @@ class GroupQuest {
       myParticipationStatus == GroupQuestParticipationStatus.applied;
   bool get rewarded =>
       myParticipationStatus == GroupQuestParticipationStatus.rewarded;
+
+  /// 정원이 있으면 `참여 3/4명`, 없으면 `참여 3명`.
+  String get participantLabel => maxParticipants == null
+      ? '참여 $participantCount명'
+      : '참여 $participantCount/$maxParticipants명';
+
+  /// 정원이 찼는가. 정원 없는 퀘스트는 항상 false.
+  bool get isFull =>
+      maxParticipants != null && participantCount >= maxParticipants!;
   factory GroupQuest.fromJson(Map<String, dynamic> j) => GroupQuest(
     id: asInt(j['id']) ?? 0,
     groupId: asInt(j['groupId']) ?? 0,
@@ -140,6 +154,7 @@ class GroupQuest {
     }, GroupQuestStatus.published),
     expReward: asInt(j['expReward']) ?? 40,
     participantCount: asInt(j['participantCount']) ?? 0,
+    maxParticipants: asInt(j['maxParticipants']),
     myParticipationStatus: _participation(asString(j['myParticipationStatus'])),
     participants: asMapList(
       j['participants'],

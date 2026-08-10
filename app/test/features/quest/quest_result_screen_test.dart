@@ -14,7 +14,7 @@ void main() {
 
     expect(find.text('LEVEL UP!'), findsOneWidget);
     expect(find.text('주간 퀘스트'), findsWidgets);
-    expect(find.text('협동 퀘스트'), findsNothing);
+    expect(find.text('그룹 퀘스트'), findsNothing);
   });
 
   testWidgets('여러 레벨을 건너뛰면 사이에 해금된 기능을 모두 보여준다', (tester) async {
@@ -23,7 +23,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('주간 퀘스트'), findsWidgets);
-    expect(find.text('협동 퀘스트'), findsWidgets);
+    expect(find.text('그룹 퀘스트'), findsWidgets);
   });
 
   testWidgets('레벨 5 달성 시 새 캐릭터를 보여준다', (tester) async {

@@ -599,8 +599,8 @@ class _MenuCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
-          _MenuRow(label: '내 그룹', onTap: () => context.push('/groups')),
-          const LqDashedDivider(),
+          // "내 그룹" 행은 하단 그룹 탭으로 옮겼다. 같은 화면으로 가는 입구를
+          // 둘 두면 탭에서 열었을 때와 push로 열었을 때 뒤로가기가 달라진다.
           _MenuRow(label: '프로필 수정', onTap: () => context.push('/profile/edit')),
           // "칭호 선택" 행은 제거했다. 칭호 변경은 업적 화면의 칭호 탭에서 한다.
           const LqDashedDivider(),

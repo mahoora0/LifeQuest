@@ -115,7 +115,13 @@ abstract final class LqIcons {
 
   static const home = '${_dir}home.svg';
   static const quest = '${_dir}quest.svg';
+
+  /// 지도. 탭에서 빠졌고 지금은 쓰는 곳이 없다 — `/map` 라우트는 남아 있으므로
+  /// 다시 진입점을 만들면 여기서 가져다 쓴다.
   static const map = '${_dir}map.svg';
+
+  /// 그룹 탭. 친구 아이콘과 구분되도록 가운데 인물이 큰 3인 실루엣이다.
+  static const group = '${_dir}group.svg';
   static const friends = '${_dir}friends.svg';
   static const my = '${_dir}my.svg';
 

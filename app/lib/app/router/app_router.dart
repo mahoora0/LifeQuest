@@ -112,11 +112,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // 세 번째 탭은 지도에서 그룹으로 바뀌었다. 그룹 목록만 탭 브랜치에 두고
+          // 하위 화면(`/groups/...`)은 그대로 push 라우트로 남긴다 — 상세·채팅에서
+          // 하단 탭바가 사라지는 지금 동작을 유지하기 위해서다.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/map',
-                builder: (context, state) => const MapScreen(),
+                path: '/groups',
+                builder: (context, state) => const GroupListScreen(),
               ),
             ],
           ),
@@ -258,20 +261,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/location-consent',
         builder: (context, state) => const LocationConsentScreen(),
       ),
-      // 알림 목록은 홈 헤더의 벨에서, 설정은 마이페이지에서 연다. 설정 카드가
-      // 목록 하단에 붙어 있으므로 두 진입점이 같은 화면으로 모인다.
+      // 홈의 벨은 기록 전용, 마이페이지의 알림 설정은 설정 전용 화면으로 연다.
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',
-        redirect: (context, state) => '/notifications',
+        builder: (context, state) =>
+            const NotificationScreen(mode: NotificationScreenMode.settings),
       ),
-      GoRoute(
-        path: '/groups',
-        builder: (context, state) => const GroupListScreen(),
-      ),
+      // 지도. 탭에서 빠져 지금은 여기로 들어오는 화면이 없다 — 화면과 라우트는
+      // 남겨 두고, 다시 필요해지면 진입점만 붙이면 된다.
+      GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
       GoRoute(
         path: '/groups/search',
         builder: (context, state) => const GroupSearchScreen(),

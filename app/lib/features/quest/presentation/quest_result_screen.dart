@@ -362,7 +362,7 @@ const _levelUnlocks = [
   ),
   _LevelUnlock(
     requiredLevel: 5,
-    name: '협동 퀘스트',
+    name: '그룹 퀘스트',
     description: '다른 모험가와 함께 퀘스트에 도전할 수 있어요.',
   ),
 ];
