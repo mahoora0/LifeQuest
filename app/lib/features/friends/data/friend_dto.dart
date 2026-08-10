@@ -222,7 +222,8 @@ class JourneySide {
     int? lifedexCollected,
     int? achievements,
     int? streakDays,
-    int lifedexTotal = 100,
+    this.achievementTotal = 0,
+    this.lifedexTotal = 0,
   }) : completedQuestCount = completedQuestCount ?? achievements ?? 0,
        visitedPlaceCount = visitedPlaceCount ?? lifedexCollected ?? 0;
 
@@ -230,12 +231,29 @@ class JourneySide {
   final int totalExp;
   final int completedQuestCount;
   final int visitedPlaceCount;
+  final int achievementTotal;
+  final int lifedexTotal;
 
   factory JourneySide.fromJson(Map<String, dynamic> json) => JourneySide(
     level: asInt(json['level']) ?? 1,
     totalExp: asInt(json['totalExp']) ?? 0,
-    completedQuestCount: asInt(json['completedQuestCount']) ?? 0,
-    visitedPlaceCount: asInt(json['visitedPlaceCount']) ?? 0,
+    completedQuestCount:
+        asInt(
+          pick(json, [
+            'completedQuestCount',
+            'achievements',
+            'achievementCount',
+          ]),
+        ) ??
+        0,
+    visitedPlaceCount:
+        asInt(
+          pick(json, ['visitedPlaceCount', 'lifedexCollected', 'lifedexCount']),
+        ) ??
+        0,
+    achievementTotal:
+        asInt(pick(json, ['achievementTotal', 'totalAchievementCount'])) ?? 0,
+    lifedexTotal: asInt(pick(json, ['lifedexTotal', 'totalLifedexCount'])) ?? 0,
   );
 }
 

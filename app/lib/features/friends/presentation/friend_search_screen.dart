@@ -262,6 +262,7 @@ class _MyCodeCard extends StatelessWidget {
             LqStatePill(
               label: '복사',
               tone: LqPillTone.quiet,
+              fontSize: 11,
               onTap: () => _copy(context, code!),
             ),
           ] else if (failed) ...[

@@ -132,11 +132,13 @@ class LqStatePill extends StatelessWidget {
     required this.label,
     this.onTap,
     this.tone = LqPillTone.muted,
+    this.fontSize = 13,
   });
 
   final String label;
   final VoidCallback? onTap;
   final LqPillTone tone;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +167,7 @@ class LqStatePill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: LqText.badge.copyWith(fontSize: 13, color: foreground),
+        style: LqText.badge.copyWith(fontSize: fontSize, color: foreground),
       ),
     );
 

@@ -8,7 +8,6 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
-import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -75,7 +74,7 @@ class _Body extends ConsumerWidget {
       children: [
         _ProfileRow(journey: journey),
         const SizedBox(height: LqSpacing.gap),
-        _SideBySideCard(journey: journey),
+        _ComparisonSection(journey: journey),
         if (journey.badges.isNotEmpty) ...[
           const SizedBox(height: LqSpacing.gap),
           _BadgeCard(nickname: journey.nickname, badges: journey.badges),
@@ -196,7 +195,12 @@ class _ProfileRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(journey.nickname, style: LqText.sectionTitle),
+              Text(
+                journey.nickname,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LqText.sectionTitle,
+              ),
               if (title != null)
                 Text(
                   title,
@@ -210,6 +214,10 @@ class _ProfileRow extends StatelessWidget {
                 'Lv. ${journey.friend.level}',
                 style: LqText.levelNumber.copyWith(height: 1),
               ),
+              if (journey.badges.firstOrNull case final badge?) ...[
+                const SizedBox(height: 5),
+                _RepresentativeBadgeChip(badge: badge),
+              ],
             ],
           ),
         ),
@@ -222,180 +230,240 @@ class _ProfileRow extends StatelessWidget {
   }
 }
 
-class _SideBySideCard extends StatelessWidget {
-  const _SideBySideCard({required this.journey});
+class _ComparisonSection extends StatelessWidget {
+  const _ComparisonSection({required this.journey});
 
   final FriendJourney journey;
 
   @override
   Widget build(BuildContext context) {
-    final me = journey.me;
-    final friend = journey.friend;
-
-    return LqCard(
-      header: '나란히 보기',
-      headerTrailing: Text('나 · ${journey.nickname}', style: LqText.caption),
-      background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 레벨은 서로의 값을 그대로 견주므로 두 막대가 한 트랙을 나눠 갖는다.
-          _CompareHeading(label: '레벨', values: '${me.level} · ${friend.level}'),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                flex: me.level.clamp(1, 9999),
-                child: const _Bar(color: LqColors.expFill),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                flex: friend.level.clamp(1, 9999),
-                child: const _Bar(color: LqColors.gold),
-              ),
-            ],
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text('여정 비교', style: LqText.cardTitle),
+            const Spacer(),
+            const _Legend(color: LqColors.expFill, label: '나'),
+            const SizedBox(width: 10),
+            _Legend(color: LqColors.gold, label: journey.nickname),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _ComparisonCard(
+          label: '레벨',
+          unit: 'Lv.',
+          mine: journey.me.level,
+          theirs: journey.friend.level,
+        ),
+        const SizedBox(height: 9),
+        _ComparisonCard(
+          label: '누적 EXP',
+          unit: ' EXP',
+          mine: journey.me.totalExp,
+          theirs: journey.friend.totalExp,
+        ),
+        const SizedBox(height: 9),
+        _ComparisonCard(
+          label: '업적',
+          unit: '개',
+          mine: journey.me.completedQuestCount,
+          theirs: journey.friend.completedQuestCount,
+          total: _total(
+            journey.me.achievementTotal,
+            journey.friend.achievementTotal,
           ),
-          const SizedBox(height: 11),
-          const LqDashedDivider(color: LqColors.divider),
-          const SizedBox(height: 11),
-          // 서버가 공개하는 누적 EXP를 같은 기준으로 비교한다.
-          _CompareHeading(
-            label: '누적 EXP',
-            values: '${me.totalExp} · ${friend.totalExp}',
-          ),
-          const SizedBox(height: 4),
-          _TrackBar(
-            value: me.totalExp,
-            total: me.totalExp > friend.totalExp
-                ? me.totalExp
-                : friend.totalExp,
-            color: LqColors.expFill,
-          ),
-          const SizedBox(height: 4),
-          _TrackBar(
-            value: friend.totalExp,
-            total: me.totalExp > friend.totalExp
-                ? me.totalExp
-                : friend.totalExp,
-            color: LqColors.gold,
-          ),
-          const SizedBox(height: 11),
-          const LqDashedDivider(color: LqColors.divider),
-          const SizedBox(height: 11),
-          _StatRow(me: me, friend: friend),
-        ],
-      ),
+        ),
+        const SizedBox(height: 9),
+        _ComparisonCard(
+          label: '도감',
+          unit: '개',
+          mine: journey.me.visitedPlaceCount,
+          theirs: journey.friend.visitedPlaceCount,
+          total: _total(journey.me.lifedexTotal, journey.friend.lifedexTotal),
+        ),
+        const SizedBox(height: 9),
+        _TitleCard(nickname: journey.nickname, title: journey.titleLine),
+      ],
     );
   }
+
+  int? _total(int mine, int theirs) =>
+      mine > 0 || theirs > 0 ? (mine > theirs ? mine : theirs) : null;
 }
 
-class _CompareHeading extends StatelessWidget {
-  const _CompareHeading({required this.label, required this.values});
-
+class _Legend extends StatelessWidget {
+  const _Legend({required this.color, required this.label});
+  final Color color;
   final String label;
-  final String values;
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 80),
           child: Text(
             label,
-            style: LqText.label.copyWith(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LqText.caption,
           ),
         ),
-        Text(values, style: LqText.label),
       ],
     );
   }
 }
 
-class _Bar extends StatelessWidget {
-  const _Bar({required this.color, this.filled = true});
-
-  final Color color;
-  final bool filled;
+class _ComparisonCard extends StatelessWidget {
+  const _ComparisonCard({
+    required this.label,
+    required this.unit,
+    required this.mine,
+    required this.theirs,
+    this.total,
+  });
+  final String label;
+  final String unit;
+  final int mine;
+  final int theirs;
+  final int? total;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: LqSpacing.progressHeight,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: LqShape.pillRadius,
-        border: Border.all(
-          color: filled ? LqColors.ink : LqColors.borderMuted,
-          width: LqShape.borderWidth,
-        ),
+    final difference = theirs - mine;
+    final maximum = total ?? (mine > theirs ? mine : theirs);
+    final safeMaximum = maximum <= 0 ? 1 : maximum;
+    final differenceLabel = difference == 0
+        ? '동일'
+        : difference > 0
+        ? '+${difference.abs()}$unit'
+        : '나 +${difference.abs()}$unit';
+    return LqCard(
+      radius: LqShape.rowRadius,
+      background: LqColors.surfaceCard,
+      padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: difference == 0 ? LqColors.lockedBg : LqColors.goldBg,
+                  borderRadius: LqShape.pillRadius,
+                ),
+                child: Text(
+                  differenceLabel,
+                  style: LqText.badge.copyWith(
+                    fontSize: 11,
+                    color: difference == 0
+                        ? LqColors.textMuted
+                        : LqColors.goldText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _PersonProgress(
+            name: '나',
+            value: mine,
+            total: total,
+            maximum: safeMaximum,
+            unit: unit,
+            color: LqColors.expFill,
+            leading: difference < 0,
+          ),
+          const SizedBox(height: 7),
+          _PersonProgress(
+            name: '친구',
+            value: theirs,
+            total: total,
+            maximum: safeMaximum,
+            unit: unit,
+            color: LqColors.gold,
+            leading: difference > 0,
+          ),
+        ],
       ),
     );
   }
 }
 
-/// 채운 만큼과 남은 만큼을 한 줄에 그린다.
-class _TrackBar extends StatelessWidget {
-  const _TrackBar({
+class _PersonProgress extends StatelessWidget {
+  const _PersonProgress({
+    required this.name,
     required this.value,
     required this.total,
+    required this.maximum,
+    required this.unit,
     required this.color,
+    required this.leading,
   });
-
+  final String name;
   final int value;
-  final int total;
+  final int? total;
+  final int maximum;
+  final String unit;
   final Color color;
+  final bool leading;
 
   @override
   Widget build(BuildContext context) {
-    final safeTotal = total <= 0 ? 1 : total;
-    final filled = value.clamp(0, safeTotal);
-    final rest = safeTotal - filled;
-
+    final valueLabel = total != null
+        ? '$value / $total'
+        : unit == 'Lv.'
+        ? 'Lv. $value'
+        : '$value$unit';
     return Semantics(
-      label: '$safeTotal개 중 $filled개',
+      label: '$name $valueLabel',
       child: Row(
         children: [
-          if (filled > 0)
-            Expanded(
-              flex: filled,
-              child: _Bar(color: color),
-            ),
-          if (filled > 0 && rest > 0) const SizedBox(width: 5),
-          if (rest > 0)
-            Expanded(
-              flex: rest,
-              child: const _Bar(color: LqColors.surfacePanel, filled: false),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatRow extends StatelessWidget {
-  const _StatRow({required this.me, required this.friend});
-
-  final JourneySide me;
-  final JourneySide friend;
-
-  @override
-  Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(
-            child: _Stat(
-              label: '완료 퀘스트',
-              value:
-                  '${me.completedQuestCount} · ${friend.completedQuestCount}',
+          SizedBox(
+            width: 34,
+            child: Text(
+              name,
+              style: LqText.caption.copyWith(
+                fontWeight: leading ? FontWeight.w700 : FontWeight.w400,
+                color: leading ? LqColors.textPrimary : LqColors.textMuted,
+              ),
             ),
           ),
-          const LqDashedDivider(axis: Axis.vertical, color: LqColors.divider),
           Expanded(
-            child: _Stat(
-              label: '방문 장소',
-              value: '${me.visitedPlaceCount} · ${friend.visitedPlaceCount}',
+            child: ClipRRect(
+              borderRadius: LqShape.pillRadius,
+              child: LinearProgressIndicator(
+                value: (value / maximum).clamp(0.0, 1.0),
+                minHeight: 9,
+                backgroundColor: LqColors.lockedBg,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          SizedBox(
+            width: 72,
+            child: Text(
+              valueLabel,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              style: LqText.label.copyWith(
+                fontWeight: leading ? FontWeight.w700 : FontWeight.w500,
+                color: LqColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -404,24 +472,75 @@ class _StatRow extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-
-  final String label;
-  final String value;
+class _TitleCard extends StatelessWidget {
+  const _TitleCard({required this.nickname, required this.title});
+  final String nickname;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label, style: LqText.caption),
-        Text(
-          value,
-          style: LqText.sectionTitle.copyWith(fontSize: 20, height: 1.2),
-        ),
-      ],
+    final shown =
+        title?.replaceFirst(RegExp(r'^칭호\s*[·:]?\s*'), '') ?? '사용 중인 칭호 없음';
+    return LqCard(
+      radius: LqShape.rowRadius,
+      background: LqColors.surfaceCard,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LqColors.tileFill,
+              borderRadius: LqShape.tileRadius,
+            ),
+            child: const Icon(
+              Icons.auto_awesome_outlined,
+              size: 18,
+              color: LqColors.goldStamp,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('사용 중인 칭호', style: LqText.caption),
+                Text(
+                  '$nickname · $shown',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _RepresentativeBadgeChip extends StatelessWidget {
+  const _RepresentativeBadgeChip({required this.badge});
+  final JourneyBadge badge;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: LqColors.goldBg,
+      borderRadius: LqShape.pillRadius,
+      border: Border.all(color: LqColors.goldBorder),
+    ),
+    child: Text(
+      '대표 배지 · ${badge.name}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: LqText.badge.copyWith(fontSize: 11.5, color: LqColors.goldText),
+    ),
+  );
 }
 
 class _BadgeCard extends StatelessWidget {
@@ -433,7 +552,8 @@ class _BadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LqCard(
-      header: '$nickname님의 대표 배지',
+      header: '배지 컬렉션',
+      headerTrailing: Text('${badges.length}개', style: LqText.caption),
       background: LqColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
       // 배지 개수는 서버가 정한다. 한 줄에 고정하면 여섯 칸을 넘는 순간 넘치므로
