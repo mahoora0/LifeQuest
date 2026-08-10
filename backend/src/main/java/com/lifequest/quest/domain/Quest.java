@@ -74,6 +74,22 @@ public class Quest {
     @Column(name = "radius_m")
     private Integer radiusM;
 
+    /**
+     * 장소를 특정하지 않는 퀘스트인가(V32·V33). {@code true}면 위 좌표는 배정 시점에 사용자
+     * 주변으로 만들어진 좌표로 덮인다({@code UserDailyQuest}의 override 컬럼).
+     *
+     * <p><b>좌표 {@code null}로는 이 구분을 할 수 없다.</b> 좌표 없는 LOCATION은
+     * {@link #requireVerifiableIfLocation}과 {@code ck_quests_location_verifiable}이 거부하며
+     * 그 제약은 유지되어야 한다. 그래서 템플릿 행도 좌표를 갖고, 별도 플래그로 "이 좌표는 기준이
+     * 아니라 자리표"임을 나타낸다.
+     *
+     * <p>배정 후보가 되는 경로는 <b>사용자 좌표가 있을 때 하나뿐</b>이다
+     * ({@code QuestAssignmentCreator}). 좌표 없이 배정되면 자리표가 그대로 인증 지점이 되므로
+     * 그 경로를 열어서는 안 된다.
+     */
+    @Column(name = "is_location_template", nullable = false)
+    private boolean locationTemplate = false;
+
     /** LIFEDEX_ITEMS.id 참조. LOCATION 퀘스트의 수집 항목은 V25에서 연결한다. */
     @Column(name = "lifedex_item_id")
     private Long lifedexItemId;
@@ -290,6 +306,14 @@ public class Quest {
 
     public boolean isLocationBased() {
         return completionType == CompletionType.LOCATION;
+    }
+
+    /**
+     * 좌표를 배정 시점에 정하는 퀘스트인가. 시드된 도시가 주변에 없는 사용자에게만 배정된다.
+     * 근거는 {@link #locationTemplate} 참조.
+     */
+    public boolean isLocationTemplate() {
+        return locationTemplate;
     }
 
     /** 관리자 소프트 삭제: 실제 행 삭제 대신 배정 풀에서 제외한다(docs/05-business-rules.md §11). */
