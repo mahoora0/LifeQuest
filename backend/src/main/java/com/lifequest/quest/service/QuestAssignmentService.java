@@ -102,6 +102,7 @@ public class QuestAssignmentService {
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public TodayQuestsResponse getTodayQuests(Long userId, Double latitude, Double longitude) {
+        requireValidCoordinates(latitude, longitude);
         LocalDateTime now = LocalDateTime.now(clock);
         List<UserDailyQuest> assigned =
             userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
@@ -191,9 +192,10 @@ public class QuestAssignmentService {
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<DailyQuestResponse> getNearbyQuests(Long userId, Double lat, Double lng, Double radiusKm) {
-        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        if (lat == null || lng == null) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "위경도가 유효 범위를 벗어났습니다.");
         }
+        requireValidCoordinates(lat, lng);
         if (radiusKm == null || radiusKm <= 0) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "검색 반경은 0보다 커야 합니다.");
         }
@@ -225,6 +227,24 @@ public class QuestAssignmentService {
 
         nearby.sort(Comparator.comparing(DailyQuestResponse::distanceM));
         return nearby;
+    }
+
+    /**
+     * 좌표가 지구 위의 점인지 본다. {@code null} 쌍은 "위치를 모른다"는 유효한 상태이므로 통과시킨다
+     * — 그 판정은 호출자가 한다.
+     *
+     * <p>배정 경로에도 이 검사가 필요한 이유는 {@code GeoDistance.offset}이 어떤 입력에도 유효한
+     * 좌표를 만들어내기 때문이다. {@code Math.asin}이 인자를 클램프하고 경도는 정규화되므로
+     * 위도 9999를 넘겨도 예외가 나지 않고, 그 결과가 override로 배정에 붙는다. 배정은 주기당
+     * 한 번뿐이라 그 좌표가 주기 내내 인증 지점으로 굳어 사용자가 완료할 수 없게 된다.
+     */
+    private void requireValidCoordinates(Double latitude, Double longitude) {
+        if (latitude == null || longitude == null) {
+            return;
+        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "위경도가 유효 범위를 벗어났습니다.");
+        }
     }
 
     private List<DailyQuestResponse> toResponses(List<UserDailyQuest> assigned) {
