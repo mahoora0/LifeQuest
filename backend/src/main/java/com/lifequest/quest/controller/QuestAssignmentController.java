@@ -42,11 +42,22 @@ public class QuestAssignmentController {
      *
      * <p>조회인데 쓰기가 일어나는 것은 의도된 설계다 — 배치로 미리 만들면 접속하지 않은
      * 사용자의 행까지 매일 생긴다(docs/05-business-rules.md §1).
+     *
+     * <p><b>{@code lat}·{@code lng}는 선택이다.</b> 위치 퀘스트를 사용자 주변에서 고르는 데 쓰이며
+     * (V32·V33), 없으면 카탈로그 전체에서 고른다. 필수로 두지 않는 이유는 위치 권한을 거부했거나
+     * 실내에서 GPS를 못 잡은 사용자에게 오늘의 퀘스트 전체가 막혀서는 안 되기 때문이다 —
+     * 그 사용자가 잃는 것은 "주변에서 고른다"는 이점뿐이어야 한다.
+     *
+     * <p>이 값은 <b>배정을 만드는 순간에만</b> 쓰인다. 이미 배정이 있으면 무시되므로, 주기 도중
+     * 이동해도 그 주기의 퀘스트는 바뀌지 않는다.
      */
     @GetMapping("/today")
-    public ResponseEntity<ApiResponse<TodayQuestsResponse>> today(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ApiResponse<TodayQuestsResponse>> today(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng) {
         return ResponseEntity.ok(ApiResponse.success(
-            questAssignmentService.getTodayQuests(Long.valueOf(jwt.getSubject()))));
+            questAssignmentService.getTodayQuests(Long.valueOf(jwt.getSubject()), lat, lng)));
     }
 
     /**

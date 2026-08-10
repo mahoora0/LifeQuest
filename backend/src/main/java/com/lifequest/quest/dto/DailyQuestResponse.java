@@ -32,7 +32,9 @@ public record DailyQuestResponse(
             assignment.getId(),
             quest.getId(),
             assignment.getStatus(),
-            QuestSummaryResponse.from(quest),
+            // 원본이 아니라 배정 맥락으로 싣는다 — 템플릿 퀘스트는 좌표·장소명이 이 배정에만
+            // 붙어 있고, 그것이 지도에 찍히는 지점이자 완료가 판정하는 지점이다(V32)
+            QuestSummaryResponse.of(assignment, quest),
             distanceM);
     }
 }

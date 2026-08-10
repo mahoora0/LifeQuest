@@ -89,6 +89,19 @@ public class QuestAssignmentService {
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public TodayQuestsResponse getTodayQuests(Long userId) {
+        return getTodayQuests(userId, null, null);
+    }
+
+    /**
+     * 사용자 주변을 반영해 조회한다. 위치는 <b>이번 호출이 배정을 만들 때만</b> 쓰인다 —
+     * 이미 배정이 있으면 그대로 돌려주므로, 주기 도중에 다른 도시로 이동해도 그 주기의 배정은
+     * 바뀌지 않는다. 배정이 도중에 갈리면 어제 보던 퀘스트가 사라지고 완료 이력의 기준도 흔들린다.
+     *
+     * @param latitude  사용자 현재 위도. {@code null}이면 위치를 모르는 것으로 본다
+     * @param longitude 사용자 현재 경도
+     */
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public TodayQuestsResponse getTodayQuests(Long userId, Double latitude, Double longitude) {
         LocalDateTime now = LocalDateTime.now(clock);
         List<UserDailyQuest> assigned =
             userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
@@ -123,7 +136,7 @@ public class QuestAssignmentService {
                 continue;
             }
             try {
-                questAssignmentCreator.createForTrack(userId, cadence);
+                questAssignmentCreator.createForTrack(userId, cadence, latitude, longitude);
             } catch (DataIntegrityViolationException e) {
                 // 다른 요청이 같은 주기의 마커를 먼저 넣었다 — 정상 흐름이다. 그쪽 트랜잭션이
                 // 배정까지 만들었으므로 아래 재조회가 그것을 가져온다.
@@ -188,7 +201,9 @@ public class QuestAssignmentService {
         double radiusM = radiusKm * 1000;
         List<DailyQuestResponse> nearby = new ArrayList<>();
 
-        for (DailyQuestResponse assignment : getTodayQuests(userId).quests()) {
+        // 지도로 먼저 들어온 사용자의 배정도 그의 주변으로 만들어져야 한다. 여기서 좌표를 넘기지
+        // 않으면 진입 순서가 결과를 바꾼다 — 목록을 먼저 연 사용자만 주변 퀘스트를 받는다
+        for (DailyQuestResponse assignment : getTodayQuests(userId, lat, lng).quests()) {
             QuestSummaryResponse quest = assignment.quest();
             if (quest.latitude() == null || quest.longitude() == null) {
                 continue;
