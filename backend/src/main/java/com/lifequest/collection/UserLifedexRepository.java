@@ -12,6 +12,17 @@ interface UserLifedexRepository extends JpaRepository<UserLifedex, Long> {
     long countByUserId(Long userId);
 
     @Query(value = """
+            SELECT COUNT(*)
+            FROM user_lifedex ul
+            JOIN lifedex_items li ON li.id = ul.lifedex_item_id
+            WHERE ul.user_id = :userId
+              AND li.category_id = :categoryId
+            """, nativeQuery = true)
+    long countByUserIdAndCategoryId(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId);
+
+    @Query(value = """
             SELECT li.category_id
             FROM lifedex_items li
             LEFT JOIN user_lifedex ul

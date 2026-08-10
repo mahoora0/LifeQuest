@@ -1,6 +1,7 @@
 package com.lifequest.quest.repository;
 
 import com.lifequest.quest.domain.QuestCompletion;
+import com.lifequest.quest.dto.QuestHistoryItemResponse;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,24 @@ public interface QuestCompletionRepository extends JpaRepository<QuestCompletion
      */
     Page<QuestCompletion> findByUserIdOrderByCompletedAtDescIdDesc(Long userId, Pageable pageable);
 
+    @Query(value = """
+            SELECT new com.lifequest.quest.dto.QuestHistoryItemResponse(
+                c.id, q.id, q.title, q.grade, q.expReward, c.completedAt)
+            FROM QuestCompletion c
+            JOIN Quest q ON q.id = c.questId
+            WHERE c.userId = :userId
+            ORDER BY c.completedAt DESC, c.id DESC
+            """, countQuery = """
+            SELECT COUNT(c.id)
+            FROM QuestCompletion c
+            WHERE c.userId = :userId
+            """)
+    Page<QuestHistoryItemResponse> findHistoryByUserId(
+            @Param("userId") Long userId, Pageable pageable);
+
     long countByUserId(Long userId);
+
+    long countByUserIdAndQuestId(Long userId, Long questId);
 
     @Query(value = """
             SELECT COUNT(*)

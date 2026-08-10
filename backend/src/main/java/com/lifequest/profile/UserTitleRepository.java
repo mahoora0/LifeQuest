@@ -31,4 +31,15 @@ public interface UserTitleRepository extends JpaRepository<UserTitle, Long> {
             @Param("titleCode") String titleCode,
             @Param("sourceType") String sourceType,
             @Param("sourceId") Long sourceId);
+
+    @Modifying
+    @Query(value = """
+            INSERT IGNORE INTO user_titles
+                (user_id, title_id, source_type, source_id, acquired_at)
+            VALUES (:userId, :titleId, 'ACHIEVEMENT', :sourceId, CURRENT_TIMESTAMP(6))
+            """, nativeQuery = true)
+    int insertAchievementRewardIfAbsent(
+            @Param("userId") Long userId,
+            @Param("titleId") Long titleId,
+            @Param("sourceId") Long sourceId);
 }
