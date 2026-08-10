@@ -220,6 +220,46 @@ class QuestLocationTargetingTests {
             .isEqualTo(template.getOverrideLatitude().doubleValue());
     }
 
+    /**
+     * 범위 밖 좌표는 배정 경로에서도 거절한다.
+     *
+     * <p>{@code GeoDistance.offset}은 <b>어떤 입력에도 유효한 좌표를 만들어낸다</b> —
+     * {@code Math.asin}이 인자를 클램프하고 경도는 정규화되므로 위도 9999도 예외 없이 지나간다.
+     * 그 결과가 override로 배정에 붙으면, 배정은 주기당 한 번뿐이라 그 좌표가 주기 내내
+     * 인증 지점으로 굳어 사용자가 완료할 수 없게 된다. 되돌릴 방법이 없다.
+     *
+     * <p>배정이 만들어졌는지도 함께 본다. 400만 확인하면 검증이 <b>생성 뒤에</b> 걸려 있어도
+     * 통과하는데, 그때는 이미 잘못된 좌표가 저장된 뒤다.
+     */
+    @Test
+    void 범위_밖_좌표는_배정을_만들지_않고_거절한다() throws Exception {
+        String email = "target-badcoord@lifequest.test";
+        String token = signUpAndGetAccessToken(email, "범위탐험가");
+
+        mockMvc.perform(get("/api/quests/today")
+                .param("lat", "9999").param("lng", "9999")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+
+        assertThat(assignmentsOf(email))
+            .as("거절된 요청이 배정을 남겼다 — 검증이 생성보다 뒤에 있다")
+            .isEmpty();
+    }
+
+    /**
+     * 좌표를 아예 보내지 않는 것은 유효한 상태다(§1-C ①). 검증이 이것까지 막으면 위치 권한을
+     * 거부한 사용자의 오늘의 퀘스트가 통째로 400이 된다.
+     */
+    @Test
+    void 좌표를_보내지_않으면_그대로_통과한다() throws Exception {
+        String token = signUpAndGetAccessToken("target-nocoord-ok@lifequest.test", "무좌표통과");
+
+        mockMvc.perform(get("/api/quests/today").header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.quests.length()").value(3));
+    }
+
     private void assertAssignedLocationQuestsAreNear(
             String email, String nickname, double lat, double lng) throws Exception {
         String token = signUpAndGetAccessToken(email, nickname);
