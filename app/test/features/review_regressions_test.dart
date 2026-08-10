@@ -22,6 +22,8 @@ import 'package:life_quest/core/network/provider_retry.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/stub_location_service.dart';
+
 /// 코드 리뷰가 프로브로 재현한 결함들을 고정한다.
 ///
 /// 프로브는 한 번 확인하고 사라지므로, 같은 실수가 되돌아오는 것을 막으려면
@@ -128,6 +130,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            stubLocation,
             notificationRepositoryProvider.overrideWithValue(repository),
           ],
           child: const MaterialApp(home: NotificationScreen()),
@@ -166,6 +169,7 @@ void main() {
           // 4xx도 재시도해서 화면이 로딩에 머문다.
           retry: lqProviderRetry,
           overrides: [
+            stubLocation,
             questRepositoryProvider.overrideWithValue(
               _NotReadyQuestRepository(),
             ),
@@ -189,6 +193,7 @@ void main() {
           // 4xx도 재시도해서 화면이 로딩에 머문다.
           retry: lqProviderRetry,
           overrides: [
+            stubLocation,
             questRepositoryProvider.overrideWithValue(
               _NotReadyQuestRepository(),
             ),
@@ -215,6 +220,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            stubLocation,
             notificationRepositoryProvider.overrideWithValue(
               const _UnreadNotificationRepository(),
             ),
@@ -244,6 +250,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            stubLocation,
             friendRepositoryProvider.overrideWithValue(
               _ListBrokenFriendRepository(),
             ),
@@ -279,6 +286,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            stubLocation,
             friendRepositoryProvider.overrideWithValue(
               _CheeredFriendRepository(),
             ),
@@ -368,7 +376,7 @@ class _NotReadyQuestRepository extends QuestRepository {
   _NotReadyQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async {
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async {
     throw const ApiException(
       code: 'ENDPOINT_NOT_FOUND',
       message: '',

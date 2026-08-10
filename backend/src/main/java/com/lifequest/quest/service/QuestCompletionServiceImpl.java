@@ -134,12 +134,16 @@ class QuestCompletionServiceImpl implements QuestCompletionService {
             accuracyM = request
                 .accuracy()
                 .setScale(2, RoundingMode.HALF_UP);
+            // 판정 기준은 퀘스트 원본이 아니라 이 배정의 인증 지점이다. 장소 미지정 템플릿은
+            // 좌표가 배정마다 다르므로(V32) 원본 좌표로 재면 국토 한가운데와의 거리가 나온다 —
+            // 그 값도 유효한 거리라 예외 없이 OUT_OF_RADIUS로만 끝나고, 사용자는 지도가 가리킨
+            // 지점에 서 있는데 인증이 안 되는 상태가 된다
             distanceM = BigDecimal.valueOf(
                     calculateDistance(
                         reportedLatitude.doubleValue(),
                         reportedLongitude.doubleValue(),
-                        quest.getLatitude().doubleValue(),
-                        quest.getLongitude().doubleValue()))
+                        userDailyQuest.resolvedLatitude(quest).doubleValue(),
+                        userDailyQuest.resolvedLongitude(quest).doubleValue()))
                 .setScale(2, RoundingMode.HALF_UP);
 
             if (distanceM.compareTo(BigDecimal.valueOf(quest.getRadiusM())) > 0) {

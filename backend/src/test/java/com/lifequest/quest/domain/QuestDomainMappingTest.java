@@ -35,6 +35,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class QuestDomainMappingTest {
 
+    /**
+     * 이 클래스가 쓰는 가짜 사용자 id. 실제 가입으로는 나오지 않을 만큼 큰 값을 쓴다.
+     *
+     * <p>{@code user_daily_quests.user_id}에는 FK가 없어(크로스도메인 제약을 두지 않는다)
+     * 존재하지 않는 사용자로도 저장된다 — 여기서 노리는 것이 그 점이다.
+     *
+     * <p><b>작은 숫자를 쓰면 다른 테스트와 겹친다.</b> 배정 계약 테스트들은
+     * {@code REQUIRES_NEW} 때문에 {@code @Transactional}을 붙이지 않아 만든 사용자와 배정이
+     * 커밋된 채 남고, 그 사용자의 id는 auto-increment라 1부터 나온다. 이 클래스는 롤백되지만
+     * <b>세는 대상은 남의 행</b>이라 "배정 1건"을 단언하는 곳이 실행 순서에 따라 깨진다.
+     */
+    private static final long MAPPING_USER_ID = 900_001L;
+    private static final long MAPPING_USER_ID_2 = 900_002L;
+    private static final long MAPPING_USER_ID_3 = 900_003L;
+    private static final long MAPPING_USER_ID_4 = 900_004L;
+
     @Autowired
     private QuestRepository questRepository;
 
@@ -130,7 +146,7 @@ class QuestDomainMappingTest {
         Quest quest = persistLocationQuest();
         LocalDate today = LocalDate.now();
         UserDailyQuest assignment = new UserDailyQuest(
-                1L, quest.getId(), today, today.atTime(23, 59, 59));
+                MAPPING_USER_ID, quest.getId(), today, today.atTime(23, 59, 59));
         userDailyQuestRepository.save(assignment);
         em.flush();
         em.clear();
@@ -138,8 +154,8 @@ class QuestDomainMappingTest {
         UserDailyQuest found = userDailyQuestRepository.findById(assignment.getId()).orElseThrow();
         assertEquals(DailyQuestStatus.ASSIGNED, found.getStatus());
         assertEquals(quest.getId(), found.getQuestId());
-        assertEquals(1, userDailyQuestRepository.findByUserIdAndAssignedDate(1L, today).size());
-        assertTrue(userDailyQuestRepository.existsByUserIdAndQuestIdAndAssignedDate(1L, quest.getId(), today));
+        assertEquals(1, userDailyQuestRepository.findByUserIdAndAssignedDate(MAPPING_USER_ID, today).size());
+        assertTrue(userDailyQuestRepository.existsByUserIdAndQuestIdAndAssignedDate(MAPPING_USER_ID, quest.getId(), today));
     }
 
     @Test
@@ -147,7 +163,7 @@ class QuestDomainMappingTest {
         Quest quest = persistLocationQuest();
         LocalDate today = LocalDate.now();
         UserDailyQuest assignment = userDailyQuestRepository.save(
-                new UserDailyQuest(1L, quest.getId(), today, today.atTime(23, 59, 59)));
+                new UserDailyQuest(MAPPING_USER_ID, quest.getId(), today, today.atTime(23, 59, 59)));
         em.flush();
 
         QuestCompletion completion = new QuestCompletion(
@@ -161,11 +177,11 @@ class QuestDomainMappingTest {
         QuestCompletion found =
                 questCompletionRepository.findByUserDailyQuestId(assignment.getId()).orElseThrow();
         assertEquals(quest.getId(), found.getQuestId());
-        assertEquals(1L, found.getUserId(), "user_id는 배정 건에서 파생되어야 한다");
+        assertEquals(MAPPING_USER_ID, found.getUserId(), "user_id는 배정 건에서 파생되어야 한다");
         assertEquals(0, new BigDecimal("18.30").compareTo(found.getDistanceM()));
         assertEquals(0, new BigDecimal("12.50").compareTo(found.getAccuracyM()));
         assertEquals(1,
-                questCompletionRepository.findByUserIdOrderByCompletedAtDescIdDesc(1L, PageRequest.of(0, 20))
+                questCompletionRepository.findByUserIdOrderByCompletedAtDescIdDesc(MAPPING_USER_ID, PageRequest.of(0, 20))
                         .getTotalElements());
     }
 
@@ -174,7 +190,7 @@ class QuestDomainMappingTest {
         Quest quest = persistLocationQuest();
         LocalDate today = LocalDate.now();
         UserDailyQuest assignment = userDailyQuestRepository.save(
-                new UserDailyQuest(3L, quest.getId(), today, today.atTime(23, 59, 59)));
+                new UserDailyQuest(MAPPING_USER_ID_3, quest.getId(), today, today.atTime(23, 59, 59)));
         em.flush();
 
         // 소수점 초가 잘리면 완료 이력의 순서가 무너지고, expires_at은 반올림으로 만료 경계가 밀린다.
@@ -221,7 +237,7 @@ class QuestDomainMappingTest {
         Quest quest = persistLocationQuest();
         LocalDate today = LocalDate.now();
         UserDailyQuest unsaved =
-                new UserDailyQuest(4L, quest.getId(), today, today.atTime(23, 59, 59));
+                new UserDailyQuest(MAPPING_USER_ID_4, quest.getId(), today, today.atTime(23, 59, 59));
 
         assertThrows(IllegalArgumentException.class, () -> new QuestCompletion(
                 unsaved, null, null, null, null, LocalDateTime.now()),
@@ -237,7 +253,7 @@ class QuestDomainMappingTest {
         questRepository.save(quest);
         LocalDate today = LocalDate.now();
         UserDailyQuest assignment = userDailyQuestRepository.save(
-                new UserDailyQuest(2L, quest.getId(), today, today.atTime(23, 59, 59)));
+                new UserDailyQuest(MAPPING_USER_ID_2, quest.getId(), today, today.atTime(23, 59, 59)));
         em.flush();
 
         QuestCompletion completion =

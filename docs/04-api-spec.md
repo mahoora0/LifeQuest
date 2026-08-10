@@ -94,7 +94,7 @@
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
-| GET | /api/quests/today | 오늘의 퀘스트 목록 조회 | 필요 |
+| GET | /api/quests/today | 오늘의 퀘스트 목록 조회(선택 `lat`,`lng` — 위치 퀘스트를 주변에서 고른다) | 필요 |
 | GET | /api/quests/{questId} | 퀘스트 상세 조회 | 필요 |
 | GET | /api/quests/nearby | 오늘 배정된 위치 퀘스트 중 주변 항목 조회(`lat`,`lng`,`radiusKm`) | 필요 |
 | POST | /api/daily-quests/{dailyQuestId}/complete | 배정 건 완료 처리(핵심 API, §4 참조) | 필요 |
@@ -184,9 +184,15 @@
 
 **퀘스트·수집**
 
+> **배정 응답의 좌표는 배정마다 다를 수 있다.** `quests[].quest`의 `latitude`·`longitude`·`placeName`은
+> 그 배정에 정해진 인증 지점이며, 장소를 특정하지 않는 퀘스트에서는 카탈로그 원본과 다르다
+> (`05-business-rules.md` §1-C). 지도 표시와 완료 판정은 **이 값**을 기준으로 한다 — 같은 `questId`를
+> `GET /quests/{questId}`로 다시 조회해 얻은 좌표로 인증하면 반경 밖이 될 수 있다.
+> 상세 조회는 배정을 지목하지 않으므로 원본 좌표를 준다. `radiusM`은 두 경로가 항상 같다.
+
 | API | 요청 | 성공 응답 `data` | 주요 오류 |
 |---|---|---|---|
-| `GET /quests/today` | 없음 | `assignedDate`(조회 시점의 논리적 일자), `quests[]`(`dailyQuestId`, `questId`, `status`, 퀘스트 요약) | `UNAUTHORIZED` |
+| `GET /quests/today` | query `lat`, `lng`(선택) | `assignedDate`(조회 시점의 논리적 일자), `quests[]`(`dailyQuestId`, `questId`, `status`, 퀘스트 요약) | `UNAUTHORIZED` |
 | `GET /quests/{questId}` | path `questId` | 퀘스트 상세·장소·보상(`createdBy`, `completionGuide` 포함) | `RESOURCE_NOT_FOUND`(없거나 **남의 개인 AI 퀘스트**) |
 | `GET /quests/nearby` | query `lat`, `lng`, `radiusKm` | 오늘 배정된 LOCATION 퀘스트 `quests[]`(`dailyQuestId` 포함) | `VALIDATION_FAILED` |
 | `POST /quest-recommendations/weekly/place` | 일반 place 추천과 동일 | 후보 3건(`candidateId` 포함) | `QUEST_FEATURE_LOCKED`(Lv.3 미만), `WEEKLY_AI_QUEST_ALREADY_CLAIMED`, `LLM_DAILY_LIMIT_EXCEEDED` |

@@ -11,6 +11,8 @@ import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/features/quest/data/quest_repository.dart';
 import 'package:life_quest/features/quest/presentation/quest_list_screen.dart';
 
+import '../support/stub_location_service.dart';
+
 /// 진입점 점검(시안 "화면 구성 규칙" §10).
 ///
 /// 눌러도 아무 일이 없는 요소는 "고장"으로 읽힌다. 연결하거나 지운 결과를 고정한다.
@@ -19,6 +21,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           questRepositoryProvider.overrideWithValue(_EmptyQuestRepository()),
         ],
         child: const MaterialApp(home: QuestListScreen()),
@@ -36,6 +39,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          stubLocation,
           lifedexRepositoryProvider.overrideWithValue(
             _EmptyLifedexRepository(),
           ),
@@ -58,7 +62,7 @@ class _EmptyQuestRepository extends QuestRepository {
   _EmptyQuestRepository() : super(Dio());
 
   @override
-  Future<TodayQuests> fetchToday() async =>
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) async =>
       const TodayQuests(assignedDate: null, quests: []);
 }
 

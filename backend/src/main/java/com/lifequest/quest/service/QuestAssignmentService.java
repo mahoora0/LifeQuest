@@ -89,6 +89,20 @@ public class QuestAssignmentService {
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public TodayQuestsResponse getTodayQuests(Long userId) {
+        return getTodayQuests(userId, null, null);
+    }
+
+    /**
+     * 사용자 주변을 반영해 조회한다. 위치는 <b>이번 호출이 배정을 만들 때만</b> 쓰인다 —
+     * 이미 배정이 있으면 그대로 돌려주므로, 주기 도중에 다른 도시로 이동해도 그 주기의 배정은
+     * 바뀌지 않는다. 배정이 도중에 갈리면 어제 보던 퀘스트가 사라지고 완료 이력의 기준도 흔들린다.
+     *
+     * @param latitude  사용자 현재 위도. {@code null}이면 위치를 모르는 것으로 본다
+     * @param longitude 사용자 현재 경도
+     */
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public TodayQuestsResponse getTodayQuests(Long userId, Double latitude, Double longitude) {
+        requireValidCoordinates(latitude, longitude);
         LocalDateTime now = LocalDateTime.now(clock);
         List<UserDailyQuest> assigned =
             userDailyQuestRepository.findByUserIdAndExpiresAtAfter(userId, now);
@@ -123,7 +137,7 @@ public class QuestAssignmentService {
                 continue;
             }
             try {
-                questAssignmentCreator.createForTrack(userId, cadence);
+                questAssignmentCreator.createForTrack(userId, cadence, latitude, longitude);
             } catch (DataIntegrityViolationException e) {
                 // 다른 요청이 같은 주기의 마커를 먼저 넣었다 — 정상 흐름이다. 그쪽 트랜잭션이
                 // 배정까지 만들었으므로 아래 재조회가 그것을 가져온다.
@@ -178,9 +192,10 @@ public class QuestAssignmentService {
      */
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<DailyQuestResponse> getNearbyQuests(Long userId, Double lat, Double lng, Double radiusKm) {
-        if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        if (lat == null || lng == null) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "위경도가 유효 범위를 벗어났습니다.");
         }
+        requireValidCoordinates(lat, lng);
         if (radiusKm == null || radiusKm <= 0) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "검색 반경은 0보다 커야 합니다.");
         }
@@ -188,7 +203,9 @@ public class QuestAssignmentService {
         double radiusM = radiusKm * 1000;
         List<DailyQuestResponse> nearby = new ArrayList<>();
 
-        for (DailyQuestResponse assignment : getTodayQuests(userId).quests()) {
+        // 지도로 먼저 들어온 사용자의 배정도 그의 주변으로 만들어져야 한다. 여기서 좌표를 넘기지
+        // 않으면 진입 순서가 결과를 바꾼다 — 목록을 먼저 연 사용자만 주변 퀘스트를 받는다
+        for (DailyQuestResponse assignment : getTodayQuests(userId, lat, lng).quests()) {
             QuestSummaryResponse quest = assignment.quest();
             if (quest.latitude() == null || quest.longitude() == null) {
                 continue;
@@ -210,6 +227,24 @@ public class QuestAssignmentService {
 
         nearby.sort(Comparator.comparing(DailyQuestResponse::distanceM));
         return nearby;
+    }
+
+    /**
+     * 좌표가 지구 위의 점인지 본다. {@code null} 쌍은 "위치를 모른다"는 유효한 상태이므로 통과시킨다
+     * — 그 판정은 호출자가 한다.
+     *
+     * <p>배정 경로에도 이 검사가 필요한 이유는 {@code GeoDistance.offset}이 어떤 입력에도 유효한
+     * 좌표를 만들어내기 때문이다. {@code Math.asin}이 인자를 클램프하고 경도는 정규화되므로
+     * 위도 9999를 넘겨도 예외가 나지 않고, 그 결과가 override로 배정에 붙는다. 배정은 주기당
+     * 한 번뿐이라 그 좌표가 주기 내내 인증 지점으로 굳어 사용자가 완료할 수 없게 된다.
+     */
+    private void requireValidCoordinates(Double latitude, Double longitude) {
+        if (latitude == null || longitude == null) {
+            return;
+        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "위경도가 유효 범위를 벗어났습니다.");
+        }
     }
 
     private List<DailyQuestResponse> toResponses(List<UserDailyQuest> assigned) {
