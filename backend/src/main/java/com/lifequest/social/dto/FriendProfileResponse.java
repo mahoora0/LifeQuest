@@ -8,7 +8,6 @@ public record FriendProfileResponse(
         String nickname,
         String profileImageUrl,
         String representativeTitle,
-        String representativeBadge,
         FriendActivitySummary me,
         FriendActivitySummary friend) {
 
@@ -23,9 +22,6 @@ public record FriendProfileResponse(
                 friend.getRepresentativeTitle() == null
                         ? null
                         : friend.getRepresentativeTitle().getName(),
-                friend.getRepresentativeBadge() == null
-                        ? null
-                        : friend.getRepresentativeBadge().getName(),
                 me,
                 friendSummary);
     }

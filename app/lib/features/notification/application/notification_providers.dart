@@ -49,6 +49,9 @@ class NotificationFeedNotifier extends AsyncNotifier<LqNotificationFeed> {
           for (final item in current.items)
             ids.contains(item.id) ? item.copyWith(read: true) : item,
         ],
+        serverUnreadCount: ids.length == 1
+            ? (current.unreadCount - 1).clamp(0, current.unreadCount)
+            : 0,
       ),
     );
 

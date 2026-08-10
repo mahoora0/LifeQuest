@@ -84,13 +84,15 @@ class LqNotification {
 
 /// 알림 목록 + 읽지 않음 개수.
 class LqNotificationFeed {
-  const LqNotificationFeed({required this.items});
+  const LqNotificationFeed({required this.items, this.serverUnreadCount});
 
   final List<LqNotification> items;
+  final int? serverUnreadCount;
 
   bool get isEmpty => items.isEmpty;
 
-  int get unreadCount => items.where((item) => !item.read).length;
+  int get unreadCount =>
+      serverUnreadCount ?? items.where((item) => !item.read).length;
 
   factory LqNotificationFeed.fromJson(Object? body) {
     final json = asMap(body);
@@ -98,6 +100,7 @@ class LqNotificationFeed {
       items: asMapList(
         pick(json, ['notifications', 'content', 'items']),
       ).map(LqNotification.fromJson).toList(),
+      serverUnreadCount: asInt(json['unreadCount']),
     );
   }
 }

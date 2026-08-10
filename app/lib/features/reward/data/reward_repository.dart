@@ -49,13 +49,6 @@ class RewardRepository {
           note: 'Lv.12 달성',
         ),
         ReceivedReward(
-          level: 10,
-          name: '개척자의 깃발',
-          kind: LqRewardKind.badge,
-          timeLabel: '2주 전',
-          note: 'Lv.10 달성',
-        ),
-        ReceivedReward(
           level: 5,
           name: '첫 걸음',
           kind: LqRewardKind.title,

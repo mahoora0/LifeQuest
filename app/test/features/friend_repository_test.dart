@@ -71,7 +71,6 @@ void main() {
         'userId': 7,
         'nickname': '하늘',
         'representativeTitle': '새벽의 개척자',
-        'representativeBadge': '첫걸음',
         'me': {
           'level': 4,
           'totalExp': 320,
@@ -91,7 +90,6 @@ void main() {
 
     expect(journey.nickname, '하늘');
     expect(journey.titleLine, '새벽의 개척자');
-    expect(journey.badges.single.name, '첫걸음');
     expect(journey.friend.totalExp, 580);
     expect(journey.friend.completedQuestCount, 14);
   });

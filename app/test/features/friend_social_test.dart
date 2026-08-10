@@ -175,7 +175,6 @@ void main() {
       expect(find.text('51개'), findsOneWidget);
       expect(find.text('사용 중인 칭호'), findsOneWidget);
       expect(find.text('하늘 · 새벽의 개척자'), findsOneWidget);
-      expect(find.text('대표 배지 · 새벽의 개척자'), findsOneWidget);
     });
 
     testWidgets('연속 달성은 서버 판정 전까지 칸째 감춘다', (tester) async {
@@ -189,8 +188,14 @@ void main() {
     testWidgets('이미 응원했으면 응원 버튼이 잠긴다', (tester) async {
       await pump(tester, const FriendJourneyScreen(userId: 11));
 
-      // 되돌릴 수 없는 단방향 동작이라 다시 누를 수 있으면 안 된다.
       expect(find.text('응원함 ✓'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('오늘은 응원했어요'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // 되돌릴 수 없는 단방향 동작이라 다시 누를 수 있으면 안 된다.
       expect(find.text('오늘은 응원했어요'), findsOneWidget);
       expect(find.text('응원 보내기'), findsNothing);
     });
@@ -266,6 +271,5 @@ class _FakeFriendRepository extends FriendRepository {
       achievements: 31,
       streakDays: 9,
     ),
-    badges: [JourneyBadge(name: '새벽의 개척자')],
   );
 }

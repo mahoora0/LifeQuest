@@ -257,16 +257,6 @@ class JourneySide {
   );
 }
 
-/// 동료의 대표 배지 한 칸.
-class JourneyBadge {
-  const JourneyBadge({required this.name, this.iconAsset});
-
-  final String name;
-
-  /// 번들 아이콘 경로. 없으면 이름 첫 글자로 그린다(마이페이지 배지 칸과 같은 방식).
-  final String? iconAsset;
-}
-
 /// S-21 동료 여정 비교 (`GET /api/friends/{userId}/journey`).
 class FriendJourney {
   const FriendJourney({
@@ -276,7 +266,6 @@ class FriendJourney {
     required this.friend,
     this.titleLine,
     this.cheered = false,
-    this.badges = const [],
   });
 
   final int userId;
@@ -288,7 +277,6 @@ class FriendJourney {
   final bool cheered;
   final JourneySide me;
   final JourneySide friend;
-  final List<JourneyBadge> badges;
 
   FriendJourney copyWith({bool? cheered}) => FriendJourney(
     userId: userId,
@@ -297,7 +285,6 @@ class FriendJourney {
     cheered: cheered ?? this.cheered,
     me: me,
     friend: friend,
-    badges: badges,
   );
 
   factory FriendJourney.fromJson(Object? body) {
@@ -311,12 +298,6 @@ class FriendJourney {
       cheered: asBool(pick(json, ['cheered', 'cheeredToday'])),
       me: JourneySide.fromJson(asMap(json['me'])),
       friend: JourneySide.fromJson(asMap(pick(json, ['friend', 'other']))),
-      badges: [
-        if (asString(json['representativeBadge']) case final badge?)
-          JourneyBadge(name: badge),
-        for (final badge in asMapList(json['badges']))
-          JourneyBadge(name: asString(pick(badge, ['name', 'label'])) ?? '배지'),
-      ],
     );
   }
 }

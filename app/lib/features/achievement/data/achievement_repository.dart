@@ -6,8 +6,8 @@ import 'package:life_quest/shared/data/sample_data.dart';
 
 /// 업적 · 칭호(S-15·S-16) 조회.
 ///
-/// ⚠ 백엔드에 achievement 컨트롤러가 아직 없어 두 경로 모두 404다(대표 칭호·배지
-/// 지정은 `/users/me/titles`·`/badges`로 이미 동작한다). 화면을 검토할 수 있도록
+/// ⚠ 백엔드에 achievement 컨트롤러가 아직 없어 두 경로 모두 404다(대표 칭호
+/// 지정은 `/users/me/titles`로 이미 동작한다). 화면을 검토할 수 있도록
 /// [LqSampleData.orSample]이 **`LQ_SAMPLES`를 켰고 컨트롤러가 없을 때만** 표본으로
 /// 떨어지고, 서버가 열리면 저절로 물러난다.
 ///

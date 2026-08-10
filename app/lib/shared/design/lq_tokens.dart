@@ -29,8 +29,7 @@ abstract final class LqColors {
   /// 리스트 행·아이콘 타일. 주 카드 위에서 다시 밝게 도드라진다.
   static const surfaceTile = surfaceRaised;
 
-  /// 배지 칸·아이콘 웰의 채움. 카드보다 한 톤 진해 안에 든 것이 도드라진다.
-  /// 대표 배지처럼 골드로 강조된 칸과 나란히 놓였을 때 대비가 생기는 값이다.
+  /// 아이콘 웰의 채움. 카드보다 한 톤 진해 안에 든 것이 도드라진다.
   static const tileFill = Color(0xFFF3E9D0);
 
   // 잉크 · 텍스트

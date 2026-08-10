@@ -9,7 +9,6 @@ import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
-import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 /// S-21 동료 여정 비교 (화면맵 2h).
@@ -75,10 +74,6 @@ class _Body extends ConsumerWidget {
         _ProfileRow(journey: journey),
         const SizedBox(height: LqSpacing.gap),
         _ComparisonSection(journey: journey),
-        if (journey.badges.isNotEmpty) ...[
-          const SizedBox(height: LqSpacing.gap),
-          _BadgeCard(nickname: journey.nickname, badges: journey.badges),
-        ],
         const SizedBox(height: 18),
         Row(
           children: [
@@ -214,10 +209,6 @@ class _ProfileRow extends StatelessWidget {
                 'Lv. ${journey.friend.level}',
                 style: LqText.levelNumber.copyWith(height: 1),
               ),
-              if (journey.badges.firstOrNull case final badge?) ...[
-                const SizedBox(height: 5),
-                _RepresentativeBadgeChip(badge: badge),
-              ],
             ],
           ),
         ),
@@ -517,96 +508,6 @@ class _TitleCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RepresentativeBadgeChip extends StatelessWidget {
-  const _RepresentativeBadgeChip({required this.badge});
-  final JourneyBadge badge;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: LqColors.goldBg,
-      borderRadius: LqShape.pillRadius,
-      border: Border.all(color: LqColors.goldBorder),
-    ),
-    child: Text(
-      '대표 배지 · ${badge.name}',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: LqText.badge.copyWith(fontSize: 11.5, color: LqColors.goldText),
-    ),
-  );
-}
-
-class _BadgeCard extends StatelessWidget {
-  const _BadgeCard({required this.nickname, required this.badges});
-
-  final String nickname;
-  final List<JourneyBadge> badges;
-
-  @override
-  Widget build(BuildContext context) {
-    return LqCard(
-      header: '배지 컬렉션',
-      headerTrailing: Text('${badges.length}개', style: LqText.caption),
-      background: LqColors.surfaceCard,
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-      // 배지 개수는 서버가 정한다. 한 줄에 고정하면 여섯 칸을 넘는 순간 넘치므로
-      // 줄바꿈으로 받는다.
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          for (var i = 0; i < badges.length; i++)
-            // 첫 칸이 대표 배지다. 마이페이지 배지 칸과 같은 gold 언어를 쓴다.
-            _BadgeSlot(badge: badges[i], representative: i == 0),
-        ],
-      ),
-    );
-  }
-}
-
-class _BadgeSlot extends StatelessWidget {
-  const _BadgeSlot({required this.badge, required this.representative});
-
-  final JourneyBadge badge;
-  final bool representative;
-
-  @override
-  Widget build(BuildContext context) {
-    final asset = badge.iconAsset;
-
-    return Semantics(
-      // 색만으로 대표를 구분하면 읽어 주는 화면에서는 전달되지 않는다.
-      label: representative ? '대표 배지 ${badge.name}' : badge.name,
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: representative ? LqColors.gold : LqColors.tileFill,
-          borderRadius: LqShape.tileRadius,
-          border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
-        ),
-        child: asset == null
-            ? Text(
-                // 서버가 이름을 빈 문자열로 주면 `characters.first`가 던진다.
-                // 다른 배지 칸(마이페이지·업적)과 같은 대체 글자를 쓴다.
-                badge.name.isEmpty ? '?' : badge.name.characters.first,
-                style: LqText.badge.copyWith(
-                  fontSize: 17,
-                  color: representative
-                      ? LqColors.goldText
-                      : LqColors.textPrimary,
-                ),
-              )
-            : LqImage(asset, width: 26),
       ),
     );
   }

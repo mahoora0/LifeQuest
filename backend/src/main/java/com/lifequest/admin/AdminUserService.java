@@ -82,7 +82,6 @@ public class AdminUserService {
                 user.getId(), user.getNickname(), user.getEmail(), user.getProfileImageUrl(), user.getRole(),
                 user.getLevel(), user.getTotalExp(),
                 user.getRepresentativeTitle() == null ? null : user.getRepresentativeTitle().getName(),
-                user.getRepresentativeBadge() == null ? null : user.getRepresentativeBadge().getName(),
                 user.getCreatedAt(), completions.countByUserId(userId),
                 assignments.countByUserIdAndStatus(userId, DailyQuestStatus.ASSIGNED), recentQuests, recentExp);
     }

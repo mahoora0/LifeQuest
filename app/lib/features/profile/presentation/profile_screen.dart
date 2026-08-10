@@ -330,7 +330,6 @@ class _HeaderProfilePhoto extends StatelessWidget {
   }
 }
 
-/// 헤더에 붙는 대표 배지 표식. 배지 탭의 선택 상태와 같은 색 언어(gold)를 쓴다.
 class _ExpCard extends ConsumerWidget {
   const _ExpCard();
 

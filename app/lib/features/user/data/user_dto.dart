@@ -10,8 +10,6 @@ class UserProfile {
     this.role,
     this.representativeTitle,
     this.representativeTitleId,
-    this.representativeBadge,
-    this.representativeBadgeId,
     this.selectedCharacter,
     this.selectedAccessory,
   });
@@ -23,15 +21,12 @@ class UserProfile {
   final String? role;
   final String? representativeTitle;
   final int? representativeTitleId;
-  final String? representativeBadge;
-  final int? representativeBadgeId;
   final AvatarCharacter? selectedCharacter;
   final AvatarAccessory? selectedAccessory;
 
   factory UserProfile.fromJson(Object? body) {
     final json = asMap(body);
     final title = json['representativeTitle'];
-    final badge = json['representativeBadge'];
     return UserProfile(
       id: asInt(pick(json, ['id', 'userId'])) ?? 0,
       nickname: asString(json['nickname']) ?? '모험가',
@@ -43,10 +38,6 @@ class UserProfile {
           ? asString(asMap(title)['name'])
           : asString(title),
       representativeTitleId: title is Map ? asInt(asMap(title)['id']) : null,
-      representativeBadge: badge is Map
-          ? asString(asMap(badge)['name'])
-          : asString(badge),
-      representativeBadgeId: badge is Map ? asInt(asMap(badge)['id']) : null,
       selectedCharacter: json['selectedCharacter'] is Map
           ? AvatarCharacter.fromJson(asMap(json['selectedCharacter']))
           : null,
@@ -250,7 +241,7 @@ class TitleCollection {
   }
 }
 
-/// 프로필 아이템(마이페이지 "내 배지").
+/// 프로필 꾸미기 아이템.
 class ProfileItem {
   const ProfileItem({
     required this.name,
@@ -270,7 +261,7 @@ class ProfileItem {
 
   factory ProfileItem.fromJson(Map<String, dynamic> json) => ProfileItem(
     id: asInt(pick(json, ['id', 'profileItemId'])),
-    name: asString(pick(json, ['name', 'itemName'])) ?? '배지',
+    name: asString(pick(json, ['name', 'itemName'])) ?? '아이템',
     imageUrl: asString(pick(json, ['imageUrl', 'iconUrl'])),
     itemType: asString(json['itemType']),
     sourceType: asString(json['sourceType']),
@@ -278,27 +269,9 @@ class ProfileItem {
   );
 }
 
-class BadgeCollection {
-  const BadgeCollection({
-    required this.badges,
-    required this.representativeBadgeId,
-  });
-
-  final List<ProfileItem> badges;
-  final int? representativeBadgeId;
-
-  factory BadgeCollection.fromJson(Object? body) {
-    final json = asMap(body);
-    return BadgeCollection(
-      badges: asMapList(json['badges']).map(ProfileItem.fromJson).toList(),
-      representativeBadgeId: asInt(json['representativeBadgeId']),
-    );
-  }
-}
-
 /// 보상 한 건의 종류. 칭호와 프로필 아이템은 서버에서 따로 오지만
 /// "무엇을 언제 얻었나"를 한 줄로 읽을 때는 구분만 남기면 된다.
-enum RewardKind { title, badge, item }
+enum RewardKind { title, item }
 
 /// 최근 획득 목록용 통합 항목.
 class RewardEntry {
@@ -342,9 +315,7 @@ class RewardHistory {
           for (final item in profileItems)
             RewardEntry(
               name: item.name,
-              kind: item.itemType == 'BADGE'
-                  ? RewardKind.badge
-                  : RewardKind.item,
+              kind: RewardKind.item,
               sourceType: item.sourceType,
               acquiredAt: item.acquiredAt,
             ),

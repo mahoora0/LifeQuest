@@ -8,7 +8,6 @@ void main() {
       'nickname': '모험가',
       'profileImageUrl': '/uploads/profile/me.png',
       'representativeTitle': {'id': 1, 'name': '새내기 모험가'},
-      'representativeBadge': {'id': 2, 'name': '나침반 배지'},
       'selectedCharacter': {
         'id': 3,
         'code': 'MONGLE',
@@ -22,20 +21,6 @@ void main() {
     expect(profile.selectedCharacter?.code, 'MONGLE');
     expect(profile.selectedAccessory?.code, 'EXPLORER_HAT');
     expect(profile.representativeTitleId, 1);
-    expect(profile.representativeBadge, '나침반 배지');
-  });
-
-  test('대표 배지 목록과 선택 상태를 파싱한다', () {
-    final collection = BadgeCollection.fromJson({
-      'badges': [
-        {'id': 1, 'name': '새싹 배지', 'itemType': 'BADGE'},
-        {'id': 2, 'name': '나침반 배지', 'itemType': 'BADGE'},
-      ],
-      'representativeBadgeId': 2,
-    });
-
-    expect(collection.badges.map((item) => item.name), ['새싹 배지', '나침반 배지']);
-    expect(collection.representativeBadgeId, 2);
   });
 
   test('최근 획득은 칭호와 아이템을 획득 시각 내림차순으로 합친다', () {
@@ -46,8 +31,8 @@ void main() {
       'profileItems': [
         {
           'id': 2,
-          'name': '나침반 배지',
-          'itemType': 'BADGE',
+          'name': '탐험가 모자',
+          'itemType': 'OUTFIT',
           'acquiredAt': '2026-07-25T09:00:00Z',
         },
         {
@@ -61,11 +46,11 @@ void main() {
 
     // 두 목록이 각각 최신순으로 와도 종류를 섞으면 순서가 깨진다.
     expect(history.recent.map((entry) => entry.name), [
-      '나침반 배지',
+      '탐험가 모자',
       '이름표',
       '새내기 모험가',
     ]);
-    expect(history.recent.first.kind, RewardKind.badge);
+    expect(history.recent.first.kind, RewardKind.item);
     expect(history.recent[1].kind, RewardKind.item);
     expect(history.recent.last.kind, RewardKind.title);
   });
@@ -78,14 +63,14 @@ void main() {
       'profileItems': [
         {
           'id': 2,
-          'name': '나침반 배지',
-          'itemType': 'BADGE',
+          'name': '탐험가 모자',
+          'itemType': 'OUTFIT',
           'acquiredAt': '2026-07-25T09:00:00Z',
         },
       ],
     });
 
-    expect(history.recent.map((entry) => entry.name), ['나침반 배지', '시각 없는 칭호']);
+    expect(history.recent.map((entry) => entry.name), ['탐험가 모자', '시각 없는 칭호']);
   });
 
   test('명세 공식에 맞는 레벨 진행률 응답을 파싱한다', () {

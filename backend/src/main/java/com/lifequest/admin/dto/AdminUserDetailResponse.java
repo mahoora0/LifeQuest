@@ -10,7 +10,7 @@ import java.util.List;
 
 public record AdminUserDetailResponse(
         Long id, String nickname, String email, String profileImageUrl, UserRole role,
-        int level, int totalExp, String representativeTitle, String representativeBadge,
+        int level, int totalExp, String representativeTitle,
         Instant createdAt, long completedQuestCount, long assignedQuestCount,
         List<QuestActivity> recentQuests, List<ExpActivity> recentExp) {
 
