@@ -19,13 +19,52 @@ final todayQuestsProvider =
 class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
   @override
   Future<TodayQuests> build() {
-    return ref.watch(questRepositoryProvider).fetchToday();
+    // 의존성은 첫 await 전에 읽어 둔다 — 위치 조회 도중 provider가 무효화되면
+    // await 뒤의 ref는 이미 dispose된 상태다(nearbyQuestsProvider와 같은 이유).
+    final locationService = ref.watch(locationServiceProvider);
+    final repository = ref.watch(questRepositoryProvider);
+    return _fetchWithPosition(locationService, repository);
   }
 
   Future<void> refresh() async {
+    final locationService = ref.read(locationServiceProvider);
+    final repository = ref.read(questRepositoryProvider);
     state = await AsyncValue.guard(
-      () => ref.read(questRepositoryProvider).fetchToday(),
+      () => _fetchWithPosition(locationService, repository),
     );
+  }
+
+  /// 위치를 곁들여 오늘의 퀘스트를 부른다. 위치를 못 얻어도 조회는 진행한다.
+  static Future<TodayQuests> _fetchWithPosition(
+    LocationService locationService,
+    QuestRepository repository,
+  ) async {
+    final position = await _bestEffortPosition(locationService);
+    return repository.fetchToday(
+      latitude: position?.latitude,
+      longitude: position?.longitude,
+    );
+  }
+
+  /// 현재 위치를 최선 노력으로 얻는다. 실패하면 `null`.
+  ///
+  /// 실패를 삼키는 것은 이 화면에서 위치가 **있으면 좋은 값**이기 때문이다.
+  /// 권한 거부·GPS 꺼짐·실내에서의 fix 실패는 모두 정상적인 상황이고, 그때
+  /// 예외를 올리면 오늘의 퀘스트 화면 전체가 오류로 바뀐다 — 잃어야 할 것은
+  /// "주변에서 고른다"는 이점뿐이다.
+  ///
+  /// 타임아웃을 두는 이유도 같다. GPS fix는 10초 넘게 걸릴 수 있는데 홈 화면이
+  /// 그동안 비어 있으면 위치 없이 뜨는 것보다 나쁘다.
+  static Future<Position?> _bestEffortPosition(
+    LocationService locationService,
+  ) async {
+    try {
+      return await locationService.getCurrentPosition().timeout(
+        const Duration(seconds: 5),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// 퀘스트 완료. 성공 시 해당 배정 건을 즉시 완료 상태로 반영하고

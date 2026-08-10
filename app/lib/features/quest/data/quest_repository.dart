@@ -11,10 +11,26 @@ class QuestRepository {
   final Dio _dio;
 
   /// `GET /quests/today`
-  Future<TodayQuests> fetchToday() => _guard(() async {
-    final response = await _dio.get<dynamic>('/quests/today');
-    return TodayQuests.fromJson(response.data);
-  });
+  ///
+  /// 좌표는 선택이다. 서버가 위치 퀘스트를 사용자 주변에서 고르는 데 쓰며,
+  /// 없으면 카탈로그 전체에서 고른다 — 위치 권한을 거부했거나 GPS를 못 잡은
+  /// 사용자에게 오늘의 퀘스트 전체가 막혀서는 안 된다.
+  ///
+  /// 이 값이 실제로 쓰이는 것은 그 주기의 배정이 **아직 없을 때 한 번**뿐이다.
+  /// 이미 배정이 있으면 서버가 무시하므로 매 호출에 실어도 결과가 흔들리지 않는다.
+  Future<TodayQuests> fetchToday({double? latitude, double? longitude}) =>
+      _guard(() async {
+        final response = await _dio.get<dynamic>(
+          '/quests/today',
+          queryParameters: {
+            if (latitude != null && longitude != null) ...{
+              'lat': latitude,
+              'lng': longitude,
+            },
+          },
+        );
+        return TodayQuests.fromJson(response.data);
+      });
 
   /// `GET /quests/{questId}`
   Future<Quest> fetchQuest(int questId) => _guard(() async {
