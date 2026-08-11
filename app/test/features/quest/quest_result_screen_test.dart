@@ -6,11 +6,20 @@ import 'package:life_quest/features/quest/presentation/quest_result_screen.dart'
 import 'package:life_quest/features/user/application/user_providers.dart';
 import 'package:life_quest/features/user/data/user_dto.dart';
 
+/// 완료 연출이 끝나고 후속 모달이 뜰 때까지 시간을 민다.
+///
+/// 떠다니는 종이조각이 멈추지 않으므로 `pumpAndSettle()`은 쓸 수 없다.
+Future<void> _playSequence(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(questResultSequenceDuration);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
 void main() {
   testWidgets('레벨 3 달성 시 주간 퀘스트 해금을 보여준다', (tester) async {
     await tester.pumpWidget(_app(_result(2, 3)));
-    await tester.pump();
-    await tester.pump();
+    await _playSequence(tester);
 
     expect(find.text('LEVEL UP!'), findsOneWidget);
     expect(find.text('주간 퀘스트'), findsWidgets);
@@ -19,8 +28,7 @@ void main() {
 
   testWidgets('여러 레벨을 건너뛰면 사이에 해금된 기능을 모두 보여준다', (tester) async {
     await tester.pumpWidget(_app(_result(2, 5)));
-    await tester.pump();
-    await tester.pump();
+    await _playSequence(tester);
 
     expect(find.text('주간 퀘스트'), findsWidgets);
     expect(find.text('그룹 퀘스트'), findsWidgets);
@@ -28,8 +36,7 @@ void main() {
 
   testWidgets('레벨 5 달성 시 새 캐릭터를 보여준다', (tester) async {
     await tester.pumpWidget(_app(_result(4, 5)));
-    await tester.pump();
-    await tester.pump();
+    await _playSequence(tester);
 
     expect(find.text('모각'), findsOneWidget);
     expect(find.byKey(const ValueKey('unlocked-character-2')), findsOneWidget);
@@ -38,8 +45,7 @@ void main() {
 
   testWidgets('레벨 4 달성 시 레벨업 모달과 새 액세서리를 보여준다', (tester) async {
     await tester.pumpWidget(_app(_result(3, 4)));
-    await tester.pump();
-    await tester.pump();
+    await _playSequence(tester);
 
     expect(find.text('LEVEL UP!'), findsOneWidget);
     expect(find.text('Lv.4'), findsWidgets);
