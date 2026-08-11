@@ -46,6 +46,14 @@ public enum ErrorCode {
     GROUP_ACCESS_DENIED(HttpStatus.FORBIDDEN, "GROUP_ACCESS_DENIED", "그룹 접근 권한이 없습니다."),
     GROUP_OWNER_REQUIRED(HttpStatus.FORBIDDEN, "GROUP_OWNER_REQUIRED", "그룹장 권한이 필요합니다."),
     GROUP_ARCHIVED(HttpStatus.CONFLICT, "GROUP_ARCHIVED", "보관된 그룹에서는 변경할 수 없습니다."),
+    GROUP_PERMANENT_DELETE_REQUIRES_ARCHIVED(
+            HttpStatus.CONFLICT,
+            "GROUP_PERMANENT_DELETE_REQUIRES_ARCHIVED",
+            "그룹을 먼저 보관한 뒤 영구 삭제해 주세요."),
+    GROUP_PERMANENT_DELETE_BLOCKED_BY_COMPLETION(
+            HttpStatus.CONFLICT,
+            "GROUP_PERMANENT_DELETE_BLOCKED_BY_COMPLETION",
+            "완료 및 EXP 지급 이력이 있는 그룹은 영구 삭제할 수 없습니다."),
     GROUP_FULL(HttpStatus.CONFLICT, "GROUP_FULL", "그룹 정원이 가득 찼습니다."),
     GROUP_MEMBERSHIP_ALREADY_EXISTS(HttpStatus.CONFLICT, "GROUP_MEMBERSHIP_ALREADY_EXISTS", "이미 가입, 초대 또는 승인 대기 중입니다."),
     GROUP_INVITATION_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_INVITATION_NOT_FOUND", "유효한 그룹 초대를 찾을 수 없습니다."),
@@ -56,6 +64,10 @@ public enum ErrorCode {
     INVALID_OWNER_TRANSFER(HttpStatus.CONFLICT, "INVALID_OWNER_TRANSFER", "그룹장 권한을 위임할 수 없는 대상입니다."),
     GROUP_QUEST_ALREADY_STARTED(HttpStatus.CONFLICT, "GROUP_QUEST_ALREADY_STARTED", "이미 시작된 그룹 퀘스트입니다."),
     GROUP_QUEST_CANCELLED(HttpStatus.CONFLICT, "GROUP_QUEST_CANCELLED", "취소된 그룹 퀘스트입니다."),
+    GROUP_QUEST_PERMANENT_DELETE_REQUIRES_CANCELLED(
+            HttpStatus.CONFLICT,
+            "GROUP_QUEST_PERMANENT_DELETE_REQUIRES_CANCELLED",
+            "그룹 퀘스트를 먼저 취소한 뒤 영구 삭제해 주세요."),
     GROUP_QUEST_ALREADY_COMPLETED(HttpStatus.CONFLICT, "GROUP_QUEST_ALREADY_COMPLETED", "이미 완료된 그룹 퀘스트입니다."),
     GROUP_QUEST_NOT_STARTED(HttpStatus.CONFLICT, "GROUP_QUEST_NOT_STARTED", "시작 시각 이후에 공동 완료할 수 있습니다."),
     GROUP_QUEST_PARTICIPATION_CLOSED(HttpStatus.CONFLICT, "GROUP_QUEST_PARTICIPATION_CLOSED", "그룹 퀘스트 참여 신청이 마감되었습니다."),

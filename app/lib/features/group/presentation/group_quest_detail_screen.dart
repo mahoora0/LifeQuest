@@ -44,6 +44,24 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
   }
 
   Future<void> cancel() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('퀘스트를 취소할까요?'),
+        content: const Text('취소하면 다시 진행할 수 없지만 기록은 남아요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('돌아가기'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('퀘스트 취소'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     try {
       await ref
           .read(groupRepositoryProvider)
@@ -53,6 +71,39 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
       await load();
     } catch (e) {
       if (mounted) showLqError(context, e);
+    }
+  }
+
+  Future<void> deletePermanently() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('퀘스트를 영구 삭제할까요?'),
+        content: const Text('퀘스트와 모든 참여 기록이 삭제되며 복구할 수 없어요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('영구 삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || busy) return;
+    setState(() => busy = true);
+    try {
+      await ref
+          .read(groupRepositoryProvider)
+          .deleteQuestPermanently(widget.groupId, widget.questId);
+      _invalidateQuestLists();
+      if (mounted) context.go('/groups/${widget.groupId}');
+    } catch (e) {
+      if (mounted) showLqError(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
@@ -263,6 +314,19 @@ class _State extends ConsumerState<GroupQuestDetailScreen> {
                             shadow: false,
                             borderColor: LqColors.borderMuted,
                             onPressed: cancel,
+                          ),
+                        ],
+                        if (group?.isOwner == true &&
+                            q.status == GroupQuestStatus.cancelled) ...[
+                          const SizedBox(height: 16),
+                          LqButton(
+                            label: '퀘스트 영구 삭제',
+                            busy: busy,
+                            shadow: false,
+                            background: LqColors.dangerText,
+                            foreground: LqColors.onDark,
+                            borderColor: LqColors.ink,
+                            onPressed: deletePermanently,
                           ),
                         ],
                       ],

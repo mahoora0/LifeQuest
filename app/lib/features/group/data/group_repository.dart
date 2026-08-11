@@ -88,6 +88,9 @@ class GroupRepository {
   Future<void> archive(int id) => _guard(() async {
     await _dio.delete<dynamic>('/groups/$id');
   });
+  Future<void> deletePermanently(int id) => _guard(() async {
+    await _dio.delete<dynamic>('/groups/$id/permanent');
+  });
   Future<void> join(int id) => _guard(() async {
     await _dio.post<dynamic>('/groups/$id/join-requests');
   });
@@ -231,6 +234,9 @@ class GroupRepository {
   });
   Future<void> cancelQuest(int id, int questId) => _guard(() async {
     await _dio.delete<dynamic>('/groups/$id/quests/$questId');
+  });
+  Future<void> deleteQuestPermanently(int id, int questId) => _guard(() async {
+    await _dio.delete<dynamic>('/groups/$id/quests/$questId/permanent');
   });
   Future<GroupQuest> applyToQuest(int id, int questId) => _guard(() async {
     final r = await _dio.post<dynamic>(

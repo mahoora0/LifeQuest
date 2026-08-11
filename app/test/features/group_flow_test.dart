@@ -16,6 +16,8 @@ import 'package:life_quest/features/group/presentation/group_members_screen.dart
 import 'package:life_quest/features/group/presentation/group_quest_detail_screen.dart';
 import 'package:life_quest/features/group/presentation/group_quest_form_screen.dart';
 import 'package:life_quest/features/group/presentation/group_search_screen.dart';
+import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_button.dart';
 
 void main() {
   testWidgets('내 그룹 목록에 역할과 인원 및 주요 진입점을 표시한다', (tester) async {
@@ -146,6 +148,43 @@ void main() {
     expect(find.text('새 퀘스트'), findsNothing);
     expect(find.text('가입 승인 관리'), findsNothing);
     expect(find.byIcon(Icons.edit), findsNothing);
+    expect(find.text('그룹 영구 삭제'), findsOneWidget);
+    final deleteButton = tester.widget<LqButton>(
+      find.widgetWithText(LqButton, '그룹 영구 삭제'),
+    );
+    expect(deleteButton.background, LqColors.dangerText);
+    expect(deleteButton.foreground, LqColors.onDark);
+  });
+
+  testWidgets('보관된 그룹을 확인 후 영구 삭제한다', (tester) async {
+    final repository = _FakeGroupRepository(archived: true);
+    final router = GoRouter(
+      initialLocation: '/groups/1',
+      routes: [
+        GoRoute(path: '/groups', builder: (_, _) => const Text('그룹 목록')),
+        GoRoute(
+          path: '/groups/:id',
+          builder: (_, _) => const GroupDetailScreen(groupId: 1),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [groupRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('그룹 영구 삭제'));
+    await tester.pumpAndSettle();
+    expect(find.text('그룹을 영구 삭제할까요?'), findsOneWidget);
+    await tester.tap(find.text('영구 삭제'));
+    await tester.pumpAndSettle();
+
+    expect(repository.permanentlyDeletedGroupIds, [1]);
+    expect(find.text('그룹 목록'), findsOneWidget);
   });
 
   testWidgets('채팅은 폴링 결과를 중복 없이 합치고 전송 결과를 즉시 표시한다', (tester) async {
@@ -251,11 +290,56 @@ void main() {
     expect(find.text('퀘스트 취소'), findsOneWidget);
     await tester.tap(find.text('퀘스트 취소'));
     await tester.pumpAndSettle();
+    expect(find.text('퀘스트를 취소할까요?'), findsOneWidget);
+    await tester.tap(find.text('퀘스트 취소').last);
+    await tester.pumpAndSettle();
 
     expect(repository.cancelledQuestIds, [41]);
     expect(find.text('취소된 퀘스트'), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsNothing);
-    expect(find.text('퀘스트 취소'), findsNothing);
+    expect(find.text('퀘스트 영구 삭제'), findsOneWidget);
+    final deleteButton = tester.widget<LqButton>(
+      find.widgetWithText(LqButton, '퀘스트 영구 삭제'),
+    );
+    expect(deleteButton.background, LqColors.dangerText);
+    expect(deleteButton.foreground, LqColors.onDark);
+  });
+
+  testWidgets('취소된 그룹 퀘스트를 확인 후 영구 삭제한다', (tester) async {
+    final repository = _FakeGroupRepository()..cancelledQuestIds.add(41);
+    final router = GoRouter(
+      initialLocation: '/groups/1/quests/41',
+      routes: [
+        GoRoute(
+          path: '/groups/:id',
+          builder: (_, _) => const Text('그룹 상세로 이동'),
+          routes: [
+            GoRoute(
+              path: 'quests/:questId',
+              builder: (_, _) =>
+                  const GroupQuestDetailScreen(groupId: 1, questId: 41),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [groupRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('퀘스트 영구 삭제'));
+    await tester.pumpAndSettle();
+    expect(find.text('퀘스트를 영구 삭제할까요?'), findsOneWidget);
+    await tester.tap(find.text('영구 삭제'));
+    await tester.pumpAndSettle();
+
+    expect(repository.permanentlyDeletedQuestIds, [41]);
+    expect(find.text('그룹 상세로 이동'), findsOneWidget);
   });
 
   testWidgets('활성 멤버는 협동 퀘스트 참여를 신청하고 취소할 수 있다', (tester) async {
@@ -354,6 +438,8 @@ class _FakeGroupRepository extends GroupRepository {
   final appliedQuestIds = <int>[];
   final withdrawnQuestIds = <int>[];
   final completedQuestIds = <int>[];
+  final permanentlyDeletedGroupIds = <int>[];
+  final permanentlyDeletedQuestIds = <int>[];
   int messageCalls = 0;
 
   @override
@@ -385,6 +471,11 @@ class _FakeGroupRepository extends GroupRepository {
 
   @override
   Future<void> join(int id) async => joinedGroupIds.add(id);
+
+  @override
+  Future<void> deletePermanently(int id) async {
+    permanentlyDeletedGroupIds.add(id);
+  }
 
   @override
   Future<List<GroupMember>> invitations() async => [_invitation()];
@@ -465,6 +556,11 @@ class _FakeGroupRepository extends GroupRepository {
   @override
   Future<void> cancelQuest(int id, int questId) async {
     cancelledQuestIds.add(questId);
+  }
+
+  @override
+  Future<void> deleteQuestPermanently(int id, int questId) async {
+    permanentlyDeletedQuestIds.add(questId);
   }
 
   @override

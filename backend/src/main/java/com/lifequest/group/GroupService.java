@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class GroupService {
-    private final GroupRepository groups; private final GroupMemberRepository members; private final GroupQuestRepository quests; private final UserRepository users; private final Clock clock;
-    public GroupService(GroupRepository groups,GroupMemberRepository members,GroupQuestRepository quests,UserRepository users,Clock clock){this.groups=groups;this.members=members;this.quests=quests;this.users=users;this.clock=clock;}
+    private final GroupRepository groups; private final GroupMemberRepository members; private final GroupQuestRepository quests; private final GroupQuestParticipantRepository participants; private final GroupChatMessageRepository messages; private final UserRepository users; private final Clock clock;
+    public GroupService(GroupRepository groups,GroupMemberRepository members,GroupQuestRepository quests,GroupQuestParticipantRepository participants,GroupChatMessageRepository messages,UserRepository users,Clock clock){this.groups=groups;this.members=members;this.quests=quests;this.participants=participants;this.messages=messages;this.users=users;this.clock=clock;}
 
     @Transactional public GroupResponse create(Long userId,CreateGroupRequest request){
         validateMaxMembers(request.maxMembers());
@@ -43,6 +43,18 @@ public class GroupService {
         group.update(required(request.name(),2,100),required(request.description(),1,500),request.visibility(),request.maxMembers(),now()); return response(group,userId,true);
     }
     @Transactional public void archive(Long groupId,Long userId){Group group=lockedOwner(groupId,userId);requireActive(group);group.archive(now());}
+    @Transactional public void deletePermanently(Long groupId,Long userId){
+        Group group=lockedOwner(groupId,userId);
+        if(group.getStatus()!=GroupStatus.ARCHIVED)throw new BusinessException(ErrorCode.GROUP_PERMANENT_DELETE_REQUIRES_ARCHIVED);
+        // 공동 완료 EXP는 이후 레벨·보상 계산에도 쓰이는 감사 이력이다. 지급을 되감지
+        // 않은 채 출처만 지우지 않도록 완료 퀘스트가 있는 그룹은 영구 삭제하지 않는다.
+        if(quests.existsByGroupIdAndStatus(groupId,GroupQuestStatus.COMPLETED))throw new BusinessException(ErrorCode.GROUP_PERMANENT_DELETE_BLOCKED_BY_COMPLETION);
+        participants.deleteAllByGroupId(groupId);
+        quests.deleteAllByGroupId(groupId);
+        messages.deleteAllByGroupId(groupId);
+        members.deleteAllByGroupId(groupId);
+        groups.delete(group);
+    }
     @Transactional public GroupResponse transferOwner(Long groupId,Long userId,Long targetId){
         Group group=lockedOwner(groupId,userId);requireActive(group);
         if(userId.equals(targetId)) throw new BusinessException(ErrorCode.INVALID_OWNER_TRANSFER);

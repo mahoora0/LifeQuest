@@ -138,6 +138,23 @@ public class GroupQuestService {
     }
 
     @Transactional
+    public void deletePermanently(Long groupId, Long userId, Long questId) {
+        Group group = groups.findById(groupId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.GROUP_NOT_FOUND));
+        if (!group.getOwner().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.GROUP_OWNER_REQUIRED);
+        }
+        GroupQuest quest = findForUpdate(groupId, questId);
+        // 완료 퀘스트는 EXP 지급 출처이므로 삭제 대상이 아니다. 먼저 취소하도록
+        // 강제하면 영구 삭제 가능한 대상에는 보상 이력이 생기지 않는다.
+        if (quest.getStatus() != GroupQuestStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.GROUP_QUEST_PERMANENT_DELETE_REQUIRES_CANCELLED);
+        }
+        participants.deleteAllByQuestId(questId);
+        quests.delete(quest);
+    }
+
+    @Transactional
     public GroupQuestResponse apply(Long groupId, Long userId, Long questId) {
         GroupMember member = requireMember(groupId, userId);
         requireActive(member.getGroup());

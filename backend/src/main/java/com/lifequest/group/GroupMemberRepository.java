@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -39,4 +40,8 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
     @EntityGraph(attributePaths = {"group", "group.owner"})
     @Query("select m from GroupMember m where m.user.id=:userId and m.status='ACTIVE' order by m.id desc")
     List<GroupMember> findActiveGroups(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("delete from GroupMember m where m.group.id=:groupId")
+    int deleteAllByGroupId(@Param("groupId") Long groupId);
 }
