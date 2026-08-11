@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/friends/application/friend_providers.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/presentation/widgets/friend_widgets.dart';
+import 'package:life_quest/shared/design/lq_hero_tags.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
@@ -184,6 +185,7 @@ class _ProfileRow extends StatelessWidget {
           seed: journey.userId,
           size: 74,
           fontSize: 30,
+          heroTag: LqHeroTags.adventurer(journey.userId),
         ),
         const SizedBox(width: 13),
         Expanded(

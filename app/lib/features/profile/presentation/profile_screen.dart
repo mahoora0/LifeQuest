@@ -18,6 +18,7 @@ import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
+import 'package:life_quest/shared/widgets/lq_swap.dart';
 
 /// 무효화만 하면 동기적으로 끝나 스피너가 즉시 사라진다.
 /// 실제 재조회가 끝날 때까지 기다려야 당김-새로고침이 의미를 갖는다.
@@ -242,11 +243,16 @@ class _ProfileHeader extends ConsumerWidget {
                 const SizedBox(height: 7),
                 Padding(
                   padding: const EdgeInsets.only(left: 58),
-                  child: Text(
-                    level.value == null
-                        ? 'Lv. —'
-                        : 'Lv. ${level.requireValue.level}',
-                    style: LqText.levelNumber.copyWith(fontSize: 29),
+                  // 레벨이 오르는 순간은 이 앱에서 가장 큰 보상이다. 숫자가
+                  // 딱 갈아끼워지면 오른 줄도 모르고 지나간다.
+                  child: LqSwap(
+                    value: level.value?.level ?? -1,
+                    child: Text(
+                      level.value == null
+                          ? 'Lv. —'
+                          : 'Lv. ${level.requireValue.level}',
+                      style: LqText.levelNumber.copyWith(fontSize: 29),
+                    ),
                   ),
                 ),
               ],
@@ -349,11 +355,14 @@ class _ExpCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Text(
-                status == null
-                    ? 'EXP —'
-                    : 'EXP ${status.currentLevelExp} / ${status.nextLevelRequiredExp}',
-                style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+              LqSwap(
+                value: status?.currentLevelExp ?? -1,
+                child: Text(
+                  status == null
+                      ? 'EXP —'
+                      : 'EXP ${status.currentLevelExp} / ${status.nextLevelRequiredExp}',
+                  style: LqText.bodySm.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
               const Spacer(),
               // 누를 수 있다는 표식. 없으면 카드가 눌리는지 알 수 없다.

@@ -6,6 +6,7 @@ import 'package:life_quest/features/friends/application/friend_providers.dart';
 import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/presentation/widgets/friend_widgets.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
+import 'package:life_quest/shared/design/lq_hero_tags.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
@@ -285,6 +286,8 @@ class _FriendRow extends StatelessWidget {
             nickname: friend.nickname,
             seed: friend.userId,
             imageUrl: friend.profileImageUrl,
+            // 여정 화면의 큰 아바타로 그대로 이어진다.
+            heroTag: LqHeroTags.adventurer(friend.userId),
           ),
           const SizedBox(width: 10),
           Expanded(

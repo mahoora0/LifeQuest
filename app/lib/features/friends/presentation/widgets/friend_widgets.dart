@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/core/config/app_config.dart';
+import 'package:life_quest/shared/design/lq_hero_tags.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 
 /// 아바타 원형 배경 — 시안(10번 화면)이 친구별로 지정한 4색.
@@ -23,6 +24,7 @@ class LqAvatar extends StatelessWidget {
     this.imageUrl,
     this.size = 38,
     this.fontSize = 16,
+    this.heroTag,
   });
 
   final String nickname;
@@ -30,6 +32,13 @@ class LqAvatar extends StatelessWidget {
   final String? imageUrl;
   final double size;
   final double fontSize;
+
+  /// 주면 화면을 넘어갈 때 이 아바타가 그대로 따라간다([LqHeroTags]).
+  ///
+  /// 같은 tag가 한 화면에 둘 있으면 크래시하므로, 그 사용자가 한 번만 나오는
+  /// 목록에서만 준다. 받은 요청·동료 찾기처럼 같은 사람이 다른 목록에도
+  /// 나올 수 있는 자리는 비워 둔다.
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +53,7 @@ class LqAvatar extends StatelessWidget {
       ),
     );
 
-    return Container(
+    final Widget avatar = Container(
       width: size,
       height: size,
       clipBehavior: Clip.antiAlias,
@@ -63,6 +72,9 @@ class LqAvatar extends StatelessWidget {
               errorBuilder: (_, _, _) => fallback,
             ),
     );
+
+    if (heroTag == null) return avatar;
+    return Hero(tag: heroTag!, child: avatar);
   }
 }
 
