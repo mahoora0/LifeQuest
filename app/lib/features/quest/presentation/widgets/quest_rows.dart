@@ -3,6 +3,7 @@ import 'package:life_quest/features/quest/data/quest_dto.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
+import 'package:life_quest/shared/widgets/lq_swipe_action.dart';
 
 /// 홈(S-07)의 오늘의 퀘스트 행.
 ///
@@ -42,66 +43,113 @@ class HomeQuestRow extends StatelessWidget {
     // 체크로만 표시한다 — 둘을 같이 흐리면 "못 한 것"과 구분이 사라진다(시안).
     return Opacity(
       opacity: status.isExpired ? 0.55 : 1,
-      child: LqCard(
-        background: LqColors.surfaceCard,
-        borderColor: LqColors.divider,
-        radius: LqShape.tileRadius,
-        shadow: false,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-        onTap: onTap,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _IconTile(title: quest.title),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    quest.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: LqText.cardTitle.copyWith(
-                      fontSize: 16,
-                      height: 1.1,
-                      fontWeight: FontWeight.w500,
-                      // 완료한 줄은 취소선과 함께 글자도 한 단계 물린다.
-                      color: completed ? LqColors.textSecondary : null,
-                      decoration: completed ? TextDecoration.lineThrough : null,
+      // 옆으로 끌어서도 완료할 수 있다. 위치 퀘스트는 인증이 필요하므로 제외한다 —
+      // 끌어서 끝낼 수 있을 것처럼 보이면 안 된다.
+      child: LqSwipeAction(
+        enabled: !inactive && !busy && !quest.completionType.isLocation,
+        onCommit: onCheck,
+        semanticLabel: '퀘스트 완료',
+        background: (context, progress) => _SwipeHint(progress: progress),
+        child: LqCard(
+          background: LqColors.surfaceCard,
+          borderColor: LqColors.divider,
+          radius: LqShape.tileRadius,
+          shadow: false,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+          onTap: onTap,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _IconTile(title: quest.title),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      quest.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: LqText.cardTitle.copyWith(
+                        fontSize: 16,
+                        height: 1.1,
+                        fontWeight: FontWeight.w500,
+                        // 완료한 줄은 취소선과 함께 글자도 한 단계 물린다.
+                        color: completed ? LqColors.textSecondary : null,
+                        decoration: completed
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 7),
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 4,
-                    children: [
-                      LqRewardBadge.exp(quest.expReward),
-                      if (LqFeatures.currencyEnabled)
-                        LqRewardBadge.gold(quest.expReward ~/ 2),
-                      if (quest.completionType.isLocation)
-                        LqRewardBadge.location(),
-                      if (status.isExpired) const _ExpiredBadge(),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 4,
+                      children: [
+                        LqRewardBadge.exp(quest.expReward),
+                        if (LqFeatures.currencyEnabled)
+                          LqRewardBadge.gold(quest.expReward ~/ 2),
+                        if (quest.completionType.isLocation)
+                          LqRewardBadge.location(),
+                        if (status.isExpired) const _ExpiredBadge(),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 9),
+              if (quest.completionType.isLocation)
+                const Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: LqColors.textMuted,
+                )
+              else
+                QuestCheckButton(
+                  checked: completed,
+                  busy: busy,
+                  expReward: quest.expReward,
+                  onTap: (inactive || busy) ? null : onCheck,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 행을 끌었을 때 뒤에서 드러나는 자리.
+///
+/// 임계값에 다다르면 체크가 또렷해진다 — 얼마나 더 가야 하는지 손이 알 수 있어야
+/// 도중에 마음을 바꿀 수 있다.
+class _SwipeHint extends StatelessWidget {
+  const _SwipeHint({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Color.lerp(
+          LqColors.surfaceCard,
+          LqColors.expBadge,
+          progress * 0.9,
+        ),
+        borderRadius: LqShape.tileRadius,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Opacity(
+            opacity: progress,
+            child: Transform.scale(
+              scale: 0.7 + 0.3 * progress,
+              child: const Icon(Icons.check, size: 20, color: LqColors.onDark),
             ),
-            const SizedBox(width: 9),
-            if (quest.completionType.isLocation)
-              const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: LqColors.textMuted,
-              )
-            else
-              QuestCheckButton(
-                checked: completed,
-                busy: busy,
-                expReward: quest.expReward,
-                onTap: (inactive || busy) ? null : onCheck,
-              ),
-          ],
+          ),
         ),
       ),
     );

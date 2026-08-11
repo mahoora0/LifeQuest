@@ -88,6 +88,10 @@
 | `LqPressable` | 누르는 동안의 물리감. 섀도를 대신 그리지 않고 눌린 진행도만 넘긴다 — 위젯마다 섀도 값이 다르기 때문이다 |
 | `LqSwap` | 값이 바뀔 때 겹쳐 흐리며 교체. 레벨·EXP처럼 오르는 순간이 곧 보상인 숫자에 쓴다 |
 | `LqStagger` | 화면 상단 고정 섹션이 차례로 등장. **긴 목록에는 쓰지 않는다** |
+| `LqTimeline` / `LqTimelineStep` | 여러 요소가 하나의 시간표를 나눠 갖는 연출. 축하처럼 순서가 곧 내용인 화면에만 |
+| `LqCountUp` | 시간표를 따라 0에서 세어 올라가는 숫자. 보상은 '얼마'보다 받는 과정이 남는다 |
+| `LqSwipeAction` | 끌어서 실행. 놓으면 스프링으로 정착하고, 되돌아가는 중에 다시 잡으면 이어받는다 |
+| `LqParallax` | 스크롤을 따라 본문보다 느리게 움직이는 요소. 값은 아주 작게 |
 | `LqBottomNav` | 홈 · 퀘스트 · 지도 · 친구 · 마이. 아이콘 20 + 라벨 11.5, 상하 패딩 8/10, 상단 ink 2px. **탭을 늘리지 않는다** |
 
 **아이콘** — 아이콘 폰트와 이모지를 쓰지 않는다. 선 아이콘은 stroke 2.2 · round cap · 24 그리드 SVG이며 `app/assets/images/icons/`에 있다(`LqIcons` 상수 → `LqIcon` 위젯). 그중 `home` · `quest` · `map` · `friends` · `my` 5종이 하단 탭이고, `search`는 동료 찾기 입력에, `lifedex`는 아직 쓰는 곳이 없다. 그 외 기호는 텍스트 글리프(**← › ✓ + ? ×**)로 취급한다. 새 아이콘이 필요하면 같은 규격의 Lucide 아이콘을 stroke 2.2로 맞춰 같은 디렉터리에 추가한다.
@@ -119,9 +123,11 @@
 | `LqMotion.standard` / `exit` | `easeOutCubic` / `easeInCubic` | 기본 이징 |
 | `LqMotion.bounce` | `cubic-bezier(.2,.8,.3,1.2)` | 퀘스트 완료 결과 화면 **전용** |
 
-- **누르는 피드백은 축소가 아니라 눌림이다** — 섀도 오프셋이 `(1,1)`까지 줄고 줄어든 만큼 위젯이 내려앉아 섀도의 바깥 경계가 제자리에 남는다(`LqPressable` + `LqShape.pressShadow`). 이 앱의 표면은 blur 없는 오프셋 섀도를 쓰는 종이 스티커라 그렇다. 섀도가 없는 요소(탭 아이콘·칩·보조 버튼)만 아주 약한 축소로 대신한다
-- **화면 전환은 한 곳에서 정한다** — 탭 밖 push 라우트는 `lqPage`(겹쳐 흐리며 아래에서 2% 올라옴), 탭 이동은 fade through. 인증 라우트(`/splash`·`/login`·`/signup`)에는 전환을 넣지 않는다
-- **바운스는 퀘스트 완료 결과 화면에만** 쓴다. 다른 화면으로 옮기면 앱 전체가 장난감처럼 읽힌다
+- **누르는 피드백은 밝기 + 눌림이다** — 밝기가 25% 어두워지는 것이 주 신호이고, 섀도 오프셋이 `(1,1)`까지 줄며 줄어든 만큼 위젯이 내려앉아 섀도의 바깥 경계가 제자리에 남는다(`LqPressable` + `LqShape.pressShadow`). 이 앱의 표면은 blur 없는 오프셋 섀도를 쓰는 종이 스티커라 그렇다. 다만 3~4px 이동만으로는 눈에 띄지 않아 밝기를 함께 쓴다
+- **화면 전환은 플랫폼 기본을 쓴다** — `PageTransitionsTheme`에 Android `PredictiveBackPageTransitionsBuilder`, iOS `CupertinoPageTransitionsBuilder`를 명시해 둔다. **`CustomTransitionPage`를 일반 라우트에 쓰지 않는다** — 그 경로는 `PageTransitionsTheme`을 우회해 iOS 가장자리 스와이프 뒤로가기와 Android predictive back을 잃는다. 예외는 축하 화면(`/quests/result`) 하나이며, 뒤로 스와이프할 일이 없는 화면에 한한다
+- **바운스는 보상 연출에만** 쓴다. 일반 화면 전환에 튕김을 넣으면 앱 전체가 장난감처럼 읽힌다
+- **끌어서 하는 동작은 스프링으로 정착시킨다** — `LqSwipeAction`이 손가락을 1:1로 따라오고, 놓으면 놓은 속도를 이어받아 `LqMotion.spatialSpring`(M3 Expressive 공간 토큰)으로 제자리를 찾는다. 되돌아가는 중에 다시 잡으면 그 지점에서 이어받아야 한다
+- **중요한 순간은 시간표로 연출한다** — 퀘스트 완료처럼 순서 자체가 내용인 화면은 `LqTimeline` + `LqTimelineStep`으로 컨트롤러 하나를 나눠 쓴다. 요소마다 따로 애니메이션을 두면 순서를 바꿀 수 없다. 총 길이는 1.6초를 넘기지 않는다
 - **`LqStagger`는 긴 목록에 쓰지 않는다** — `ListView`가 항목을 재활용해 스크롤할 때마다 다시 날아온다. 홈처럼 섹션 수가 고정된 자리에만 쓴다
 - **동작 줄이기 대응은 필수 요건이다** — 새 애니메이션은 duration을 `LqMotion.of(context, ...)`로 감싸고, 끝나지 않는 장식(`LqSpeck`·`LqPulseRing`)은 `LqMotion.isReduced(context)`일 때 아예 시작하지 않는다. 덕분에 그 화면에서도 `pumpAndSettle()`을 쓸 수 있다(동작 줄이기를 켠 테스트에 한해)
 - **패키지를 늘리지 않는다** — `animations`는 M3 룩앤필이 손그림 톤과 충돌하고, `flutter_animate`는 stagger 하나 때문에 의존성을 늘릴 이유가 없다. Rive·Lottie는 캐릭터 PNG 체계와 이중 관리가 되고 톤이 어긋난다

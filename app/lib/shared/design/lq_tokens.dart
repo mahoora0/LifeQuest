@@ -318,6 +318,17 @@ abstract final class LqMotion {
   /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`. 보상 연출에 쓴다.
   static const bounce = Cubic(.2, .8, .3, 1.2);
 
+  /// 손가락을 따라온 뒤 제자리를 찾는 스프링.
+  ///
+  /// Material 3 Expressive의 공간(spatial) 기본 토큰 — 강성 380에 감쇠비 0.8.
+  /// 끌다 놓는 동작에는 duration·curve가 맞지 않는다. 사용자가 얼마나 빠르게
+  /// 놓았는지(속도)를 이어받아야 손에서 이어지는 느낌이 나기 때문이다.
+  static const spatialSpring = SpringDescription(
+    mass: 1,
+    stiffness: 380,
+    damping: 31.2,
+  );
+
   /// 사용자가 OS에서 "동작 줄이기"를 켰는가.
   ///
   /// 켠 사람에게 움직임은 취향 문제가 아니라 어지럼증·주의 분산의 원인이다.
