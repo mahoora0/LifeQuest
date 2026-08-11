@@ -30,6 +30,9 @@ class LqStagger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 동작 줄이기를 켠 사람에게는 순서대로 나타나는 것 자체가 방해다.
+    if (LqMotion.isReduced(context)) return child;
+
     final delay = delayFor(index);
     final total = delay + itemDuration;
     final start = delay.inMicroseconds / total.inMicroseconds;

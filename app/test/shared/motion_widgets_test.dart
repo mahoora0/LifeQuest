@@ -88,6 +88,18 @@ void main() {
     });
   });
 
+  group('클라이맥스', () {
+    test('완료 연출은 900ms 안에 끝난다', () {
+      // 퀘스트 완료 화면의 LEVEL UP 등장(지연 2단계 + emphasized).
+      final total = LqMotion.staggerStep * 2 + LqMotion.emphasized;
+      expect(total, lessThanOrEqualTo(const Duration(milliseconds: 900)));
+    });
+
+    test('바운스는 시안이 정한 곡선 그대로다', () {
+      expect(LqMotion.bounce, const Cubic(.2, .8, .3, 1.2));
+    });
+  });
+
   group('LqStagger', () {
     test('상한을 넘는 항목은 기다리지 않는다', () {
       expect(LqStagger.delayFor(0), Duration.zero);

@@ -73,7 +73,7 @@ class _LqPressableState extends State<LqPressable> {
       onTapCancel: () => _setPressed(false),
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(end: _pressed ? 1 : 0),
-        duration: LqMotion.press,
+        duration: LqMotion.of(context, LqMotion.press),
         curve: LqMotion.standard,
         builder: (context, t, _) {
           final child = widget.builder(context, t);

@@ -10,11 +10,11 @@ import 'package:life_quest/shared/design/lq_tokens.dart';
 ///
 /// 전환을 통째로 되돌려야 하면 이 함수 안에서 [MaterialPage]를 반환하면 된다 —
 /// 라우트 30여 개를 다시 손대지 않기 위해 진입점을 하나로 둔 것이다.
-Page<void> lqPage(GoRouterState state, Widget child) {
+Page<void> lqPage(BuildContext context, GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    transitionDuration: LqMotion.page,
-    reverseTransitionDuration: LqMotion.pageReverse,
+    transitionDuration: LqMotion.of(context, LqMotion.page),
+    reverseTransitionDuration: LqMotion.of(context, LqMotion.pageReverse),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(
         parent: animation,

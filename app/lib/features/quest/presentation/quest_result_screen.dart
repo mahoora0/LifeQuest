@@ -267,11 +267,16 @@ class _LevelUpPanel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Column(
         children: [
-          const LqStamp(label: 'LEVEL UP', angleDegrees: -3, fontSize: 14),
+          const _ClimaxEntrance(
+            child: LqStamp(label: 'LEVEL UP', angleDegrees: -3, fontSize: 14),
+          ),
           const SizedBox(height: 10),
-          Text(
-            'Lv.${growth.previousLevel} → Lv.${growth.currentLevel}',
-            style: LqText.levelNumber,
+          _ClimaxEntrance(
+            delay: LqMotion.staggerStep * 2,
+            child: Text(
+              'Lv.${growth.previousLevel} → Lv.${growth.currentLevel}',
+              style: LqText.levelNumber,
+            ),
           ),
           if (growth.rewards.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -696,6 +701,40 @@ class _FloatingConfetti extends StatelessWidget {
   }
 }
 
+/// 이 앱에서 **유일하게 튕기는** 등장 연출.
+///
+/// 퀘스트를 끝낸 순간이 LifeQuest의 클라이맥스이고, 시안이 정한 바운스
+/// 이징([LqMotion.bounce])은 여기서만 쓴다. 다른 화면으로 옮기면 앱 전체가
+/// 장난감처럼 읽히므로 이 파일 밖으로 내보내지 않았다.
+///
+/// 총 길이는 [delay] + [LqMotion.emphasized]이며 900ms를 넘지 않는다.
+class _ClimaxEntrance extends StatelessWidget {
+  const _ClimaxEntrance({required this.child, this.delay = Duration.zero});
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    if (LqMotion.isReduced(context)) return child;
+
+    final total = delay + LqMotion.emphasized;
+    final start = delay.inMicroseconds / total.inMicroseconds;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: total,
+      curve: Interval(start, 1, curve: LqMotion.bounce),
+      builder: (context, t, child) => Opacity(
+        // 바운스는 1을 넘겼다 돌아오므로 불투명도는 따로 잘라 준다.
+        opacity: t.clamp(0, 1),
+        child: Transform.scale(scale: 0.72 + 0.28 * t, child: child),
+      ),
+      child: child,
+    );
+  }
+}
+
 class _FloatingPiece extends StatefulWidget {
   const _FloatingPiece({
     required this.color,
@@ -718,7 +757,19 @@ class _FloatingPieceState extends State<_FloatingPiece>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: (widget.seconds * 1000).round()),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (LqMotion.isReduced(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+      return;
+    }
+    if (!_controller.isAnimating) _controller.repeat(reverse: true);
+  }
 
   @override
   void dispose() {

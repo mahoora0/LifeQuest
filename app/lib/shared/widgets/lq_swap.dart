@@ -17,7 +17,7 @@ class LqSwap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: LqMotion.normal,
+      duration: LqMotion.of(context, LqMotion.normal),
       switchInCurve: LqMotion.standard,
       switchOutCurve: LqMotion.exit,
       transitionBuilder: (child, animation) => FadeTransition(

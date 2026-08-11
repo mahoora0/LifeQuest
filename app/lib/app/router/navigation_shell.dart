@@ -56,6 +56,12 @@ class _BranchFadeState extends State<_BranchFade>
   );
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = LqMotion.of(context, LqMotion.normal);
+  }
+
+  @override
   void didUpdateWidget(_BranchFade oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.index != widget.index) {

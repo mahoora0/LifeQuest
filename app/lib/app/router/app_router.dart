@@ -377,7 +377,8 @@ GoRoute _pushRoute({
 }) {
   return GoRoute(
     path: path,
-    pageBuilder: (context, state) => lqPage(state, builder(context, state)),
+    pageBuilder: (context, state) =>
+        lqPage(context, state, builder(context, state)),
   );
 }
 

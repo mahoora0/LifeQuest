@@ -305,6 +305,19 @@ abstract final class LqMotion {
 
   /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`.
   static const bounce = Cubic(.2, .8, .3, 1.2);
+
+  /// 사용자가 OS에서 "동작 줄이기"를 켰는가.
+  ///
+  /// 켠 사람에게 움직임은 취향 문제가 아니라 어지럼증·주의 분산의 원인이다.
+  /// 특히 끝나지 않는 장식(둥실·파동)은 반드시 멈춰야 한다.
+  static bool isReduced(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context);
+
+  /// "동작 줄이기"가 켜져 있으면 0을 준다.
+  ///
+  /// **새 애니메이션은 duration을 이 함수로 감싸는 것이 필수 요건이다.**
+  static Duration of(BuildContext context, Duration duration) =>
+      isReduced(context) ? Duration.zero : duration;
 }
 
 /// 여백 · 치수 토큰.

@@ -22,7 +22,7 @@ void main() {
           GoRoute(
             path: '/next',
             pageBuilder: (context, state) =>
-                page = lqPage(state, const Text('다음 화면')),
+                page = lqPage(context, state, const Text('다음 화면')),
           ),
         ],
       );
@@ -49,7 +49,8 @@ void main() {
           GoRoute(path: '/', builder: (context, state) => const Text('첫 화면')),
           GoRoute(
             path: '/next',
-            pageBuilder: (context, state) => lqPage(state, const Text('다음 화면')),
+            pageBuilder: (context, state) =>
+                lqPage(context, state, const Text('다음 화면')),
           ),
         ],
       );
@@ -77,7 +78,8 @@ void main() {
           GoRoute(path: '/', builder: (context, state) => const Text('첫 화면')),
           GoRoute(
             path: '/next',
-            pageBuilder: (context, state) => lqPage(state, const Text('다음 화면')),
+            pageBuilder: (context, state) =>
+                lqPage(context, state, const Text('다음 화면')),
           ),
         ],
       );
