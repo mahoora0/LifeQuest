@@ -29,7 +29,7 @@ void main() {
         host(
           Builder(
             builder: (context) {
-              reduced = LqMotion.of(context, LqMotion.page);
+              reduced = LqMotion.of(context, LqMotion.normal);
               return const SizedBox();
             },
           ),
@@ -40,7 +40,7 @@ void main() {
         host(
           Builder(
             builder: (context) {
-              normal = LqMotion.of(context, LqMotion.page);
+              normal = LqMotion.of(context, LqMotion.normal);
               return const SizedBox();
             },
           ),
@@ -49,7 +49,7 @@ void main() {
       );
 
       expect(reduced, Duration.zero);
-      expect(normal, LqMotion.page);
+      expect(normal, LqMotion.normal);
     });
   });
 

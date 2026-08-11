@@ -278,20 +278,23 @@ abstract final class LqMotion {
   /// 누름·뗌 피드백.
   static const press = Duration(milliseconds: 110);
 
+  /// 눌렸을 때 어두워지는 정도.
+  ///
+  /// 섀도가 줄고 4px 내려앉는 것만으로는 눈에 잘 띄지 않는다. 밝기가 함께
+  /// 변해야 "눌렀다"가 읽힌다 — 3px 이동보다 25% 밝기 변화가 훨씬 강하다.
+  static const pressDim = 0.25;
+
   /// 아이콘 토글처럼 작은 변화.
-  static const quick = Duration(milliseconds: 160);
+  static const quick = Duration(milliseconds: 200);
 
-  /// 숫자·콘텐츠 교체(`AnimatedSwitcher`).
-  static const normal = Duration(milliseconds: 220);
+  /// 숫자·콘텐츠 교체(`AnimatedSwitcher`), 축하 화면 전환.
+  static const normal = Duration(milliseconds: 300);
 
-  /// 페이지 전환(들어갈 때).
-  static const page = Duration(milliseconds: 280);
+  /// 보상 연출 한 단계.
+  static const emphasized = Duration(milliseconds: 600);
 
-  /// 페이지 전환(나올 때). 나가는 쪽이 빨라야 되돌아오는 길이 가볍다.
-  static const pageReverse = Duration(milliseconds: 220);
-
-  /// 보상 연출. 퀘스트 완료 결과 화면 전용이다.
-  static const emphasized = Duration(milliseconds: 480);
+  /// 숫자가 세어 올라가는 것처럼 오래 지켜보는 연출.
+  static const slow = Duration(milliseconds: 900);
 
   /// 목록이 순서대로 등장할 때의 항목 간 간격.
   static const staggerStep = Duration(milliseconds: 40);
@@ -300,10 +303,19 @@ abstract final class LqMotion {
   /// 20번째 항목까지 기다리게 하면 목록이 느린 앱이 된다.
   static const staggerMaxItems = 6;
 
-  static const standard = Curves.easeOutCubic;
-  static const exit = Curves.easeInCubic;
+  // 커브는 Flutter가 들고 있는 Material 3 토큰(`Easing`)을 그대로 쓴다.
+  // `Curves.easeOutCubic` 같은 근사치를 직접 고를 이유가 없다.
 
-  /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`.
+  /// 대부분의 전환.
+  static const standard = Easing.standard;
+
+  /// 사라지는 쪽.
+  static const exit = Easing.standardAccelerate;
+
+  /// 크게 등장하는 것. 끝에서 길게 감속해 무게가 실린다.
+  static const arrive = Easing.emphasizedDecelerate;
+
+  /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`. 보상 연출에 쓴다.
   static const bounce = Cubic(.2, .8, .3, 1.2);
 
   /// 사용자가 OS에서 "동작 줄이기"를 켰는가.

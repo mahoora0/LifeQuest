@@ -76,9 +76,16 @@ class _LqPressableState extends State<LqPressable> {
         duration: LqMotion.of(context, LqMotion.press),
         curve: LqMotion.standard,
         builder: (context, t, _) {
-          final child = widget.builder(context, t);
-          if (widget.depth == Offset.zero) return child;
-          return Transform.translate(offset: widget.depth * t, child: child);
+          // 밝기 변화가 눌림의 주된 신호다. 섀도·내려앉음은 이 앱의 종이 질감을
+          // 지키기 위한 보조 표현이다.
+          Widget child = Opacity(
+            opacity: 1 - LqMotion.pressDim * t,
+            child: widget.builder(context, t),
+          );
+          if (widget.depth != Offset.zero) {
+            child = Transform.translate(offset: widget.depth * t, child: child);
+          }
+          return child;
         },
       ),
     );

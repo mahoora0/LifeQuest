@@ -2,36 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 
-/// 탭 밖 push 라우트의 화면 전환.
+/// 축하 화면 전용 전환 — 겹쳐 흐리기만 한다.
 ///
-/// 화면 폭을 통째로 밀지 않고 아래에서 2%만 올라오며 겹쳐 흐린다. 밀어내기는
-/// 이 앱처럼 카드가 겹겹이 쌓인 화면에서 종이가 옆으로 미끄러지는 것처럼 읽힌다.
-/// 나올 때가 들어갈 때보다 빨라야 되돌아오는 길이 가볍다([LqMotion.pageReverse]).
+/// **일반 push 라우트에는 쓰지 않는다.** `CustomTransitionPage`는 `PageRoute`를
+/// 직접 상속해 `PageTransitionsTheme`을 우회하므로, 여기에 태우면
+/// iOS 가장자리 스와이프 뒤로가기와 Android predictive back 미리보기가 사라진다.
+/// 전환 모양을 통일하려고 앱 전체를 이쪽으로 옮겼다가 되돌린 이력이 있다
+/// (`10-motion-plan.md` P1 회고).
 ///
-/// 전환을 통째로 되돌려야 하면 이 함수 안에서 [MaterialPage]를 반환하면 된다 —
-/// 라우트 30여 개를 다시 손대지 않기 위해 진입점을 하나로 둔 것이다.
-Page<void> lqPage(BuildContext context, GoRouterState state, Widget child) {
+/// 그래서 남은 자리는 하나다 — 퀘스트 완료 결과처럼 **뒤로 스와이프할 일이 없고
+/// 연출이 곧 내용인 화면**. 밀려 들어오면 축하가 아니라 이동으로 읽힌다.
+Page<void> lqCelebrationPage(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  final duration = LqMotion.of(context, LqMotion.normal);
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    transitionDuration: LqMotion.of(context, LqMotion.page),
-    reverseTransitionDuration: LqMotion.of(context, LqMotion.pageReverse),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: LqMotion.standard,
-        reverseCurve: LqMotion.exit,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.02),
-            end: Offset.zero,
-          ).animate(curved),
+    transitionDuration: duration,
+    reverseTransitionDuration: duration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: LqMotion.standard,
+            reverseCurve: LqMotion.exit,
+          ),
           child: child,
         ),
-      );
-    },
     child: child,
   );
 }
