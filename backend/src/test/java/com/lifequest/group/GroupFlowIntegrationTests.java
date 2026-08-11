@@ -321,6 +321,67 @@ class GroupFlowIntegrationTests {
         assertThat(quests.update(created.id(),owner.getId(),quest.id(),shrink).maxParticipants()).isNull();
     }
 
+    @Test
+    void cancelledQuestCanBePermanentlyDeletedWithParticipationHistory() {
+        User owner=user("questDeleteOwner"); User member=user("questDeleteMember");
+        unlockCoop(owner,member);
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest(
+                "퀘스트 삭제 그룹","영구 삭제를 검증합니다",GroupVisibility.PUBLIC,3));
+        GroupMemberResponse pending=memberships.requestJoin(created.id(),member.getId());
+        memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
+        GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest(
+                "삭제할 공동 일정","참여 기록도 함께 삭제합니다","서울",now().plusHours(2),null));
+        quests.apply(created.id(),member.getId(),quest.id());
+
+        assertError(()->quests.deletePermanently(created.id(),owner.getId(),quest.id()),
+                ErrorCode.GROUP_QUEST_PERMANENT_DELETE_REQUIRES_CANCELLED);
+        quests.cancel(created.id(),owner.getId(),quest.id());
+        quests.deletePermanently(created.id(),owner.getId(),quest.id());
+
+        assertThat(jdbc.queryForObject("select count(*) from group_quest_participants where group_quest_id=?",Integer.class,quest.id())).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from group_quests where id=?",Integer.class,quest.id())).isZero();
+        assertError(()->quests.detail(created.id(),owner.getId(),quest.id()),ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void archivedGroupCanBePermanentlyDeletedUnlessItHasCompletionRewards() {
+        User owner=user("groupDeleteOwner"); User member=user("groupDeleteMember");
+        unlockCoop(owner,member);
+        GroupResponse created=groups.create(owner.getId(),new CreateGroupRequest(
+                "영구 삭제 그룹","모든 하위 기록을 삭제합니다",GroupVisibility.PUBLIC,3));
+        GroupMemberResponse pending=memberships.requestJoin(created.id(),member.getId());
+        memberships.respondJoin(created.id(),owner.getId(),pending.memberId(),true);
+        chat.send(created.id(),owner.getId(),"삭제될 메시지");
+        GroupQuestResponse quest=quests.create(created.id(),owner.getId(),new CreateGroupQuestRequest(
+                "삭제될 일정","참여자도 함께 삭제합니다","서울",now().plusHours(2),null));
+        quests.apply(created.id(),member.getId(),quest.id());
+
+        assertError(()->groups.deletePermanently(created.id(),owner.getId()),
+                ErrorCode.GROUP_PERMANENT_DELETE_REQUIRES_ARCHIVED);
+        groups.archive(created.id(),owner.getId());
+        groups.deletePermanently(created.id(),owner.getId());
+
+        for(String table:new String[]{"group_quest_participants","group_quests","group_chat_messages","group_members","quest_groups"}){
+            String column=table.equals("group_quest_participants")?"group_quest_id":table.equals("group_quests")?"group_id":table.equals("quest_groups")?"id":"group_id";
+            Object target=table.equals("group_quest_participants")?quest.id():created.id();
+            assertThat(jdbc.queryForObject("select count(*) from "+table+" where "+column+"=?",Integer.class,target)).isZero();
+        }
+        assertError(()->groups.detail(created.id(),owner.getId()),ErrorCode.GROUP_NOT_FOUND);
+
+        GroupResponse rewardedGroup=groups.create(owner.getId(),new CreateGroupRequest(
+                "완료 기록 그룹","EXP 감사 이력을 보호합니다",GroupVisibility.PUBLIC,3));
+        GroupQuestResponse rewardedQuest=quests.create(rewardedGroup.id(),owner.getId(),new CreateGroupQuestRequest(
+                "완료된 일정","지급 이력을 남깁니다","서울",now().plusHours(1),null));
+        quests.apply(rewardedGroup.id(),owner.getId(),rewardedQuest.id());
+        jdbc.update("update group_quests set scheduled_at=? where id=?",now().minusMinutes(1),rewardedQuest.id());
+        quests.complete(rewardedGroup.id(),owner.getId(),rewardedQuest.id());
+        groups.archive(rewardedGroup.id(),owner.getId());
+
+        assertError(()->groups.deletePermanently(rewardedGroup.id(),owner.getId()),
+                ErrorCode.GROUP_PERMANENT_DELETE_BLOCKED_BY_COMPLETION);
+        assertThat(groups.detail(rewardedGroup.id(),owner.getId()).status()).isEqualTo(GroupStatus.ARCHIVED);
+    }
+
     private LocalDateTime now(){ return LocalDateTime.now(clock); }
 
     private String role(Long groupId,Long userId){

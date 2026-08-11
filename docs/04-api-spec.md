@@ -337,12 +337,18 @@ sequenceDiagram
 
 | Method | Path | 설명 |
 |---|---|---|
+| DELETE | `/api/groups/{groupId}` | 그룹 보관(그룹장, 기록 유지) |
+| DELETE | `/api/groups/{groupId}/permanent` | 보관 그룹 영구 삭제(그룹장, 완료·EXP 지급 이력이 있으면 불가) |
+| DELETE | `/api/groups/{groupId}/quests/{questId}` | 시작 전 그룹 퀘스트 취소(그룹장, 기록 유지) |
+| DELETE | `/api/groups/{groupId}/quests/{questId}/permanent` | 취소된 그룹 퀘스트 및 참여 기록 영구 삭제(그룹장) |
 | GET | `/api/group-quests/me?scope=UPCOMING|PAST` | 내가 속한 그룹의 협동 퀘스트 |
 | POST | `/api/groups/{groupId}/quests/{questId}/participation` | Lv.5 활성 멤버 참여 신청 |
 | DELETE | `/api/groups/{groupId}/quests/{questId}/participation` | 시작 전 참여 신청 취소 |
 | POST | `/api/groups/{groupId}/quests/{questId}/complete` | 시작 후 그룹장 공동 완료 |
 
 공동 완료는 유효한 신청자 전원에게 서버 고정 40 EXP를 지급한다. 그룹 퀘스트 행 잠금과 `EXP_LOGS UNIQUE(user_id, source_type, source_id)`로 동시·중복 완료의 재지급을 막으며, 한 참여자라도 지급에 실패하면 상태와 모든 지급을 롤백한다.
+
+영구 삭제는 복구할 수 없는 별도 동작이다. 그룹 퀘스트는 먼저 취소해야 하고, 그룹은 먼저 보관해야 한다. 공동 완료된 퀘스트의 EXP 감사 이력을 보존하기 위해 완료 퀘스트가 하나라도 있는 그룹은 영구 삭제할 수 없다.
 
 ## 6. 인증 필요 여부 요약
 

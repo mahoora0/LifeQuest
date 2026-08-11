@@ -7,10 +7,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GroupQuestRepository extends JpaRepository<GroupQuest, Long> {
+    boolean existsByGroupIdAndStatus(Long groupId, GroupQuestStatus status);
     @EntityGraph(attributePaths = "createdBy")
     Optional<GroupQuest> findByIdAndGroupId(Long id, Long groupId);
     @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
@@ -49,4 +51,8 @@ public interface GroupQuestRepository extends JpaRepository<GroupQuest, Long> {
         """)
     Page<GroupQuest> findMinePast(
         @Param("userId") Long userId, @Param("now") LocalDateTime now, Pageable pageable);
+
+    @Modifying
+    @Query("delete from GroupQuest q where q.group.id=:groupId")
+    int deleteAllByGroupId(@Param("groupId") Long groupId);
 }

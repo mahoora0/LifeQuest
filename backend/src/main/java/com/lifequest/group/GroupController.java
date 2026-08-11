@@ -16,6 +16,7 @@ public class GroupController {
     @GetMapping("/{groupId}") public ApiResponse<GroupResponse> detail(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId){return ApiResponse.success(service.detail(groupId,uid(jwt)));}
     @PatchMapping("/{groupId}") public ApiResponse<GroupResponse> update(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@Valid @RequestBody UpdateGroupRequest r){return ApiResponse.success(service.update(groupId,uid(jwt),r));}
     @DeleteMapping("/{groupId}") public ApiResponse<Boolean> archive(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId){service.archive(groupId,uid(jwt));return ApiResponse.success(true);}
+    @DeleteMapping("/{groupId}/permanent") public ApiResponse<Boolean> deletePermanently(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId){service.deletePermanently(groupId,uid(jwt));return ApiResponse.success(true);}
     @PostMapping("/{groupId}/owner-transfer") public ApiResponse<GroupResponse> transfer(@AuthenticationPrincipal Jwt jwt,@PathVariable Long groupId,@Valid @RequestBody TransferGroupOwnerRequest r){return ApiResponse.success(service.transferOwner(groupId,uid(jwt),r.newOwnerUserId()));}
     private Long uid(Jwt jwt){return Long.valueOf(jwt.getSubject());}
 }

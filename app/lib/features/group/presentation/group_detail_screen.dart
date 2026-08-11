@@ -34,6 +34,41 @@ class GroupDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _deletePermanently(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('그룹을 영구 삭제할까요?'),
+        content: const Text(
+          '멤버, 채팅, 취소된 퀘스트와 참여 기록이 모두 삭제되며 복구할 수 없어요. '
+          '완료되어 EXP를 지급한 퀘스트가 있으면 삭제되지 않아요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('영구 삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await ref.read(groupRepositoryProvider).deletePermanently(groupId);
+      ref.invalidate(myGroupsProvider);
+      ref.invalidate(groupDetailProvider(groupId));
+      ref.invalidate(upcomingGroupQuestsProvider(groupId));
+      ref.invalidate(pastGroupQuestsProvider(groupId));
+      ref.invalidate(myCoopGroupQuestsProvider);
+      if (context.mounted) context.go('/groups');
+    } catch (error) {
+      if (context.mounted) showLqError(context, error);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(groupDetailProvider(groupId));
@@ -153,6 +188,17 @@ class GroupDetailScreen extends ConsumerWidget {
                             shadow: false,
                             borderColor: LqColors.borderMuted,
                             onPressed: () => _leave(context, ref),
+                          ),
+                        ],
+                        if (group.isOwner && group.archived) ...[
+                          const SizedBox(height: 20),
+                          LqButton(
+                            label: '그룹 영구 삭제',
+                            shadow: false,
+                            background: LqColors.dangerText,
+                            foreground: LqColors.onDark,
+                            borderColor: LqColors.ink,
+                            onPressed: () => _deletePermanently(context, ref),
                           ),
                         ],
                       ],
