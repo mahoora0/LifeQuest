@@ -98,6 +98,7 @@ class HomeQuestRow extends StatelessWidget {
               QuestCheckButton(
                 checked: completed,
                 busy: busy,
+                expReward: quest.expReward,
                 onTap: (inactive || busy) ? null : onCheck,
               ),
           ],
@@ -107,58 +108,160 @@ class HomeQuestRow extends StatelessWidget {
   }
 }
 
+/// 체크가 채워지는 연출의 길이.
+///
+/// 완료 직후 결과 화면으로 넘어가는 화면들은 이만큼 기다렸다 이동한다 —
+/// 누른 자리에서 아무 일도 안 일어난 채 화면이 바뀌면, 방금 무엇을 눌러
+/// 무엇이 됐는지가 연결되지 않는다.
+const questCheckCelebration = Duration(milliseconds: 420);
+
 /// 원형 체크 버튼(27) — 완료 시 `expBadge` 배경 + ✓.
-class QuestCheckButton extends StatelessWidget {
+///
+/// 완료로 바뀌는 순간 원이 한 번 부풀었다 가라앉고 `+EXP`가 위로 떠오른다.
+/// 보상을 받은 자리를 눈으로 확인시키는 것이 목적이다.
+class QuestCheckButton extends StatefulWidget {
   const QuestCheckButton({
     super.key,
     required this.checked,
     this.busy = false,
     this.onTap,
+    this.expReward,
   });
 
   final bool checked;
   final bool busy;
   final VoidCallback? onTap;
 
+  /// 주면 완료 순간 `+EXP n`이 떠오른다.
+  final int? expReward;
+
+  @override
+  State<QuestCheckButton> createState() => _QuestCheckButtonState();
+}
+
+class _QuestCheckButtonState extends State<QuestCheckButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: LqMotion.emphasized,
+  );
+
+  @override
+  void didUpdateWidget(QuestCheckButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 처음부터 완료였던 행(목록을 다시 열었을 때)은 연출하지 않는다.
+    // 방금 해낸 것과 예전에 해낸 것은 다르다.
+    if (!oldWidget.checked && widget.checked && !LqMotion.isReduced(context)) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final exp = widget.expReward;
+
     return Semantics(
       button: true,
-      checked: checked,
+      checked: widget.checked,
       label: '퀘스트 완료',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onTap,
+        onTap: widget.onTap,
         child: SizedBox(
           width: LqSpacing.minTouchTarget,
           height: LqSpacing.minTouchTarget,
-          child: Center(
-            child: Container(
-              width: 27,
-              height: 27,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: checked ? LqColors.expBadge : LqColors.surfaceRaised,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: LqColors.ink,
-                  width: LqShape.borderWidth,
+          child: Stack(
+            // 떠오르는 라벨이 버튼 밖으로 나가야 한다.
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              if (exp != null)
+                Positioned(
+                  top: 0,
+                  child: _RisingExp(exp: exp, animation: _controller),
                 ),
-              ),
-              child: busy
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: LqColors.textMuted,
-                      ),
-                    )
-                  : checked
-                  ? const Icon(Icons.check, size: 16, color: LqColors.onDark)
-                  : null,
-            ),
+              Center(child: _circle()),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _circle() {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // 한 번 부풀었다 제자리로. 끝에서 다시 커지면 두 번 눌린 것처럼 보인다.
+        final pop = _controller.value == 0 || _controller.value == 1
+            ? 0.0
+            : Curves.easeOut.transform(
+                    (1 - (_controller.value * 2 - 1).abs()).clamp(0.0, 1.0),
+                  ) *
+                  0.3;
+        return Transform.scale(scale: 1 + pop, child: child);
+      },
+      child: AnimatedContainer(
+        duration: LqMotion.quick,
+        curve: LqMotion.standard,
+        width: 27,
+        height: 27,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: widget.checked ? LqColors.expBadge : LqColors.surfaceRaised,
+          shape: BoxShape.circle,
+          border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+        ),
+        child: widget.busy
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: LqColors.textMuted,
+                ),
+              )
+            : widget.checked
+            ? const Icon(Icons.check, size: 16, color: LqColors.onDark)
+            : null,
+      ),
+    );
+  }
+}
+
+/// 완료 순간 위로 떠오르며 사라지는 `+EXP n`.
+class _RisingExp extends StatelessWidget {
+  const _RisingExp({required this.exp, required this.animation});
+
+  final int exp;
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) {
+          final t = animation.value;
+          if (t == 0 || t == 1) return const SizedBox.shrink();
+          return Opacity(
+            // 떠오르며 흐려진다. 끝까지 선명하면 사라지는 게 아니라 잘린다.
+            opacity: (1 - t) * (t < 0.15 ? t / 0.15 : 1),
+            child: Transform.translate(
+              offset: Offset(0, -22 * Curves.easeOut.transform(t)),
+              child: child,
+            ),
+          );
+        },
+        child: Text(
+          '+$exp',
+          style: LqText.badge.copyWith(fontSize: 13, color: LqColors.expBadge),
         ),
       ),
     );

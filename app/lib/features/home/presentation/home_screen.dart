@@ -138,6 +138,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(todayQuestsProvider.notifier)
           .complete(dailyQuest.dailyQuestId);
       if (!mounted) return;
+
+      // 체크가 채워지고 +EXP가 떠오르는 것을 보고 나서 결과 화면으로 넘어간다.
+      // 곧바로 이동하면 무엇을 눌러 무엇이 됐는지가 연결되지 않는다.
+      if (!LqMotion.isReduced(context)) {
+        await Future<void>.delayed(questCheckCelebration);
+        if (!mounted) return;
+      }
       context.push('/quests/result', extra: result);
     } catch (error) {
       if (!mounted) return;
