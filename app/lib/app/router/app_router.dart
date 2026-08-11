@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/app/router/lq_page.dart';
 import 'package:life_quest/app/router/navigation_shell.dart';
 import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
@@ -150,11 +151,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       //
       // `/proofs/new`를 `/proofs/:postId`보다 먼저 선언해야
       // "new"가 postId로 잡히지 않는다.
-      GoRoute(
+      _pushRoute(
         path: '/proofs',
         builder: (context, state) => const ProofFeedScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/proofs/new',
         builder: (context, state) => ProofFormScreen(
           // 퀘스트 완료 결과 화면에서 넘어오면 완료 기록이 이미 정해져 있다.
@@ -164,7 +165,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               : null,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/proofs/:postId',
         builder: (context, state) => ProofDetailScreen(
           postId: int.tryParse(state.pathParameters['postId'] ?? '') ?? 0,
@@ -173,7 +174,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // `/quests/result`를 `/quests/:questId`보다 먼저 선언해야
       // "result"가 questId로 잡히지 않는다.
-      GoRoute(
+      _pushRoute(
         path: '/quests/result',
         builder: (context, state) {
           final result = state.extra;
@@ -186,7 +187,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return QuestResultScreen(result: result);
         },
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quests/:questId',
         builder: (context, state) => QuestDetailScreen(
           questId: int.tryParse(state.pathParameters['questId'] ?? '') ?? 0,
@@ -195,7 +196,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               : null,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quests/:dailyQuestId/verify',
         builder: (context, state) {
           final args = state.extra;
@@ -215,25 +216,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       // `/friends/search`·`/friends/requests`를 `/friends/:userId`보다 먼저
       // 선언해야 "search"가 userId로 잡히지 않는다.
-      GoRoute(
+      _pushRoute(
         path: '/friends/search',
         builder: (context, state) => const FriendSearchScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/friends/requests',
         builder: (context, state) => const FriendRequestsScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/friends/:userId',
         builder: (context, state) => FriendJourneyScreen(
           userId: int.tryParse(state.pathParameters['userId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/lifedex',
         builder: (context, state) => const LifedexScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/achievements',
         builder: (context, state) => AchievementScreen(
           initialTab: switch (state.uri.queryParameters['tab']) {
@@ -242,116 +243,116 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           },
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/profile/character',
         builder: (context, state) => const CharacterSelectionScreen(),
       ),
       // 마이페이지의 EXP 바를 눌러 연다. 값이 이미 보이는 자리를 누르는 쪽이
       // "나의 기록"에 행을 하나 더 붙이는 것보다 예측 가능하다.
-      GoRoute(
+      _pushRoute(
         path: '/rewards',
         builder: (context, state) => const RewardScreen(),
       ),
       // 위치 권한 전면 안내(1단계). 홈이 첫 프레임 뒤에 실행당 한 번 push한다.
-      GoRoute(
+      _pushRoute(
         path: '/location-consent',
         builder: (context, state) => const LocationConsentScreen(),
       ),
       // 홈의 벨은 기록 전용, 마이페이지의 알림 설정은 설정 전용 화면으로 연다.
-      GoRoute(
+      _pushRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/settings/notifications',
         builder: (context, state) =>
             const NotificationScreen(mode: NotificationScreenMode.settings),
       ),
       // 지도. 탭에서 빠져 지금은 여기로 들어오는 화면이 없다 — 화면과 라우트는
       // 남겨 두고, 다시 필요해지면 진입점만 붙이면 된다.
-      GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
-      GoRoute(
+      _pushRoute(path: '/map', builder: (context, state) => const MapScreen()),
+      _pushRoute(
         path: '/groups/search',
         builder: (context, state) => const GroupSearchScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/create',
         builder: (context, state) => const GroupFormScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/invitations',
         builder: (context, state) => const GroupInvitationsScreen(),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/edit',
         builder: (context, state) => GroupFormScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? ''),
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/members',
         builder: (context, state) => GroupMembersScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/join-requests',
         builder: (context, state) => GroupJoinRequestsScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/chat',
         builder: (context, state) => GroupChatScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/quests/create',
         builder: (context, state) => GroupQuestFormScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/quests/:questId/edit',
         builder: (context, state) => GroupQuestFormScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
           questId: int.tryParse(state.pathParameters['questId'] ?? ''),
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId/quests/:questId',
         builder: (context, state) => GroupQuestDetailScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
           questId: int.tryParse(state.pathParameters['questId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/groups/:groupId',
         builder: (context, state) => GroupDetailScreen(
           groupId: int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0,
         ),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quest-recommendations',
         builder: (context, state) =>
             RecommendationTypeScreen(weekly: _isWeekly(state)),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quest-recommendations/place',
         builder: (context, state) =>
             PlaceRecommendationFormScreen(weekly: _isWeekly(state)),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quest-recommendations/travel',
         builder: (context, state) =>
             TravelRecommendationFormScreen(weekly: _isWeekly(state)),
       ),
-      GoRoute(
+      _pushRoute(
         path: '/quest-recommendations/result',
         builder: (context, state) => state.extra is QuestRecommendationResult
             ? RecommendationResultScreen(
@@ -365,6 +366,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// 탭 밖 push 라우트. 화면 전환만 [lqPage]로 바꾸고 나머지는 [GoRoute]와 같다.
+///
+/// 탭 브랜치와 인증 라우트(`/splash`·`/login`·`/signup`)에는 쓰지 않는다 —
+/// 리다이렉트로 자동 전환되는 자리에 전환을 넣으면 앱 시작이 굼떠 보인다.
+GoRoute _pushRoute({
+  required String path,
+  required GoRouterWidgetBuilder builder,
+}) {
+  return GoRoute(
+    path: path,
+    pageBuilder: (context, state) => lqPage(state, builder(context, state)),
+  );
+}
 
 /// `?weekly=true`면 주간 퀘스트 슬롯용 추천이다.
 ///

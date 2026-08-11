@@ -34,13 +34,12 @@ void main() {
     return transform.transform.getTranslation().y;
   }
 
-  Widget host(Widget child) =>
-      MaterialApp(home: Scaffold(body: Center(child: child)));
+  Widget host(Widget child) => MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 
   testWidgets('누르면 섀도가 줄고 그만큼 내려간다', (tester) async {
-    await tester.pumpWidget(
-      host(LqButton(label: '확인', onPressed: () {})),
-    );
+    await tester.pumpWidget(host(LqButton(label: '확인', onPressed: () {})));
 
     expect(shadowOffset(tester), LqShape.buttonShadow.first.offset);
     expect(translateY(tester), 0);
@@ -59,9 +58,7 @@ void main() {
   });
 
   testWidgets('손을 떼면 원래 상태로 돌아온다', (tester) async {
-    await tester.pumpWidget(
-      host(LqButton(label: '확인', onPressed: () {})),
-    );
+    await tester.pumpWidget(host(LqButton(label: '확인', onPressed: () {})));
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(LqButton)),
