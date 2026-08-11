@@ -19,6 +19,7 @@ import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
+import 'package:life_quest/shared/widgets/lq_parallax.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
 import 'package:life_quest/shared/widgets/lq_stagger.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -219,10 +220,16 @@ class _Greeting extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        LqImage(
-          characterAsset,
-          key: const ValueKey('home-selected-character'),
-          width: 62,
+        // 캐릭터만 본문보다 조금 느리게 따라온다. 홈에서 가장 눈이 가는 요소라
+        // 여기 하나만 층을 만들어도 화면이 평면으로 읽히지 않는다.
+        LqParallax(
+          factor: 0.16,
+          maxOffset: 40,
+          child: LqImage(
+            characterAsset,
+            key: const ValueKey('home-selected-character'),
+            width: 62,
+          ),
         ),
       ],
     );
