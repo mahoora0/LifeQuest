@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_icon.dart';
+import 'package:life_quest/shared/widgets/lq_pressable.dart';
 
 /// 하단 탭바 — Material `NavigationBar`는 스타일이 맞지 않아 사용하지 않는다.
 ///
@@ -87,22 +88,26 @@ class _NavItem extends StatelessWidget {
       button: true,
       selected: selected,
       label: destination.label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      // 탭 아이템에는 섀도가 없어 내려앉힐 자리가 없다. 아주 약한 축소로만
+      // 눌린 것을 알린다 — 탭 바가 통째로 출렁이면 산만하다.
+      child: LqPressable(
         onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LqIcon(destination.icon, size: 20, color: color),
-            const SizedBox(height: 3),
-            Text(
-              destination.label,
-              style: LqText.tabLabel.copyWith(
-                color: color,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+        builder: (context, t) => Transform.scale(
+          scale: 1 - 0.06 * t,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LqIcon(destination.icon, size: 20, color: color),
+              const SizedBox(height: 3),
+              Text(
+                destination.label,
+                style: LqText.tabLabel.copyWith(
+                  color: color,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

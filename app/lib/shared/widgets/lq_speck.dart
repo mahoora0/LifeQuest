@@ -46,8 +46,22 @@ class _LqSpeckState extends State<LqSpeck> with SingleTickerProviderStateMixin {
   Timer? _startDelay;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 동작 줄이기를 켜면 아예 시작하지 않는다. 끝나지 않는 장식은 그 설정을 켠
+    // 사람에게 가장 거슬리는 종류이고, 덤으로 이 화면에서 `pumpAndSettle()`이
+    // 타임아웃하던 문제도 함께 풀린다.
+    if (LqMotion.isReduced(context)) {
+      _startDelay?.cancel();
+      _startDelay = null;
+      _controller
+        ..stop()
+        ..value = 0;
+      return;
+    }
+    if (_controller.isAnimating || _startDelay != null) return;
+
     if (widget.delay == Duration.zero) {
       _controller.repeat(reverse: true);
     } else {

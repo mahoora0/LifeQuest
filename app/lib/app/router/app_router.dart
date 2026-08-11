@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/app/router/lq_page.dart';
 import 'package:life_quest/app/router/navigation_shell.dart';
 import 'package:life_quest/features/auth/application/auth_controller.dart';
 import 'package:life_quest/features/auth/presentation/auth_splash_screen.dart';
@@ -173,17 +174,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // `/quests/result`를 `/quests/:questId`보다 먼저 선언해야
       // "result"가 questId로 잡히지 않는다.
+      // 앱에서 유일하게 커스텀 전환을 쓰는 라우트. 축하는 밀려 들어오는 것보다
+      // 겹쳐 떠오르는 쪽이 맞고, 이 화면은 뒤로 스와이프할 일이 없다.
       GoRoute(
         path: '/quests/result',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final result = state.extra;
-          if (result is! QuestCompletionResult) {
-            return const FeaturePlaceholderScreen(
-              title: '퀘스트 완료',
-              message: '완료 결과를 불러오지 못했어요',
-            );
-          }
-          return QuestResultScreen(result: result);
+          return lqCelebrationPage(
+            context,
+            state,
+            result is QuestCompletionResult
+                ? QuestResultScreen(result: result)
+                : const FeaturePlaceholderScreen(
+                    title: '퀘스트 완료',
+                    message: '완료 결과를 불러오지 못했어요',
+                  ),
+          );
         },
       ),
       GoRoute(

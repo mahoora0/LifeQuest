@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_pressable.dart';
 
 /// 필터 칩(pill).
 ///
@@ -19,29 +20,32 @@ class LqChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return LqPressable(
       onTap: onTap,
-      child: Container(
-        // 칩 자체는 낮지만 최소 터치 타깃 44를 확보하기 위해 세로 여백을 준다.
-        constraints: const BoxConstraints(minHeight: 32),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: selected ? LqColors.primary : LqColors.surfaceRaised,
-          borderRadius: LqShape.pillRadius,
-          border: Border.all(
-            color: selected ? LqColors.ink : LqColors.borderMuted,
-            width: LqShape.borderWidth,
+      // 칩도 섀도가 없다. 탭 아이템보다는 작게 줄인다.
+      builder: (context, t) => Transform.scale(
+        scale: 1 - 0.04 * t,
+        child: Container(
+          // 칩 자체는 낮지만 최소 터치 타깃 44를 확보하기 위해 세로 여백을 준다.
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: BoxDecoration(
+            color: selected ? LqColors.primary : LqColors.surfaceRaised,
+            borderRadius: LqShape.pillRadius,
+            border: Border.all(
+              color: selected ? LqColors.ink : LqColors.borderMuted,
+              width: LqShape.borderWidth,
+            ),
           ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            height: 1.2,
-            color: selected ? LqColors.onDark : LqColors.textSecondary,
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+              color: selected ? LqColors.onDark : LqColors.textSecondary,
+            ),
           ),
         ),
       ),

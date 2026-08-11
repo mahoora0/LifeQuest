@@ -19,7 +19,9 @@ import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
+import 'package:life_quest/shared/widgets/lq_parallax.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
+import 'package:life_quest/shared/widgets/lq_stagger.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
 
 /// S-07 홈 / 오늘의 퀘스트.
@@ -80,23 +82,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               LqSpacing.screen,
               24,
             ),
+            // 섹션이 위에서부터 차례로 나타난다. 홈은 스크롤이 길지 않고 섹션 수가
+            // 고정이라 `LqStagger`를 쓸 수 있는 자리다(긴 목록에는 쓰지 않는다).
             children: [
-              const _LogoRow(),
+              const LqStagger(index: 0, child: _LogoRow()),
               const SizedBox(height: LqSpacing.gap),
-              _Greeting(profile: profile),
+              LqStagger(index: 1, child: _Greeting(profile: profile)),
               const SizedBox(height: LqSpacing.gap),
               // 1단계에서 넘긴 사람에게만 보이고 권한을 허용하면 함께 걷힌다.
               const LocationConsentBanner(),
-              _LevelCard(level: level),
+              LqStagger(index: 2, child: _LevelCard(level: level)),
               const SizedBox(height: LqSpacing.gap),
-              _TodayQuestCard(
-                today: today,
-                completing: _completing,
-                onOpen: _openDetail,
-                onCheck: _completeSelfReport,
+              LqStagger(
+                index: 3,
+                child: _TodayQuestCard(
+                  today: today,
+                  completing: _completing,
+                  onOpen: _openDetail,
+                  onCheck: _completeSelfReport,
+                ),
               ),
               const SizedBox(height: LqSpacing.gap),
-              const _ProofPlazaCard(),
+              const LqStagger(index: 4, child: _ProofPlazaCard()),
             ],
           ),
         ),
@@ -132,6 +139,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(todayQuestsProvider.notifier)
           .complete(dailyQuest.dailyQuestId);
       if (!mounted) return;
+
+      // 체크가 채워지고 +EXP가 떠오르는 것을 보고 나서 결과 화면으로 넘어간다.
+      // 곧바로 이동하면 무엇을 눌러 무엇이 됐는지가 연결되지 않는다.
+      if (!LqMotion.isReduced(context)) {
+        await Future<void>.delayed(questCheckCelebration);
+        if (!mounted) return;
+      }
       context.push('/quests/result', extra: result);
     } catch (error) {
       if (!mounted) return;
@@ -206,10 +220,16 @@ class _Greeting extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        LqImage(
-          characterAsset,
-          key: const ValueKey('home-selected-character'),
-          width: 62,
+        // 캐릭터만 본문보다 조금 느리게 따라온다. 홈에서 가장 눈이 가는 요소라
+        // 여기 하나만 층을 만들어도 화면이 평면으로 읽히지 않는다.
+        LqParallax(
+          factor: 0.16,
+          maxOffset: 40,
+          child: LqImage(
+            characterAsset,
+            key: const ValueKey('home-selected-character'),
+            width: 62,
+          ),
         ),
       ],
     );

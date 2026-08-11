@@ -8,6 +8,7 @@ import 'package:life_quest/features/user/data/user_dto.dart';
 import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/features/proof/presentation/proof_form_args.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_timeline.dart';
 import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
@@ -26,6 +27,35 @@ class QuestResultScreen extends ConsumerStatefulWidget {
   ConsumerState<QuestResultScreen> createState() => _QuestResultScreenState();
 }
 
+/// 완료 연출 전체 길이. 각 단계는 이 길이의 비율로 자리를 잡는다.
+///
+/// 1.6초는 "보고 있게 되는" 상한이다. 더 끌면 축하가 아니라 대기가 된다.
+///
+/// 공개해 두는 이유는 테스트가 이 값만큼 시간을 밀어야 하기 때문이다 —
+/// 테스트에 1600을 다시 적으면 값이 바뀌는 순간 조용히 어긋난다.
+const questResultSequenceDuration = Duration(milliseconds: 1600);
+
+/// 연출 시간표. 구간을 겹쳐야 끊기지 않는다.
+abstract final class _Beat {
+  /// "퀘스트 완료!" 카드가 도장처럼 찍힌다.
+  static const stamp = (0.0, 0.22);
+
+  /// 캐릭터가 아래에서 올라온다.
+  static const character = (0.12, 0.40);
+
+  /// 퀘스트 이름.
+  static const title = (0.30, 0.50);
+
+  /// 보상 카드 — EXP 숫자가 세어 올라간다.
+  static const reward = (0.40, 0.78);
+
+  /// 레벨업 패널 · 도감 · 업적.
+  static const extras = (0.62, 0.88);
+
+  /// 하단 버튼. 연출이 끝나야 누를 마음이 생긴다.
+  static const actions = (0.78, 1.0);
+}
+
 class _QuestResultScreenState extends ConsumerState<QuestResultScreen> {
   @override
   void initState() {
@@ -35,8 +65,17 @@ class _QuestResultScreenState extends ConsumerState<QuestResultScreen> {
     });
   }
 
+  /// 완료 연출이 다 돌 때까지 기다렸다가 후속 모달을 띄운다.
+  ///
+  /// 바로 띄우면 방금 시작한 축하를 덮어 버린다 — 보상을 받는 장면을 못 본 채
+  /// 팝업부터 닫게 되므로, 완료했다는 실감이 가장 큰 순간을 통째로 날린다.
   Future<void> _showResultEvents() async {
     final result = widget.result;
+    if (!LqMotion.isReduced(context)) {
+      await Future<void>.delayed(questResultSequenceDuration);
+    }
+    if (!mounted) return;
+
     if (!result.duplicated && result.growth.levelUp) {
       ref.invalidate(levelStatusProvider);
       ref.invalidate(characterCollectionProvider);
@@ -67,151 +106,203 @@ class _QuestResultScreenState extends ConsumerState<QuestResultScreen> {
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
-      body: Stack(
-        children: [
-          const Positioned.fill(child: _FloatingConfetti()),
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView(
+      body: LqTimeline(
+        duration: questResultSequenceDuration,
+        child: Stack(
+          children: [
+            const Positioned.fill(
+              child: LqTimelineStep(
+                start: 0,
+                end: 0.3,
+                from: Offset.zero,
+                child: _FloatingConfetti(),
+              ),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        LqSpacing.screen,
+                        24,
+                        LqSpacing.screen,
+                        16,
+                      ),
+                      children: [
+                        // 도장처럼 찍힌다 — 작게 시작해 살짝 넘겼다 자리를 잡는다.
+                        LqTimelineStep(
+                          start: _Beat.stamp.$1,
+                          end: _Beat.stamp.$2,
+                          from: Offset.zero,
+                          fromScale: 0.55,
+                          curve: LqMotion.bounce,
+                          child: Center(
+                            child: Transform.rotate(
+                              angle: -2 * 3.1415926535 / 180,
+                              child: LqCard(
+                                background: LqColors.surfaceCard,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 22,
+                                  vertical: 10,
+                                ),
+                                child: Text(
+                                  result.duplicated
+                                      ? '이미 완료한 퀘스트예요'
+                                      : '퀘스트 완료!',
+                                  style: LqText.bigTitle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        LqTimelineStep(
+                          start: _Beat.character.$1,
+                          end: _Beat.character.$2,
+                          from: const Offset(0, 34),
+                          child: Center(
+                            child: LqImage(LqAssets.charWalk, width: 158),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        if (result.questTitle != null)
+                          LqTimelineStep(
+                            start: _Beat.title.$1,
+                            end: _Beat.title.$2,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: LqColors.surfaceRaised,
+                                  borderRadius: LqShape.pillRadius,
+                                  border: Border.all(
+                                    color: LqColors.ink,
+                                    width: LqShape.borderWidth,
+                                  ),
+                                ),
+                                child: Text(
+                                  result.questTitle!,
+                                  style: LqText.cardTitle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+
+                        // 멱등 재요청이면 보상이 재지급되지 않으므로 안내만 남긴다.
+                        LqTimelineStep(
+                          start: _Beat.reward.$1,
+                          end: _Beat.reward.$2,
+                          child: result.duplicated
+                              ? const _Notice(
+                                  message: '이미 완료 처리된 퀘스트라 보상은 다시 지급되지 않았어요.',
+                                )
+                              : _RewardRow(growth: growth),
+                        ),
+
+                        if (!result.duplicated && growth.levelUp) ...[
+                          const SizedBox(height: LqSpacing.gap),
+                          LqTimelineStep(
+                            start: _Beat.extras.$1,
+                            end: _Beat.extras.$2,
+                            child: _LevelUpPanel(growth: growth),
+                          ),
+                        ],
+
+                        if (result.collection.newLifedexItems.isNotEmpty) ...[
+                          const SizedBox(height: LqSpacing.gap),
+                          for (final item in result.collection.newLifedexItems)
+                            LqTimelineStep(
+                              start: _Beat.extras.$1,
+                              end: _Beat.extras.$2,
+                              child: _CollectionNotice(
+                                message: "도감에 '${item.name}' 도장이 새로 찍혔어요",
+                              ),
+                            ),
+                        ],
+                        // 비밀 업적은 모달이 맡으므로 줄로 중복해 알리지 않는다.
+                        if (result
+                            .collection
+                            .newPlainAchievements
+                            .isNotEmpty) ...[
+                          const SizedBox(height: LqSpacing.gap),
+                          for (final item
+                              in result.collection.newPlainAchievements)
+                            LqTimelineStep(
+                              start: _Beat.extras.$1,
+                              end: _Beat.extras.$2,
+                              child: _CollectionNotice(
+                                message: "업적 '${item.name}' 을(를) 달성했어요",
+                              ),
+                            ),
+                        ],
+                        if (result.location?.distanceM != null) ...[
+                          const SizedBox(height: LqSpacing.gap),
+                          LqTimelineStep(
+                            start: _Beat.extras.$1,
+                            end: _Beat.extras.$2,
+                            child: Center(
+                              child: Text(
+                                '인증 거리 ${result.location!.distanceM!.round()}m',
+                                style: LqText.caption,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Padding(
                     padding: const EdgeInsets.fromLTRB(
                       LqSpacing.screen,
-                      24,
+                      0,
                       LqSpacing.screen,
                       16,
                     ),
-                    children: [
-                      Center(
-                        child: Transform.rotate(
-                          angle: -2 * 3.1415926535 / 180,
-                          child: LqCard(
-                            background: LqColors.surfaceCard,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 22,
-                              vertical: 10,
-                            ),
-                            child: Text(
-                              result.duplicated ? '이미 완료한 퀘스트예요' : '퀘스트 완료!',
-                              style: LqText.bigTitle,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      const Center(
-                        child: LqImage(LqAssets.charWalk, width: 158),
-                      ),
-                      const SizedBox(height: 18),
-                      if (result.questTitle != null)
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: LqColors.surfaceRaised,
-                              borderRadius: LqShape.pillRadius,
-                              border: Border.all(
-                                color: LqColors.ink,
-                                width: LqShape.borderWidth,
+                    // 인증 사진을 올릴 마음이 제일 큰 순간이 바로 여기다 — 방금 그 장소에
+                    // 있었고 사진도 방금 찍었다. 홈으로 돌아간 뒤에 다시 들어와 올리는
+                    // 사람은 거의 없으므로 주 버튼을 이쪽에 준다.
+                    //
+                    // 중복 완료(duplicated)는 이미 게시물이 있을 수 있어 권하지 않는다.
+                    child: LqTimelineStep(
+                      start: _Beat.actions.$1,
+                      end: _Beat.actions.$2,
+                      child: Column(
+                        children: [
+                          if (!result.duplicated)
+                            LqButton(
+                              label: '인증 사진 올리기',
+                              onPressed: () => context.pushReplacement(
+                                '/proofs/new',
+                                extra: ProofFormArgs(
+                                  completionId: result.completionId,
+                                  questTitle: result.questTitle,
+                                  questGrade: result.grade,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              result.questTitle!,
-                              style: LqText.cardTitle,
-                            ),
+                          if (!result.duplicated) const SizedBox(height: 8),
+                          LqButton(
+                            label: '확인',
+                            background: LqColors.surfaceRaised,
+                            foreground: LqColors.textPrimary,
+                            borderColor: LqColors.borderMuted,
+                            shadow: result.duplicated,
+                            onPressed: () => context.go('/'),
                           ),
-                        ),
-                      const SizedBox(height: 16),
-
-                      // 멱등 재요청이면 보상이 재지급되지 않으므로 안내만 남긴다.
-                      if (result.duplicated)
-                        const _Notice(
-                          message: '이미 완료 처리된 퀘스트라 보상은 다시 지급되지 않았어요.',
-                        )
-                      else
-                        _RewardRow(growth: growth),
-
-                      if (!result.duplicated && growth.levelUp) ...[
-                        const SizedBox(height: LqSpacing.gap),
-                        _LevelUpPanel(growth: growth),
-                      ],
-
-                      if (result.collection.newLifedexItems.isNotEmpty) ...[
-                        const SizedBox(height: LqSpacing.gap),
-                        for (final item in result.collection.newLifedexItems)
-                          _CollectionNotice(
-                            message: "도감에 '${item.name}' 도장이 새로 찍혔어요",
-                          ),
-                      ],
-                      // 비밀 업적은 모달이 맡으므로 줄로 중복해 알리지 않는다.
-                      if (result
-                          .collection
-                          .newPlainAchievements
-                          .isNotEmpty) ...[
-                        const SizedBox(height: LqSpacing.gap),
-                        for (final item
-                            in result.collection.newPlainAchievements)
-                          _CollectionNotice(
-                            message: "업적 '${item.name}' 을(를) 달성했어요",
-                          ),
-                      ],
-                      if (result.location?.distanceM != null) ...[
-                        const SizedBox(height: LqSpacing.gap),
-                        Center(
-                          child: Text(
-                            '인증 거리 ${result.location!.distanceM!.round()}m',
-                            style: LqText.caption,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    LqSpacing.screen,
-                    0,
-                    LqSpacing.screen,
-                    16,
-                  ),
-                  // 인증 사진을 올릴 마음이 제일 큰 순간이 바로 여기다 — 방금 그 장소에
-                  // 있었고 사진도 방금 찍었다. 홈으로 돌아간 뒤에 다시 들어와 올리는
-                  // 사람은 거의 없으므로 주 버튼을 이쪽에 준다.
-                  //
-                  // 중복 완료(duplicated)는 이미 게시물이 있을 수 있어 권하지 않는다.
-                  child: Column(
-                    children: [
-                      if (!result.duplicated)
-                        LqButton(
-                          label: '인증 사진 올리기',
-                          onPressed: () => context.pushReplacement(
-                            '/proofs/new',
-                            extra: ProofFormArgs(
-                              completionId: result.completionId,
-                              questTitle: result.questTitle,
-                              questGrade: result.grade,
-                            ),
-                          ),
-                        ),
-                      if (!result.duplicated) const SizedBox(height: 8),
-                      LqButton(
-                        label: '확인',
-                        background: LqColors.surfaceRaised,
-                        foreground: LqColors.textPrimary,
-                        borderColor: LqColors.borderMuted,
-                        shadow: result.duplicated,
-                        onPressed: () => context.go('/'),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -235,11 +326,18 @@ class _RewardRow extends StatelessWidget {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: [
-              LqRewardBadge(
-                label: 'EXP ${growth.expGained}',
-                background: LqColors.expBadge,
-                foreground: LqColors.onDark,
-                fontSize: 14,
+              // 보상은 "얼마"보다 **받는 과정**이 남는다. 카드가 뜨는 구간의
+              // 뒷부분에 걸쳐 0에서 세어 올라간다.
+              LqCountUp(
+                value: growth.expGained,
+                start: _Beat.reward.$1 + 0.06,
+                end: _Beat.reward.$2,
+                builder: (context, value) => LqRewardBadge(
+                  label: 'EXP $value',
+                  background: LqColors.expBadge,
+                  foreground: LqColors.onDark,
+                  fontSize: 14,
+                ),
               ),
               // ② 연속 달성 보너스는 서버 판정이 필요해 v1에서 제외.
             ],
@@ -718,7 +816,19 @@ class _FloatingPieceState extends State<_FloatingPiece>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: (widget.seconds * 1000).round()),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (LqMotion.isReduced(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+      return;
+    }
+    if (!_controller.isAnimating) _controller.repeat(reverse: true);
+  }
 
   @override
   void dispose() {

@@ -233,11 +233,114 @@ abstract final class LqShape {
     BoxShadow(color: Color(0x405A4628), offset: Offset(3, 4)),
   ];
 
+  /// 눌린 표면의 섀도 오프셋. 모든 표면이 여기까지 눌린다.
+  static const pressedShadowOffset = Offset(1, 1);
+
+  /// [base]가 [pressedShadowOffset]까지 눌리는 동안 위젯이 내려가야 하는 거리.
+  ///
+  /// 이 값만큼 내려가야 섀도의 바깥 경계가 제자리에 남는다 — 스티커가 종이에
+  /// 눌러 붙는 것처럼 보이는 이유가 그것이다. 위젯만 내리거나 섀도만 줄이면
+  /// 경계가 함께 움직여 "미끄러진" 것처럼 읽힌다.
+  static Offset pressDepth(List<BoxShadow> base) =>
+      base.first.offset - pressedShadowOffset;
+
+  /// 눌림 진행도 [t](0=평상시, 1=눌림)에 맞춰 섀도를 줄인다.
+  static List<BoxShadow>? pressShadow(List<BoxShadow>? base, double t) {
+    if (base == null) return null;
+    if (t == 0) return base;
+    return [
+      for (final shadow in base)
+        BoxShadow(
+          color: shadow.color,
+          blurRadius: shadow.blurRadius,
+          spreadRadius: shadow.spreadRadius,
+          offset: Offset.lerp(shadow.offset, pressedShadowOffset, t)!,
+        ),
+    ];
+  }
+
   static Border get inkBorder =>
       Border.all(color: LqColors.ink, width: borderWidth);
 
   static Border mutedBorder([Color color = LqColors.borderMuted]) =>
       Border.all(color: color, width: borderWidth);
+}
+
+/// 모션 토큰. 화면·위젯 코드에서 duration·curve를 하드코딩하지 않는다.
+///
+/// 시안(`09-design-system.md` §3)이 정한 손그림 톤을 지키기 위한 규칙이 둘 있다.
+///
+/// 1. 누르는 피드백은 축소(scale)가 아니라 **섀도 오프셋 감소 + 그만큼의 내려감**이다.
+///    이 앱의 표면은 blur 없는 오프셋 섀도를 쓰는 종이 스티커라, 줄어드는 쪽이 맞다.
+/// 2. 바운스([bounce])는 퀘스트 완료 결과 화면에만 쓴다. 그 밖에서 튕기면
+///    앱 전체가 장난감처럼 읽힌다.
+abstract final class LqMotion {
+  /// 누름·뗌 피드백.
+  static const press = Duration(milliseconds: 110);
+
+  /// 눌렸을 때 어두워지는 정도.
+  ///
+  /// 섀도가 줄고 4px 내려앉는 것만으로는 눈에 잘 띄지 않는다. 밝기가 함께
+  /// 변해야 "눌렀다"가 읽힌다 — 3px 이동보다 25% 밝기 변화가 훨씬 강하다.
+  static const pressDim = 0.25;
+
+  /// 아이콘 토글처럼 작은 변화.
+  static const quick = Duration(milliseconds: 200);
+
+  /// 숫자·콘텐츠 교체(`AnimatedSwitcher`), 축하 화면 전환.
+  static const normal = Duration(milliseconds: 300);
+
+  /// 보상 연출 한 단계.
+  static const emphasized = Duration(milliseconds: 600);
+
+  /// 숫자가 세어 올라가는 것처럼 오래 지켜보는 연출.
+  static const slow = Duration(milliseconds: 900);
+
+  /// 목록이 순서대로 등장할 때의 항목 간 간격.
+  static const staggerStep = Duration(milliseconds: 40);
+
+  /// 시간차를 주는 항목 수 상한. 그 뒤 항목은 지연 없이 바로 나온다 —
+  /// 20번째 항목까지 기다리게 하면 목록이 느린 앱이 된다.
+  static const staggerMaxItems = 6;
+
+  // 커브는 Flutter가 들고 있는 Material 3 토큰(`Easing`)을 그대로 쓴다.
+  // `Curves.easeOutCubic` 같은 근사치를 직접 고를 이유가 없다.
+
+  /// 대부분의 전환.
+  static const standard = Easing.standard;
+
+  /// 사라지는 쪽.
+  static const exit = Easing.standardAccelerate;
+
+  /// 크게 등장하는 것. 끝에서 길게 감속해 무게가 실린다.
+  static const arrive = Easing.emphasizedDecelerate;
+
+  /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`. 보상 연출에 쓴다.
+  static const bounce = Cubic(.2, .8, .3, 1.2);
+
+  /// 손가락을 따라온 뒤 제자리를 찾는 스프링.
+  ///
+  /// Material 3 Expressive의 공간(spatial) 기본 토큰 — 강성 380에 감쇠비 0.8.
+  /// 끌다 놓는 동작에는 duration·curve가 맞지 않는다. 사용자가 얼마나 빠르게
+  /// 놓았는지(속도)를 이어받아야 손에서 이어지는 느낌이 나기 때문이다.
+  static const spatialSpring = SpringDescription(
+    mass: 1,
+    stiffness: 380,
+    damping: 31.2,
+  );
+
+  /// 사용자가 OS에서 "동작 줄이기"를 켰는가.
+  ///
+  /// 켠 사람에게 움직임은 취향 문제가 아니라 어지럼증·주의 분산의 원인이다.
+  /// 특히 끝나지 않는 장식(둥실·파동)은 반드시 멈춰야 한다.
+  static bool isReduced(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context);
+
+  /// "동작 줄이기"가 켜져 있으면 0을 준다.
+  ///
+  /// **새 애니메이션은 duration을 이 함수로 감싸는 것이 필수 요건이다.**
+  static Duration of(BuildContext context, Duration duration) =>
+      isReduced(context) ? Duration.zero : duration;
 }
 
 /// 여백 · 치수 토큰.

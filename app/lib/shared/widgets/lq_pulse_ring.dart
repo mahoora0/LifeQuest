@@ -27,7 +27,22 @@ class _LqPulseRingState extends State<LqPulseRing>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: widget.duration,
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 동작 줄이기를 켜면 파동을 멈추고 가장 작은 링만 남긴다. 위치를 가리키는
+    // 표식 자체는 남아야 하므로 위젯을 지우지는 않는다.
+    if (LqMotion.isReduced(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+      return;
+    }
+    if (!_controller.isAnimating) _controller.repeat();
+  }
 
   @override
   void dispose() {

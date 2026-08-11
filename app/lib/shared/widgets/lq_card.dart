@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_dashed.dart';
+import 'package:life_quest/shared/widgets/lq_pressable.dart';
 
 /// 시안의 기본 표면 — ink 2px 테두리 + 좌우 비대칭 라운드 + blur 없는 오프셋 섀도.
 ///
@@ -96,40 +97,56 @@ class LqCard extends StatelessWidget {
             ],
           );
 
-    Widget surface = Container(
-      width: width,
-      height: height,
-      alignment: alignment,
-      padding: header == null ? padding : null,
-      clipBehavior: header == null ? Clip.none : Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: effectiveBackground,
-        borderRadius: radius,
-        border: locked
-            ? null
-            : Border.all(color: borderColor, width: LqShape.borderWidth),
-        boxShadow: (shadow && !locked) ? LqShape.cardShadow : null,
-      ),
-      child: body,
-    );
+    final hasShadow = shadow && !locked;
 
-    if (locked) {
-      surface = CustomPaint(
-        foregroundPainter: LqDashedBorderPainter(radius: radius),
-        child: surface,
+    // 눌린 진행도 t에 따라 섀도만 달라지는 표면. 탭이 없으면 t는 늘 0이다.
+    Widget buildSurface(double t) {
+      Widget surface = Container(
+        width: width,
+        height: height,
+        alignment: alignment,
+        padding: header == null ? padding : null,
+        clipBehavior: header == null ? Clip.none : Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: effectiveBackground,
+          borderRadius: radius,
+          border: locked
+              ? null
+              : Border.all(color: borderColor, width: LqShape.borderWidth),
+          boxShadow: hasShadow
+              ? LqShape.pressShadow(LqShape.cardShadow, t)
+              : null,
+        ),
+        child: body,
       );
+
+      if (locked) {
+        surface = CustomPaint(
+          foregroundPainter: LqDashedBorderPainter(radius: radius),
+          child: surface,
+        );
+      }
+      return surface;
     }
 
+    Widget result = onTap == null
+        ? buildSurface(0)
+        : LqPressable(
+            onTap: onTap,
+            depth: hasShadow
+                ? LqShape.pressDepth(LqShape.cardShadow)
+                : Offset.zero,
+            builder: (context, t) => Transform.scale(
+              scale: hasShadow ? 1 : 1 - 0.01 * t,
+              child: buildSurface(t),
+            ),
+          );
+
+    // margin은 눌림에 함께 움직이면 안 되므로 바깥에 남긴다.
     if (margin != null) {
-      surface = Padding(padding: margin!, child: surface);
+      result = Padding(padding: margin!, child: result);
     }
 
-    if (onTap == null) return surface;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: surface,
-    );
+    return result;
   }
 }
