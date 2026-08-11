@@ -116,12 +116,16 @@
 | 토큰 | 값 | 쓰는 곳 |
 |---|---|---|
 | `LqMotion.press` | 110ms | 누름·뗌 피드백 |
-| `LqMotion.quick` | 160ms | 작은 변화, 섹션 등장 |
-| `LqMotion.normal` | 220ms | 숫자·콘텐츠 교체, 탭 전환 |
-| `LqMotion.page` / `pageReverse` | 280 / 220ms | 페이지 전환(나올 때가 더 빠르다) |
-| `LqMotion.emphasized` | 480ms | 퀘스트 완료 연출 **전용** |
-| `LqMotion.standard` / `exit` | `easeOutCubic` / `easeInCubic` | 기본 이징 |
-| `LqMotion.bounce` | `cubic-bezier(.2,.8,.3,1.2)` | 퀘스트 완료 결과 화면 **전용** |
+| `LqMotion.pressDim` | 0.25 | 눌렸을 때 어두워지는 정도 |
+| `LqMotion.quick` | 200ms | 작은 변화, 섹션 등장 |
+| `LqMotion.normal` | 300ms | 숫자·콘텐츠 교체, 탭 전환, 축하 화면 전환 |
+| `LqMotion.emphasized` | 600ms | 보상 연출 한 단계 |
+| `LqMotion.slow` | 900ms | 오래 지켜보는 연출 |
+| `LqMotion.standard` / `exit` / `arrive` | `Easing.standard` / `standardAccelerate` / `emphasizedDecelerate` | Material 3 이징 토큰을 그대로 쓴다 |
+| `LqMotion.bounce` | `cubic-bezier(.2,.8,.3,1.2)` | 보상 연출 **전용** |
+| `LqMotion.spatialSpring` | stiffness 380 · 감쇠비 0.8 | 끌어서 놓았을 때의 정착(M3 Expressive) |
+
+페이지 전환 시간은 토큰에 없다 — 플랫폼 기본을 그대로 쓰기 때문이다(아래).
 
 - **누르는 피드백은 밝기 + 눌림이다** — 밝기가 25% 어두워지는 것이 주 신호이고, 섀도 오프셋이 `(1,1)`까지 줄며 줄어든 만큼 위젯이 내려앉아 섀도의 바깥 경계가 제자리에 남는다(`LqPressable` + `LqShape.pressShadow`). 이 앱의 표면은 blur 없는 오프셋 섀도를 쓰는 종이 스티커라 그렇다. 다만 3~4px 이동만으로는 눈에 띄지 않아 밝기를 함께 쓴다
 - **화면 전환은 플랫폼 기본을 쓴다** — `PageTransitionsTheme`에 Android `PredictiveBackPageTransitionsBuilder`, iOS `CupertinoPageTransitionsBuilder`를 명시해 둔다. **`CustomTransitionPage`를 일반 라우트에 쓰지 않는다** — 그 경로는 `PageTransitionsTheme`을 우회해 iOS 가장자리 스와이프 뒤로가기와 Android predictive back을 잃는다. 예외는 축하 화면(`/quests/result`) 하나이며, 뒤로 스와이프할 일이 없는 화면에 한한다
