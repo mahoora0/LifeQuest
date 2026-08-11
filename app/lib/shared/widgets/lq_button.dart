@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_pressable.dart';
 
 /// 풀폭 주 버튼.
 ///
@@ -45,51 +46,60 @@ class LqButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    final hasShadow = _enabled && shadow;
+
+    return LqPressable(
       onTap: _enabled ? onPressed : null,
-      child: Container(
-        height: height,
-        width: double.infinity,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _enabled ? background : LqColors.disabledBg,
-          borderRadius: LqShape.buttonRadius,
-          border: Border.all(color: borderColor, width: LqShape.borderWidth),
-          boxShadow: (_enabled && shadow) ? LqShape.buttonShadow : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (busy) ...[
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
-                  color: LqColors.textMuted,
+      // 섀도를 끈 보조 버튼은 내려갈 자리가 없다. 대신 builder에서 아주 약하게
+      // 줄여 눌린 것을 알린다.
+      depth: hasShadow ? LqShape.pressDepth(LqShape.buttonShadow) : Offset.zero,
+      builder: (context, t) => Transform.scale(
+        scale: hasShadow ? 1 : 1 - 0.02 * t,
+        child: Container(
+          height: height,
+          width: double.infinity,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _enabled ? background : LqColors.disabledBg,
+            borderRadius: LqShape.buttonRadius,
+            border: Border.all(color: borderColor, width: LqShape.borderWidth),
+            boxShadow: hasShadow
+                ? LqShape.pressShadow(LqShape.buttonShadow, t)
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (busy) ...[
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: LqColors.textMuted,
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ] else if (icon != null) ...[
+                icon!,
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: _enabled ? foreground : LqColors.textMuted,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-            ] else if (icon != null) ...[
-              icon!,
-              const SizedBox(width: 8),
             ],
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  color: _enabled ? foreground : LqColors.textMuted,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

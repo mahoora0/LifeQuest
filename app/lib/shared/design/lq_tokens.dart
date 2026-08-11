@@ -233,11 +233,78 @@ abstract final class LqShape {
     BoxShadow(color: Color(0x405A4628), offset: Offset(3, 4)),
   ];
 
+  /// 눌린 표면의 섀도 오프셋. 모든 표면이 여기까지 눌린다.
+  static const pressedShadowOffset = Offset(1, 1);
+
+  /// [base]가 [pressedShadowOffset]까지 눌리는 동안 위젯이 내려가야 하는 거리.
+  ///
+  /// 이 값만큼 내려가야 섀도의 바깥 경계가 제자리에 남는다 — 스티커가 종이에
+  /// 눌러 붙는 것처럼 보이는 이유가 그것이다. 위젯만 내리거나 섀도만 줄이면
+  /// 경계가 함께 움직여 "미끄러진" 것처럼 읽힌다.
+  static Offset pressDepth(List<BoxShadow> base) =>
+      base.first.offset - pressedShadowOffset;
+
+  /// 눌림 진행도 [t](0=평상시, 1=눌림)에 맞춰 섀도를 줄인다.
+  static List<BoxShadow>? pressShadow(List<BoxShadow>? base, double t) {
+    if (base == null) return null;
+    if (t == 0) return base;
+    return [
+      for (final shadow in base)
+        BoxShadow(
+          color: shadow.color,
+          blurRadius: shadow.blurRadius,
+          spreadRadius: shadow.spreadRadius,
+          offset: Offset.lerp(shadow.offset, pressedShadowOffset, t)!,
+        ),
+    ];
+  }
+
   static Border get inkBorder =>
       Border.all(color: LqColors.ink, width: borderWidth);
 
   static Border mutedBorder([Color color = LqColors.borderMuted]) =>
       Border.all(color: color, width: borderWidth);
+}
+
+/// 모션 토큰. 화면·위젯 코드에서 duration·curve를 하드코딩하지 않는다.
+///
+/// 시안(`09-design-system.md` §3)이 정한 손그림 톤을 지키기 위한 규칙이 둘 있다.
+///
+/// 1. 누르는 피드백은 축소(scale)가 아니라 **섀도 오프셋 감소 + 그만큼의 내려감**이다.
+///    이 앱의 표면은 blur 없는 오프셋 섀도를 쓰는 종이 스티커라, 줄어드는 쪽이 맞다.
+/// 2. 바운스([bounce])는 퀘스트 완료 결과 화면에만 쓴다. 그 밖에서 튕기면
+///    앱 전체가 장난감처럼 읽힌다.
+abstract final class LqMotion {
+  /// 누름·뗌 피드백.
+  static const press = Duration(milliseconds: 110);
+
+  /// 아이콘 토글처럼 작은 변화.
+  static const quick = Duration(milliseconds: 160);
+
+  /// 숫자·콘텐츠 교체(`AnimatedSwitcher`).
+  static const normal = Duration(milliseconds: 220);
+
+  /// 페이지 전환(들어갈 때).
+  static const page = Duration(milliseconds: 280);
+
+  /// 페이지 전환(나올 때). 나가는 쪽이 빨라야 되돌아오는 길이 가볍다.
+  static const pageReverse = Duration(milliseconds: 220);
+
+  /// 보상 연출. 퀘스트 완료 결과 화면 전용이다.
+  static const emphasized = Duration(milliseconds: 480);
+
+  /// 목록이 순서대로 등장할 때의 항목 간 간격.
+  static const staggerStep = Duration(milliseconds: 40);
+
+  /// 시간차를 주는 항목 수 상한. 그 뒤 항목은 지연 없이 바로 나온다 —
+  /// 20번째 항목까지 기다리게 하면 목록이 느린 앱이 된다.
+  static const staggerMaxItems = 6;
+
+  static const standard = Curves.easeOutCubic;
+  static const exit = Curves.easeInCubic;
+
+  /// 시안 확정 바운스 `cubic-bezier(.2,.8,.3,1.2)`.
+  static const bounce = Cubic(.2, .8, .3, 1.2);
 }
 
 /// 여백 · 치수 토큰.
