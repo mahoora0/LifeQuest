@@ -1,0 +1,546 @@
+{"kind":"deck","id":"pr/guz51o","name":"Deck"}
+{"kind":"layout","layoutId":"7d41223a-a6f4-4dd2-83fa-0cb625e7637c","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"7d80ee61-a8d9-4031-a07d-a32b70a299b0","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/yqkwv5","slide":1,"title":"PROJECT TECHNICAL SPECIFICATION","textShapes":5}
+{"kind":"shape","id":"sh/1ofi1kf2","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/el4zqpwb","slide":1,"bbox":[760,-90,600,900]}
+{"kind":"shape","id":"sh/fmd0zaxw","slide":1,"bbox":[920,72,250,520]}
+{"kind":"shape","id":"sh/2pozupwn","slide":1,"bbox":[70,95,330,36]}
+{"kind":"textbox","id":"sh/nqx03ux8","slide":1,"text":"PROJECT TECHNICAL SPECIFICATION","textPreview":"PROJECT TECHNICAL SPECIFICATION","textChars":31,"textLines":1,"bbox":[70,95,330,36]}
+{"kind":"textbox","id":"sh/cvq10zep","slide":1,"text":"LIFE\nQUEST","textPreview":"LIFE | QUEST","textChars":10,"textLines":2,"bbox":[70,150,620,190]}
+{"kind":"textbox","id":"sh/xgzi94va","slide":1,"text":"일상을 퀘스트로 만들고\n기록을 성장으로 연결한다","textPreview":"일상을 퀘스트로 만들고 | 기록을 성장으로 연결한다","textChars":26,"textLines":2,"bbox":[74,360,570,92]}
+{"kind":"textbox","id":"sh/dsz6h0vi","slide":1,"text":"Flutter · React · Spring Boot · MySQL · JWT · AI · GPS","textPreview":"Flutter · React · Spring Boot · MySQL · JWT · AI · GPS","textChars":54,"textLines":1,"bbox":[74,500,650,38]}
+{"kind":"textbox","id":"sh/crq58vex","slide":1,"text":"TECHNICAL SPECIFICATION  /  2026","textPreview":"TECHNICAL SPECIFICATION  /  2026","textChars":32,"textLines":1,"bbox":[74,642,560,22]}
+{"kind":"image","id":"im/98jyx8bm","slide":1,"name":"","geometry":"roundRect","alt":"spec-main.png","bbox":[934,88,222,488]}
+{"kind":"image","id":"im/87aho3a1","slide":1,"name":"","geometry":"roundRect","alt":"logo-char.png","bbox":[730,445,155,155]}
+{"kind":"notes","id":"nt/yqkwv5","slide":1,"text":""}
+{"kind":"slide","id":"sl/ifm2rb","slide":2,"title":"TECHNICAL SPECIFICATION","textShapes":16}
+{"kind":"textbox","id":"sh/e9knmdkn","slide":2,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/1cvmxs3e","slide":2,"text":"행동–보상–기록이 이어지는 현실 RPG","textPreview":"행동–보상–기록이 이어지는 현실 RPG","textChars":21,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/gb25on2t","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/3ed4z2l4","slide":2,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/2d4nqxkj","slide":2,"bbox":[66,160,350,176]}
+{"kind":"shape","id":"sh/p0vm1sja","slide":2,"bbox":[66,160,8,176]}
+{"kind":"textbox","id":"sh/ozm5s72p","slide":2,"text":"QUEST","textPreview":"QUEST","textChars":5,"textLines":1,"bbox":[90,174,308,34]}
+{"kind":"textbox","id":"sh/ji94nyl0","slide":2,"text":"일간·주간·지역·그룹","textPreview":"일간·주간·지역·그룹","textChars":11,"textLines":1,"bbox":[90,212,308,112]}
+{"kind":"shape","id":"sh/ih03etkf","slide":2,"bbox":[448,160,350,176]}
+{"kind":"shape","id":"sh/4ruhkzm1","slide":2,"bbox":[448,160,8,176]}
+{"kind":"textbox","id":"sh/ps3yt43m","slide":2,"text":"GROWTH","textPreview":"GROWTH","textChars":6,"textLines":1,"bbox":[472,174,308,34]}
+{"kind":"textbox","id":"sh/25czip4v","slide":2,"text":"EXP·레벨·보상","textPreview":"EXP·레벨·보상","textChars":9,"textLines":1,"bbox":[472,212,308,112]}
+{"kind":"shape","id":"sh/36lgrulg","slide":2,"bbox":[830,160,350,176]}
+{"kind":"shape","id":"sh/cvuhojmx","slide":2,"bbox":[830,160,8,176]}
+{"kind":"textbox","id":"sh/dwnyx43i","slide":2,"text":"COLLECTION","textPreview":"COLLECTION","textChars":10,"textLines":1,"bbox":[854,174,308,34]}
+{"kind":"textbox","id":"sh/qtczm947","slide":2,"text":"업적·칭호·도감","textPreview":"업적·칭호·도감","textChars":8,"textLines":1,"bbox":[854,212,308,112]}
+{"kind":"shape","id":"sh/rulgvels","slide":2,"bbox":[66,370,350,176]}
+{"kind":"shape","id":"sh/szaxcfmt","slide":2,"bbox":[66,370,8,176]}
+{"kind":"textbox","id":"sh/t0jylk3e","slide":2,"text":"SOCIAL","textPreview":"SOCIAL","textChars":6,"textLines":1,"bbox":[90,384,308,34]}
+{"kind":"textbox","id":"sh/9kr6tcbq","slide":2,"text":"친구·그룹·랭킹","textPreview":"친구·그룹·랭킹","textChars":8,"textLines":1,"bbox":[90,422,308,112]}
+{"kind":"shape","id":"sh/oji507al","slide":2,"bbox":[448,370,350,176]}
+{"kind":"shape","id":"sh/ni9or2t0","slide":2,"bbox":[448,370,8,176]}
+{"kind":"textbox","id":"sh/mh0nyxsf","slide":2,"text":"LOCATION","textPreview":"LOCATION","textChars":8,"textLines":1,"bbox":[472,384,308,34]}
+{"kind":"textbox","id":"sh/xob6xwb2","slide":2,"text":"GPS 위치 검증","textPreview":"GPS 위치 검증","textChars":9,"textLines":1,"bbox":[472,422,308,112]}
+{"kind":"shape","id":"sh/wni54rah","slide":2,"bbox":[830,370,350,176]}
+{"kind":"shape","id":"sh/bm9ovmtw","slide":2,"bbox":[830,370,8,176]}
+{"kind":"textbox","id":"sh/al0n2hsb","slide":2,"text":"AI","textPreview":"AI","textChars":2,"textLines":1,"bbox":[854,384,308,34]}
+{"kind":"textbox","id":"sh/lcb61wby","slide":2,"text":"장소·여행 추천","textPreview":"장소·여행 추천","textChars":8,"textLines":1,"bbox":[854,422,308,112]}
+{"kind":"notes","id":"nt/ifm2rb","slide":2,"text":""}
+{"kind":"slide","id":"sl/i8n0ep","slide":3,"title":"TECHNICAL SPECIFICATION","textShapes":16}
+{"kind":"textbox","id":"sh/kbe5wrix","slide":3,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/jq54nm1c","slide":3,"text":"체크리스트를 새로운 경험의 성장 루프로 전환","textPreview":"체크리스트를 새로운 경험의 성장 루프로 전환","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/ypwnuh0r","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/xonmlcj6","slide":3,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/wnuls7il","slide":3,"bbox":[70,170,350,350]}
+{"kind":"shape","id":"sh/bml4jm1g","slide":3,"bbox":[70,170,8,350]}
+{"kind":"textbox","id":"sh/alc3qh0v","slide":3,"text":"기존 방식","textPreview":"기존 방식","textChars":5,"textLines":1,"bbox":[94,184,308,34]}
+{"kind":"textbox","id":"sh/hk7mxgzq","slide":3,"text":"할 일을 직접 등록하고 반복 체크합니다. 완료 이후의 성장감과 새로운 행동 발견이 약합니다.","textPreview":"할 일을 직접 등록하고 반복 체크합니다. 완료 이후의 성장감과 새로운 행동 발견이 약합니다.","textChars":51,"textLines":1,"bbox":[94,222,308,286]}
+{"kind":"textbox","id":"sh/gjy54bi5","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[440,300,70,60]}
+{"kind":"shape","id":"sh/e5c3q5gn","slide":3,"bbox":[530,170,650,350]}
+{"kind":"shape","id":"sh/f6lkzah8","slide":3,"bbox":[530,170,8,350]}
+{"kind":"textbox","id":"sh/g7elsfyt","slide":3,"text":"LifeQuest","textPreview":"LifeQuest","textChars":9,"textLines":1,"bbox":[554,184,608,34]}
+{"kind":"textbox","id":"sh/18n210ze","slide":3,"text":"새로운 장소·활동을 퀘스트로 제안하고, 완료 결과를 EXP·레벨·업적·도감으로 연결합니다.","textPreview":"새로운 장소·활동을 퀘스트로 제안하고, 완료 결과를 EXP·레벨·업적·도감으로 연결합니다.","textChars":50,"textLines":1,"bbox":[554,222,608,286]}
+{"kind":"shape","id":"sh/6hcjml0r","slide":3,"bbox":[70,565,130,48]}
+{"kind":"textbox","id":"sh/rilkvqhc","slide":3,"text":"현실 행동","textPreview":"현실 행동","textChars":5,"textLines":1,"bbox":[78,565,114,48]}
+{"kind":"textbox","id":"sh/sjulovyh","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,565,30,48]}
+{"kind":"shape","id":"sh/t432x0z2","slide":3,"bbox":[230,565,130,48]}
+{"kind":"textbox","id":"sh/qdw3ypgv","slide":3,"text":"퀘스트 완료","textPreview":"퀘스트 완료","textChars":6,"textLines":1,"bbox":[238,565,114,48]}
+{"kind":"textbox","id":"sh/bepk7uhg","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,565,30,48]}
+{"kind":"shape","id":"sh/7ih0zmxs","slide":3,"bbox":[390,565,130,48]}
+{"kind":"textbox","id":"sh/mh8zqhg7","slide":3,"text":"성장","textPreview":"성장","textChars":2,"textLines":1,"bbox":[398,565,114,48]}
+{"kind":"textbox","id":"sh/9kzi1cfy","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[520,565,30,48]}
+{"kind":"shape","id":"sh/8jqhsryd","slide":3,"bbox":[550,565,130,48]}
+{"kind":"textbox","id":"sh/vmh03mx4","slide":3,"text":"수집","textPreview":"수집","textChars":2,"textLines":1,"bbox":[558,565,114,48]}
+{"kind":"notes","id":"nt/i8n0ep","slide":3,"text":""}
+{"kind":"slide","id":"sl/tiqhuv","slide":4,"title":"TECHNICAL SPECIFICATION","textShapes":12}
+{"kind":"textbox","id":"sh/d8ri5wz6","slide":4,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/q50zah0f","slide":4,"text":"프로젝트의 네 가지 개발 원칙","textPreview":"프로젝트의 네 가지 개발 원칙","textChars":16,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/r6903mh0","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/0vi1grix","slide":4,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/1wbi9wz2","slide":4,"bbox":[70,170,540,190]}
+{"kind":"shape","id":"sh/e90je10r","slide":4,"bbox":[70,170,8,190]}
+{"kind":"textbox","id":"sh/fu907mhc","slide":4,"text":"01  직관적 경험","textPreview":"01  직관적 경험","textChars":10,"textLines":1,"bbox":[94,184,498,34]}
+{"kind":"textbox","id":"sh/oz21kbit","slide":4,"text":"설명 없이도 도전→수행→보상을 이해","textPreview":"설명 없이도 도전→수행→보상을 이해","textChars":19,"textLines":1,"bbox":[94,222,498,126]}
+{"kind":"shape","id":"sh/90bidgze","slide":4,"bbox":[640,170,540,190]}
+{"kind":"shape","id":"sh/9of2hc7e","slide":4,"bbox":[640,170,8,190]}
+{"kind":"textbox","id":"sh/8n6187qt","slide":4,"text":"02  기능 간 연결","textPreview":"02  기능 간 연결","textChars":11,"textLines":1,"bbox":[664,184,498,34]}
+{"kind":"textbox","id":"sh/nmxkfmp8","slide":4,"text":"완료 이벤트가 여러 성장 도메인에 반영","textPreview":"완료 이벤트가 여러 성장 도메인에 반영","textChars":21,"textLines":1,"bbox":[664,222,498,126]}
+{"kind":"shape","id":"sh/mloj6h83","slide":4,"bbox":[70,390,540,190]}
+{"kind":"shape","id":"sh/xsz2lw7q","slide":4,"bbox":[70,390,8,190]}
+{"kind":"textbox","id":"sh/wrqlcr65","slide":4,"text":"03  실제 데이터 구조","textPreview":"03  실제 데이터 구조","textChars":13,"textLines":1,"bbox":[94,404,498,34]}
+{"kind":"textbox","id":"sh/vqxkjmpk","slide":4,"text":"UI·API·DB가 같은 규칙으로 동작","textPreview":"UI·API·DB가 같은 규칙으로 동작","textChars":21,"textLines":1,"bbox":[94,442,498,126]}
+{"kind":"shape","id":"sh/apo3ahoz","slide":4,"bbox":[640,390,540,190]}
+{"kind":"shape","id":"sh/dwv29s76","slide":4,"bbox":[640,390,8,190]}
+{"kind":"textbox","id":"sh/cvm10nql","slide":4,"text":"04  확장 가능한 도메인","textPreview":"04  확장 가능한 도메인","textChars":14,"textLines":1,"bbox":[664,404,498,34]}
+{"kind":"textbox","id":"sh/4zqlw7yh","slide":4,"text":"추천·지역·소셜 기능을 독립 확장","textPreview":"추천·지역·소셜 기능을 독립 확장","textChars":18,"textLines":1,"bbox":[664,442,498,126]}
+{"kind":"notes","id":"nt/tiqhuv","slide":4,"text":""}
+{"kind":"slide","id":"sl/ykg97c","slide":5,"title":"TECHNICAL SPECIFICATION","textShapes":26}
+{"kind":"textbox","id":"sh/cb658jy5","slide":5,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/baxofehk","slide":5,"text":"핵심 기능은 하나의 성장 경험을 분담한다","textPreview":"핵심 기능은 하나의 성장 경험을 분담한다","textChars":22,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/q9on69gf","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/lgz6loz2","slide":5,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/0f65cjyh","slide":5,"bbox":[70,190,130,48]}
+{"kind":"textbox","id":"sh/zexojehw","slide":5,"text":"QUEST","textPreview":"QUEST","textChars":5,"textLines":1,"bbox":[78,190,114,48]}
+{"kind":"textbox","id":"sh/ydonatgb","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,190,30,48]}
+{"kind":"shape","id":"sh/94z6p8zy","slide":5,"bbox":[230,190,172,48]}
+{"kind":"textbox","id":"sh/8jq5g3yd","slide":5,"text":"EXP / LEVEL","textPreview":"EXP / LEVEL","textChars":11,"textLines":1,"bbox":[238,190,156,48]}
+{"kind":"textbox","id":"sh/u9wni9kv","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[402,190,30,48]}
+{"kind":"shape","id":"sh/va5obe1g","slide":5,"bbox":[432,190,130,48]}
+{"kind":"textbox","id":"sh/gbe5kj21","slide":5,"text":"REWARD","textPreview":"REWARD","textChars":6,"textLines":1,"bbox":[440,190,114,48]}
+{"kind":"textbox","id":"sh/hcn6d4j6","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[562,190,30,48]}
+{"kind":"shape","id":"sh/idgnm9kr","slide":5,"bbox":[592,190,172,48]}
+{"kind":"textbox","id":"sh/3epofe1c","slide":5,"text":"ACHIEVEMENT","textPreview":"ACHIEVEMENT","textChars":11,"textLines":1,"bbox":[600,190,156,48]}
+{"kind":"textbox","id":"sh/4fypoj2x","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[764,190,30,48]}
+{"kind":"shape","id":"sh/pg76hoji","slide":5,"bbox":[794,190,130,48]}
+{"kind":"textbox","id":"sh/yhcnapkn","slide":5,"text":"LIFEDEX","textPreview":"LIFEDEX","textChars":7,"textLines":1,"bbox":[802,190,114,48]}
+{"kind":"shape","id":"sh/jilo3ul8","slide":5,"bbox":[70,300,130,48]}
+{"kind":"textbox","id":"sh/nm1kbqh0","slide":5,"text":"FRIEND","textPreview":"FRIEND","textChars":6,"textLines":1,"bbox":[78,300,114,48]}
+{"kind":"textbox","id":"sh/ml83il0f","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,300,30,48]}
+{"kind":"shape","id":"sh/9oj2dgz6","slide":5,"bbox":[230,300,130,48]}
+{"kind":"textbox","id":"sh/onalkvil","slide":5,"text":"GROUP","textPreview":"GROUP","textChars":5,"textLines":1,"bbox":[238,300,114,48]}
+{"kind":"textbox","id":"sh/zihk761o","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,300,30,48]}
+{"kind":"shape","id":"sh/eh83e10j","slide":5,"bbox":[390,300,130,48]}
+{"kind":"textbox","id":"sh/1kz29gju","slide":5,"text":"RANKING","textPreview":"RANKING","textChars":7,"textLines":1,"bbox":[398,300,114,48]}
+{"kind":"textbox","id":"sh/0jqlgbi9","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[520,300,30,48]}
+{"kind":"shape","id":"sh/jel4jah8","slide":5,"bbox":[550,300,184,48]}
+{"kind":"textbox","id":"sh/ydc3q50n","slide":5,"text":"NOTIFICATION","textPreview":"NOTIFICATION","textChars":12,"textLines":1,"bbox":[558,300,168,48]}
+{"kind":"shape","id":"sh/gzmhk7y5","slide":5,"bbox":[70,410,184,48]}
+{"kind":"textbox","id":"sh/h0vidczq","slide":5,"text":"AI RECOMMEND","textPreview":"AI RECOMMEND","textChars":12,"textLines":1,"bbox":[78,410,168,48]}
+{"kind":"textbox","id":"sh/ux4zixgz","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[254,410,30,48]}
+{"kind":"shape","id":"sh/fyd0b2hk","slide":5,"bbox":[284,410,160,48]}
+{"kind":"textbox","id":"sh/4n6ho7y1","slide":5,"text":"GPS VERIFY","textPreview":"GPS VERIFY","textChars":10,"textLines":1,"bbox":[292,410,144,48]}
+{"kind":"textbox","id":"sh/pofihcfm","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[444,410,30,48]}
+{"kind":"shape","id":"sh/214zmxgb","slide":5,"bbox":[474,410,130,48]}
+{"kind":"textbox","id":"sh/32d0f2hg","slide":5,"text":"ADMIN","textPreview":"ADMIN","textChars":5,"textLines":1,"bbox":[482,410,114,48]}
+{"kind":"textbox","id":"sh/cr61sryd","slide":5,"text":"사용자 행동을 시작시키는 기능과, 완료 결과를 축적하는 기능을 하나의 서비스 흐름으로 연결했습니다.","textPreview":"사용자 행동을 시작시키는 기능과, 완료 결과를 축적하는 기능을 하나의 서비스 흐름으로 연결했습니다.","textChars":55,"textLines":1,"bbox":[85,540,1110,58]}
+{"kind":"notes","id":"nt/ykg97c","slide":5,"text":""}
+{"kind":"slide","id":"sl/cw2ek1","slide":6,"title":"TECHNICAL SPECIFICATION","textShapes":16}
+{"kind":"textbox","id":"sh/fa1snqx4","slide":6,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/gbatgvyp","slide":6,"text":"앱과 관리자 웹은 하나의 도메인 규칙을 공유한다","textPreview":"앱과 관리자 웹은 하나의 도메인 규칙을 공유한다","textChars":26,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/1cjap0fu","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/2dsbi5gf","slide":6,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"textbox","id":"sh/3e1srqx0","slide":6,"text":"CLIENT","textPreview":"CLIENT","textChars":6,"textLines":1,"bbox":[80,160,200,28]}
+{"kind":"shape","id":"sh/ofatkvyl","slide":6,"bbox":[80,198,270,160]}
+{"kind":"shape","id":"sh/pg3at0f6","slide":6,"bbox":[80,198,8,160]}
+{"kind":"textbox","id":"sh/qhcbm5gr","slide":6,"text":"Flutter App","textPreview":"Flutter App","textChars":11,"textLines":1,"bbox":[104,212,228,34]}
+{"kind":"textbox","id":"sh/bilcvaxc","slide":6,"text":"Riverpod · GoRouter\n사용자 행동과 상태 표현","textPreview":"Riverpod · GoRouter | 사용자 행동과 상태 표현","textChars":33,"textLines":2,"bbox":[104,250,228,96]}
+{"kind":"shape","id":"sh/b21srm9k","slide":6,"bbox":[80,380,270,140]}
+{"kind":"shape","id":"sh/q18rihsf","slide":6,"bbox":[80,380,8,140]}
+{"kind":"textbox","id":"sh/d4jatwrq","slide":6,"text":"React Admin","textPreview":"React Admin","textChars":11,"textLines":1,"bbox":[104,394,228,34]}
+{"kind":"textbox","id":"sh/c3a9kra5","slide":6,"text":"운영 데이터와 카탈로그 관리","textPreview":"운영 데이터와 카탈로그 관리","textChars":15,"textLines":1,"bbox":[104,432,228,76]}
+{"kind":"textbox","id":"sh/3ehsn29o","slide":6,"text":"→  REST / JSON  →","textPreview":"→  REST / JSON  →","textChars":17,"textLines":1,"bbox":[378,302,220,44]}
+{"kind":"shape","id":"sh/2d8rehs3","slide":6,"bbox":[620,190,290,340]}
+{"kind":"shape","id":"sh/p0zapcru","slide":6,"bbox":[620,190,8,340]}
+{"kind":"textbox","id":"sh/ofq9g7a9","slide":6,"text":"Spring Boot","textPreview":"Spring Boot","textChars":11,"textLines":1,"bbox":[644,204,248,34]}
+{"kind":"textbox","id":"sh/nalsz69s","slide":6,"text":"Controller\nSpring Security / JWT\nDomain Service\nRepository / JPA","textPreview":"Controller | Spring Security / JWT | Domain Service | Repository / JPA","textChars":64,"textLines":4,"bbox":[644,242,248,276]}
+{"kind":"textbox","id":"sh/m9crq1s7","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[928,302,55,44]}
+{"kind":"shape","id":"sh/i1g3e9gr","slide":6,"bbox":[1000,228,210,190]}
+{"kind":"shape","id":"sh/j2p47uxc","slide":6,"bbox":[1000,228,8,190]}
+{"kind":"textbox","id":"sh/43ylgzyx","slide":6,"text":"MySQL","textPreview":"MySQL","textChars":5,"textLines":1,"bbox":[1024,242,168,34]}
+{"kind":"textbox","id":"sh/547m94fi","slide":6,"text":"Flyway migration\n관계형 도메인 데이터","textPreview":"Flyway migration | 관계형 도메인 데이터","textChars":28,"textLines":2,"bbox":[1024,280,168,126]}
+{"kind":"textbox","id":"sh/65g3i9g3","slide":6,"text":"요청 흐름  |  Flutter → REST API → Security → Service → JPA → MySQL → DTO → 화면 상태","textPreview":"요청 흐름  |  Flutter → REST API → Security → Service → JPA → MySQL → DTO → 화면 상태","textChars":77,"textLines":1,"bbox":[80,570,1130,52]}
+{"kind":"notes","id":"nt/cw2ek1","slide":6,"text":""}
+{"kind":"slide","id":"sl/tpvfvq","slide":7,"title":"TECHNICAL SPECIFICATION","textShapes":16}
+{"kind":"textbox","id":"sh/9onehcbi","slide":7,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/mlwfmxcr","slide":7,"text":"사용자를 중심으로 퀘스트·성장·소셜 데이터가 연결된다","textPreview":"사용자를 중심으로 퀘스트·성장·소셜 데이터가 연결된다","textChars":29,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/nm5wf2tc","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/0zuxknu1","slide":7,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/1knedsb6","slide":7,"bbox":[70,160,350,175]}
+{"kind":"shape","id":"sh/excfidcv","slide":7,"bbox":[70,160,8,175]}
+{"kind":"textbox","id":"sh/zylwbitg","slide":7,"text":"USER","textPreview":"USER","textChars":4,"textLines":1,"bbox":[94,174,308,34]}
+{"kind":"textbox","id":"sh/cvuxgnup","slide":7,"text":"User · Character · SocialAccount","textPreview":"User · Character · SocialAccount","textChars":32,"textLines":1,"bbox":[94,212,308,111]}
+{"kind":"shape","id":"sh/dw3e9sba","slide":7,"bbox":[450,160,350,175]}
+{"kind":"shape","id":"sh/dkry1gr6","slide":7,"bbox":[450,160,8,175]}
+{"kind":"textbox","id":"sh/cjih8bal","slide":7,"text":"QUEST","textPreview":"QUEST","textChars":5,"textLines":1,"bbox":[474,174,308,34]}
+{"kind":"textbox","id":"sh/bi9gz690","slide":7,"text":"Quest · UserQuest · QuestProof","textPreview":"Quest · UserQuest · QuestProof","textChars":30,"textLines":1,"bbox":[474,212,308,111]}
+{"kind":"shape","id":"sh/qx0z61sf","slide":7,"bbox":[830,160,350,175]}
+{"kind":"shape","id":"sh/pwrydwra","slide":7,"bbox":[830,160,8,175]}
+{"kind":"textbox","id":"sh/ovih4rap","slide":7,"text":"GROWTH","textPreview":"GROWTH","textChars":6,"textLines":1,"bbox":[854,174,308,34]}
+{"kind":"textbox","id":"sh/3u9gbm94","slide":7,"text":"ExpLog · LevelReward · RewardGrant","textPreview":"ExpLog · LevelReward · RewardGrant","textChars":34,"textLines":1,"bbox":[854,212,308,111]}
+{"kind":"shape","id":"sh/2tgz2hsj","slide":7,"bbox":[70,365,350,175]}
+{"kind":"shape","id":"sh/1s7y9wry","slide":7,"bbox":[70,365,8,175]}
+{"kind":"textbox","id":"sh/gryx0rad","slide":7,"text":"COLLECTION","textPreview":"COLLECTION","textChars":10,"textLines":1,"bbox":[94,379,308,34]}
+{"kind":"textbox","id":"sh/sb2hgri9","slide":7,"text":"Achievement · Title · Lifedex","textPreview":"Achievement · Title · Lifedex","textChars":29,"textLines":1,"bbox":[94,417,308,111]}
+{"kind":"shape","id":"sh/tcbypwzu","slide":7,"bbox":[450,365,350,175]}
+{"kind":"shape","id":"sh/69kzeh03","slide":7,"bbox":[450,365,8,175]}
+{"kind":"textbox","id":"sh/7atgnmho","slide":7,"text":"SOCIAL","textPreview":"SOCIAL","textChars":6,"textLines":1,"bbox":[474,379,308,34]}
+{"kind":"textbox","id":"sh/k72hc7id","slide":7,"text":"Friendship · Group · GroupQuest","textPreview":"Friendship · Group · GroupQuest","textChars":31,"textLines":1,"bbox":[474,417,308,111]}
+{"kind":"shape","id":"sh/58bylczy","slide":7,"bbox":[830,365,350,175]}
+{"kind":"shape","id":"sh/i50zah07","slide":7,"bbox":[830,365,8,175]}
+{"kind":"textbox","id":"sh/j69gjmhs","slide":7,"text":"SYSTEM","textPreview":"SYSTEM","textChars":6,"textLines":1,"bbox":[854,379,308,34]}
+{"kind":"textbox","id":"sh/43mhobih","slide":7,"text":"Notification · Region · Location","textPreview":"Notification · Region · Location","textChars":32,"textLines":1,"bbox":[854,417,308,111]}
+{"kind":"notes","id":"nt/tpvfvq","slide":7,"text":""}
+{"kind":"slide","id":"sl/ala01k","slide":8,"title":"USER JOURNEY · HOME","textShapes":9}
+{"kind":"textbox","id":"sh/qlczel8b","slide":8,"text":"USER JOURNEY · HOME","textPreview":"USER JOURNEY · HOME","textChars":19,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/donip072","slide":8,"text":"홈은 오늘의 퀘스트와 성장 상태를 한 화면에 모은다","textPreview":"홈은 오늘의 퀘스트와 성장 상태를 한 화면에 모은다","textChars":28,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/cnuhgvqh","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/3il0j6p0","slide":8,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/2hcza18f","slide":8,"bbox":[72,135,244.19,520]}
+{"kind":"shape","id":"sh/pk3ilg7q","slide":8,"bbox":[78,141,232.19,508]}
+{"kind":"textbox","id":"sh/fu10f6po","slide":8,"text":"화면 목적","textPreview":"화면 목적","textChars":5,"textLines":1,"bbox":[390,165,760,30]}
+{"kind":"textbox","id":"sh/utsz6183","slide":8,"text":"• 접속 직후 현재 레벨과 오늘의 행동 확인\n• 퀘스트 상세·알림·하단 메뉴로 빠르게 이동","textPreview":"• 접속 직후 현재 레벨과 오늘의 행동 확인 | • 퀘스트 상세·알림·하단 메뉴로 빠르게 이동","textChars":50,"textLines":2,"bbox":[390,203,760,70]}
+{"kind":"textbox","id":"sh/gv6ps3ax","slide":8,"text":"데이터 처리","textPreview":"데이터 처리","textChars":6,"textLines":1,"bbox":[390,315,760,30]}
+{"kind":"textbox","id":"sh/1wfq18bi","slide":8,"text":"• 홈 조회 API가 사용자 성장과 할당 퀘스트를 반환\n• Riverpod 상태 갱신 후 EXP·퀘스트 목록을 동시 반영","textPreview":"• 홈 조회 API가 사용자 성장과 할당 퀘스트를 반환 | • Riverpod 상태 갱신 후 EXP·퀘스트 목록을 동시 반영","textChars":67,"textLines":2,"bbox":[390,353,760,70]}
+{"kind":"shape","id":"sh/uto7qtsr","slide":8,"bbox":[390,535,560,36]}
+{"kind":"textbox","id":"sh/fux8zytc","slide":8,"text":"행동 → API 요청 → 상태 저장 → UI 반영","textPreview":"행동 → API 요청 → 상태 저장 → UI 반영","textChars":27,"textLines":1,"bbox":[390,535,560,36]}
+{"kind":"image","id":"im/1wvq5cjq","slide":8,"name":"","geometry":"roundRect","alt":"spec-main.png","bbox":[82,145,224.19,500]}
+{"kind":"notes","id":"nt/ala01k","slide":8,"text":""}
+{"kind":"slide","id":"sl/hc86hi","slide":9,"title":"USER JOURNEY · DISCOVER","textShapes":8}
+{"kind":"textbox","id":"sh/uh0ziton","slide":9,"text":"USER JOURNEY · DISCOVER","textPreview":"USER JOURNEY · DISCOVER","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/hkbitony","slide":9,"text":"퀘스트 탐색과 AI 추천을 한 여정으로 통합","textPreview":"퀘스트 탐색과 AI 추천을 한 여정으로 통합","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/gj21k36d","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/7e90nepw","slide":9,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/6d0ze9ob","slide":9,"bbox":[45,160,212.81,450]}
+{"kind":"shape","id":"sh/tgripon2","slide":9,"bbox":[51,166,200.81,438]}
+{"kind":"shape","id":"sh/rad0zi50","slide":9,"bbox":[350,160,212.81,450]}
+{"kind":"shape","id":"sh/q9kjqdof","slide":9,"bbox":[356,166,200.81,438]}
+{"kind":"shape","id":"sh/10z25kbi","slide":9,"bbox":[655,160,212.81,450]}
+{"kind":"shape","id":"sh/ex83a5sr","slide":9,"bbox":[661,166,200.81,438]}
+{"kind":"textbox","id":"sh/svql8ful","slide":9,"text":"통합 범위","textPreview":"통합 범위","textChars":5,"textLines":1,"bbox":[970,185,250,30]}
+{"kind":"textbox","id":"sh/dwz210b6","slide":9,"text":"• 일간·주간 목록\n• AI 장소/여행 추천\n• 선택 후 상세 이동","textPreview":"• 일간·주간 목록 | • AI 장소/여행 추천 | • 선택 후 상세 이동","textChars":37,"textLines":3,"bbox":[970,223,250,100]}
+{"kind":"textbox","id":"sh/qto365cv","slide":9,"text":"Quest API\n+ Recommendation API\n+ UserQuest 상태","textPreview":"Quest API | + Recommendation API | + UserQuest 상태","textChars":45,"textLines":3,"bbox":[970,365,250,110]}
+{"kind":"shape","id":"sh/ruxkzat0","slide":9,"bbox":[970,520,230,36]}
+{"kind":"textbox","id":"sh/47614vup","slide":9,"text":"발견 → 선택 → 등록","textPreview":"발견 → 선택 → 등록","textChars":12,"textLines":1,"bbox":[970,520,230,36]}
+{"kind":"image","id":"im/94bqdwra","slide":9,"name":"","geometry":"roundRect","alt":"spec-quests.png","bbox":[55,170,192.81,430]}
+{"kind":"image","id":"im/ve9kju90","slide":9,"name":"","geometry":"roundRect","alt":"spec-quest-list-week.png","bbox":[360,170,192.81,430]}
+{"kind":"image","id":"im/gfilszal","slide":9,"name":"","geometry":"roundRect","alt":"spec-recommend.png","bbox":[665,170,192.81,430]}
+{"kind":"notes","id":"nt/hc86hi","slide":9,"text":""}
+{"kind":"slide","id":"sl/8hps9o","slide":10,"title":"USER JOURNEY · COMPLETE","textShapes":8}
+{"kind":"textbox","id":"sh/x8bu107q","slide":10,"text":"USER JOURNEY · COMPLETE","textPreview":"USER JOURNEY · COMPLETE","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/a5kbq5of","slide":10,"text":"완료 이벤트가 보상과 레벨업을 연쇄 처리한다","textPreview":"완료 이벤트가 보상과 레벨업을 연쇄 처리한다","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/v6tczapk","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/kvmdwf6h","slide":10,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/5wvu5k72","slide":10,"bbox":[100,145,232.98,495]}
+{"kind":"shape","id":"sh/i9kvu5ob","slide":10,"bbox":[106,151,220.98,483]}
+{"kind":"shape","id":"sh/szmd0z6d","slide":10,"bbox":[440,145,232.98,495]}
+{"kind":"shape","id":"sh/t0vu9kny","slide":10,"bbox":[446,151,220.98,483]}
+{"kind":"textbox","id":"sh/cvehk7ah","slide":10,"text":"처리 순서","textPreview":"처리 순서","textChars":5,"textLines":1,"bbox":[810,170,380,30]}
+{"kind":"textbox","id":"sh/bu50r2tc","slide":10,"text":"• 완료 조건 검증\n• UserQuest 상태 변경\n• EXP 기록 및 레벨 계산\n• 보상·업적·도감 평가\n• 최종 결과 DTO 반환","textPreview":"• 완료 조건 검증 | • UserQuest 상태 변경 | • EXP 기록 및 레벨 계산 | • 보상·업적·도감 평가 | • 최종 결과 DTO 반환","textChars":74,"textLines":5,"bbox":[810,208,380,160]}
+{"kind":"shape","id":"sh/qtczixsr","slide":10,"bbox":[810,500,220,36]}
+{"kind":"textbox","id":"sh/lknixcbe","slide":10,"text":"단일 트랜잭션","textPreview":"단일 트랜잭션","textChars":7,"textLines":1,"bbox":[810,500,220,36]}
+{"kind":"textbox","id":"sh/0jeho7at","slide":10,"text":"중복 요청에도 보상은 한 번만 지급","textPreview":"중복 요청에도 보상은 한 번만 지급","textChars":19,"textLines":1,"bbox":[810,550,380,40]}
+{"kind":"image","id":"im/i1gjy90v","slide":10,"name":"","geometry":"roundRect","alt":"spec-quest-completed.png","bbox":[110,155,212.98,475]}
+{"kind":"image","id":"im/y5snep4z","slide":10,"name":"","geometry":"roundRect","alt":"spec-levelup-popup.png","bbox":[450,155,212.98,475]}
+{"kind":"notes","id":"nt/8hps9o","slide":10,"text":""}
+{"kind":"slide","id":"sl/1ge11e","slide":11,"title":"USER JOURNEY · GROWTH","textShapes":7}
+{"kind":"textbox","id":"sh/e5gzy5kj","slide":11,"text":"USER JOURNEY · GROWTH","textPreview":"USER JOURNEY · GROWTH","textChars":21,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/1s7ytk3u","slide":11,"text":"업적·도감·캐릭터가 성장의 결과를 시각화한다","textPreview":"업적·도감·캐릭터가 성장의 결과를 시각화한다","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/0ryh0f29","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/nupgval0","slide":11,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/mtgz25kf","slide":11,"bbox":[35,165,208.32,440]}
+{"kind":"shape","id":"sh/9wryxk36","slide":11,"bbox":[41,171,196.32,428]}
+{"kind":"shape","id":"sh/3y5gjqlw","slide":11,"bbox":[330,165,208.32,440]}
+{"kind":"shape","id":"sh/2xwfqlkb","slide":11,"bbox":[336,171,196.32,428]}
+{"kind":"shape","id":"sh/x0nu1c3e","slide":11,"bbox":[625,165,208.32,440]}
+{"kind":"shape","id":"sh/axcvqx43","slide":11,"bbox":[631,171,196.32,428]}
+{"kind":"textbox","id":"sh/k3edw7m5","slide":11,"text":"연결 데이터","textPreview":"연결 데이터","textChars":6,"textLines":1,"bbox":[930,190,275,30]}
+{"kind":"textbox","id":"sh/54ne5c3q","slide":11,"text":"• Achievement 진행률\n• UserLifedex 수집률\n• Character / Accessory\n• 대표 칭호","textPreview":"• Achievement 진행률 | • UserLifedex 수집률 | • Character / Accessory | • 대표 칭호","textChars":67,"textLines":4,"bbox":[930,228,275,130]}
+{"kind":"textbox","id":"sh/i1wvuh4z","slide":11,"text":"퀘스트 완료 결과가\n“숫자”에서\n“소유한 경험”으로 바뀝니다.","textPreview":"퀘스트 완료 결과가 | “숫자”에서 | “소유한 경험”으로 바뀝니다.","textChars":34,"textLines":3,"bbox":[930,400,275,120]}
+{"kind":"image","id":"im/5wrixove","slide":11,"name":"","geometry":"roundRect","alt":"spec-achievements.png","bbox":[45,175,188.32,420]}
+{"kind":"image","id":"im/bmtwze58","slide":11,"name":"","geometry":"roundRect","alt":"spec-dogam.png","bbox":[340,175,188.32,420]}
+{"kind":"image","id":"im/cn2xsjmt","slide":11,"name":"","geometry":"roundRect","alt":"spec-ch.png","bbox":[635,175,188.32,420]}
+{"kind":"notes","id":"nt/1ge11e","slide":11,"text":""}
+{"kind":"slide","id":"sl/y45iim","slide":12,"title":"USER JOURNEY · SOCIAL","textShapes":11}
+{"kind":"textbox","id":"sh/x0ryh07y","slide":12,"text":"USER JOURNEY · SOCIAL","textPreview":"USER JOURNEY · SOCIAL","textChars":21,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/ax0zm58n","slide":12,"text":"친구와 그룹은 개인 퀘스트를 공동 경험으로 확장한다","textPreview":"친구와 그룹은 개인 퀘스트를 공동 경험으로 확장한다","textChars":28,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/by9gfaps","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/ovyxkvqh","slide":12,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/pw7yd072","slide":12,"bbox":[80,155,230.74,490]}
+{"kind":"shape","id":"sh/2tgfil8b","slide":12,"bbox":[86,161,218.74,478]}
+{"kind":"shape","id":"sh/8r2hwz6l","slide":12,"bbox":[415,155,230.74,490]}
+{"kind":"shape","id":"sh/9sbypk76","slide":12,"bbox":[421,161,218.74,478]}
+{"kind":"textbox","id":"sh/ofulsfal","slide":12,"text":"주요 기능","textPreview":"주요 기능","textChars":5,"textLines":1,"bbox":[790,180,400,30]}
+{"kind":"textbox","id":"sh/nelkza90","slide":12,"text":"• 친구 요청·EXP 랭킹\n• 그룹 퀘스트 참여\n• 진행 상태와 공동 보상\n• 소유권·멤버 권한 검증","textPreview":"• 친구 요청·EXP 랭킹 | • 그룹 퀘스트 참여 | • 진행 상태와 공동 보상 | • 소유권·멤버 권한 검증","textChars":56,"textLines":4,"bbox":[790,218,400,130]}
+{"kind":"shape","id":"sh/mdcjq5sf","slide":12,"bbox":[70,525,130,48]}
+{"kind":"textbox","id":"sh/1c32x0ru","slide":12,"text":"친구 발견","textPreview":"친구 발견","textChars":5,"textLines":1,"bbox":[78,525,114,48]}
+{"kind":"textbox","id":"sh/0ba1ovap","slide":12,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,525,30,48]}
+{"kind":"shape","id":"sh/za1kvq94","slide":12,"bbox":[230,525,130,48]}
+{"kind":"textbox","id":"sh/e9sjm5sj","slide":12,"text":"그룹 참여","textPreview":"그룹 참여","textChars":5,"textLines":1,"bbox":[238,525,114,48]}
+{"kind":"textbox","id":"sh/l8n294re","slide":12,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,525,30,48]}
+{"kind":"shape","id":"sh/k7el0zat","slide":12,"bbox":[390,525,130,48]}
+{"kind":"textbox","id":"sh/4bm5c3i5","slide":12,"text":"공동 완료","textPreview":"공동 완료","textChars":5,"textLines":1,"bbox":[398,525,114,48]}
+{"kind":"image","id":"im/i5kzitsb","slide":12,"name":"","geometry":"roundRect","alt":"spec-friends.png","bbox":[90,165,210.74,470]}
+{"kind":"image","id":"im/290r6pob","slide":12,"name":"","geometry":"roundRect","alt":"spec-group.png","bbox":[425,165,210.74,470]}
+{"kind":"notes","id":"nt/y45iim","slide":12,"text":""}
+{"kind":"slide","id":"sl/6pp3za","slide":13,"title":"USER JOURNEY · PROFILE","textShapes":9}
+{"kind":"textbox","id":"sh/sny1876t","slide":13,"text":"USER JOURNEY · PROFILE","textPreview":"USER JOURNEY · PROFILE","textChars":22,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/rm5kz258","slide":13,"text":"마이페이지는 성장 기록과 개인 설정의 허브다","textPreview":"마이페이지는 성장 기록과 개인 설정의 허브다","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/6lwj6xon","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/1s725cna","slide":13,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/gry1c76p","slide":13,"bbox":[100,140,244.19,520]}
+{"kind":"shape","id":"sh/fqpk3254","slide":13,"bbox":[106,146,232.19,508]}
+{"kind":"textbox","id":"sh/hwnit8n6","slide":13,"text":"표현 정보","textPreview":"표현 정보","textChars":5,"textLines":1,"bbox":[470,165,700,30]}
+{"kind":"textbox","id":"sh/wve10n6l","slide":13,"text":"• 캐릭터·액세서리·대표 칭호\n• 레벨·EXP·완료 퀘스트\n• 업적·도감·친구","textPreview":"• 캐릭터·액세서리·대표 칭호 | • 레벨·EXP·완료 퀘스트 | • 업적·도감·친구","textChars":43,"textLines":3,"bbox":[470,203,700,100]}
+{"kind":"textbox","id":"sh/it8vixkv","slide":13,"text":"갱신 원칙","textPreview":"갱신 원칙","textChars":5,"textLines":1,"bbox":[470,360,700,30]}
+{"kind":"textbox","id":"sh/3uhwb21g","slide":13,"text":"• 프로필 PATCH 후 사용자 상태 캐시 무효화\n• 친구·그룹·랭킹 화면에 동일 정보 재반영","textPreview":"• 프로필 PATCH 후 사용자 상태 캐시 무효화 | • 친구·그룹·랭킹 화면에 동일 정보 재반영","textChars":52,"textLines":2,"bbox":[470,398,700,70]}
+{"kind":"shape","id":"sh/4vqdk721","slide":13,"bbox":[470,535,420,36]}
+{"kind":"textbox","id":"sh/5wzedcj6","slide":13,"text":"Single Source of Profile State","textPreview":"Single Source of Profile State","textChars":30,"textLines":1,"bbox":[470,535,420,36]}
+{"kind":"image","id":"im/76p47a1o","slide":13,"name":"","geometry":"roundRect","alt":"spec-mypage.png","bbox":[110,150,224.19,500]}
+{"kind":"notes","id":"nt/6pp3za","slide":13,"text":""}
+{"kind":"slide","id":"sl/6cobwe","slide":14,"title":"ADMIN CONSOLE","textShapes":5}
+{"kind":"textbox","id":"sh/8j258ni5","slide":14,"text":"ADMIN CONSOLE","textPreview":"ADMIN CONSOLE","textChars":13,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/7itofihk","slide":14,"text":"관리자 웹은 운영 현황과 콘텐츠 변경을 담당한다","textPreview":"관리자 웹은 운영 현황과 콘텐츠 변경을 담당한다","textChars":26,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/mhkn6d0z","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/hov6lszm","slide":14,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/wnm5cni1","slide":14,"bbox":[70,155,1140,395]}
+{"kind":"textbox","id":"sh/ul4nax0b","slide":14,"text":"Admin Web → REST API → Admin Service → Database → User App 재조회","textPreview":"Admin Web → REST API → Admin Service → Database → User App 재조회","textChars":62,"textLines":1,"bbox":[90,580,1100,42]}
+{"kind":"image","id":"im/mhsnyxcb","slide":14,"name":"","geometry":"roundRect","alt":"spec-admin.png","bbox":[78,163,1124,379]}
+{"kind":"notes","id":"nt/6cobwe","slide":14,"text":""}
+{"kind":"slide","id":"sl/fdosa3","slide":15,"title":"TECHNICAL SPECIFICATION","textShapes":16}
+{"kind":"textbox","id":"sh/a18z6hon","slide":15,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/x4zi1c7e","slide":15,"text":"화면과 서버는 역할을 분리해 변경 영향을 줄인다","textPreview":"화면과 서버는 역할을 분리해 변경 영향을 줄인다","textChars":26,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/w3qh876t","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/nyh0v2pc","slide":15,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/mxoz2xor","slide":15,"bbox":[70,160,350,175]}
+{"kind":"shape","id":"sh/90zixc72","slide":15,"bbox":[70,160,8,175]}
+{"kind":"textbox","id":"sh/ozqh476x","slide":15,"text":"Presentation","textPreview":"Presentation","textChars":12,"textLines":1,"bbox":[94,174,308,34]}
+{"kind":"textbox","id":"sh/7u107mpg","slide":15,"text":"화면과 사용자 이벤트","textPreview":"화면과 사용자 이벤트","textChars":11,"textLines":1,"bbox":[94,212,308,111]}
+{"kind":"shape","id":"sh/6tsze1ov","slide":15,"bbox":[450,160,350,175]}
+{"kind":"shape","id":"sh/wjahcjep","slide":15,"bbox":[450,160,8,175]}
+{"kind":"textbox","id":"sh/xkji5ofa","slide":15,"text":"Application State","textPreview":"Application State","textChars":17,"textLines":1,"bbox":[474,174,308,34]}
+{"kind":"textbox","id":"sh/ah8zatwz","slide":15,"text":"Riverpod provider / controller","textPreview":"Riverpod provider / controller","textChars":30,"textLines":1,"bbox":[474,212,308,111]}
+{"kind":"shape","id":"sh/bi103exk","slide":15,"bbox":[830,160,350,175]}
+{"kind":"shape","id":"sh/ofqh8jet","slide":15,"bbox":[830,160,8,175]}
+{"kind":"textbox","id":"sh/9gzi1ofe","slide":15,"text":"API Client","textPreview":"API Client","textChars":10,"textLines":1,"bbox":[854,174,308,34]}
+{"kind":"textbox","id":"sh/md8z69wn","slide":15,"text":"DTO 직렬화·토큰 전달","textPreview":"DTO 직렬화·토큰 전달","textChars":13,"textLines":1,"bbox":[854,212,308,111]}
+{"kind":"shape","id":"sh/neh0zex8","slide":15,"bbox":[70,365,350,175]}
+{"kind":"shape","id":"sh/0rqh4zex","slide":15,"bbox":[70,365,8,175]}
+{"kind":"textbox","id":"sh/1czyx4f2","slide":15,"text":"Controller","textPreview":"Controller","textChars":10,"textLines":1,"bbox":[94,379,308,34]}
+{"kind":"textbox","id":"sh/h8ry1076","slide":15,"text":"요청 검증·응답 경계","textPreview":"요청 검증·응답 경계","textChars":11,"textLines":1,"bbox":[94,417,308,111]}
+{"kind":"shape","id":"sh/g7ix8v6l","slide":15,"bbox":[450,365,350,175]}
+{"kind":"shape","id":"sh/f69wzqp0","slide":15,"bbox":[450,365,8,175]}
+{"kind":"textbox","id":"sh/u5gf6lof","slide":15,"text":"Domain Service","textPreview":"Domain Service","textChars":14,"textLines":1,"bbox":[474,379,308,34]}
+{"kind":"textbox","id":"sh/tk7exg7u","slide":15,"text":"완료·성장·권한 규칙","textPreview":"완료·성장·권한 규칙","textChars":11,"textLines":1,"bbox":[474,417,308,111]}
+{"kind":"shape","id":"sh/sjyx4b69","slide":15,"bbox":[830,365,350,175]}
+{"kind":"shape","id":"sh/7ipwvqp4","slide":15,"bbox":[830,365,8,175]}
+{"kind":"textbox","id":"sh/6hgf2l8j","slide":15,"text":"Repository","textPreview":"Repository","textChars":10,"textLines":1,"bbox":[854,379,308,34]}
+{"kind":"textbox","id":"sh/dgby9k7e","slide":15,"text":"JPA 영속성","textPreview":"JPA 영속성","textChars":7,"textLines":1,"bbox":[854,417,308,111]}
+{"kind":"notes","id":"nt/fdosa3","slide":15,"text":""}
+{"kind":"slide","id":"sl/1mvv7j","slide":16,"title":"TECHNICAL SPECIFICATION","textShapes":26}
+{"kind":"textbox","id":"sh/r6xkzylo","slide":16,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/c76l83m9","slide":16,"text":"퀘스트 완료는 처리 순서와 트랜잭션이 핵심이다","textPreview":"퀘스트 완료는 처리 순서와 트랜잭션이 핵심이다","textChars":25,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/dsfm183u","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/21432t47","slide":16,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/32dkvyls","slide":16,"bbox":[70,190,160,48]}
+{"kind":"textbox","id":"sh/43ml4jmd","slide":16,"text":"사용자·퀘스트 확인","textPreview":"사용자·퀘스트 확인","textChars":10,"textLines":1,"bbox":[78,190,144,48]}
+{"kind":"textbox","id":"sh/p4f2xo3i","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[230,190,30,48]}
+{"kind":"shape","id":"sh/mx83edkb","slide":16,"bbox":[260,190,130,48]}
+{"kind":"textbox","id":"sh/nyh47ilw","slide":16,"text":"조건 검증","textPreview":"조건 검증","textChars":5,"textLines":1,"bbox":[268,190,114,48]}
+{"kind":"textbox","id":"sh/b6xobmto","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[390,190,30,48]}
+{"kind":"shape","id":"sh/a547ihc3","slide":16,"bbox":[420,190,184,48]}
+{"kind":"textbox","id":"sh/x8f6dwbu","slide":16,"text":"UserQuest 완료","textPreview":"UserQuest 완료","textChars":12,"textLines":1,"bbox":[428,190,168,48]}
+{"kind":"textbox","id":"sh/c76pkru9","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[604,190,30,48]}
+{"kind":"shape","id":"sh/zaxofmt0","slide":16,"bbox":[634,190,130,48]}
+{"kind":"textbox","id":"sh/y9o7mhcf","slide":16,"text":"EXP 기록","textPreview":"EXP 기록","textChars":6,"textLines":1,"bbox":[642,190,114,48]}
+{"kind":"shape","id":"sh/lcf6hwbq","slide":16,"bbox":[70,310,130,48]}
+{"kind":"textbox","id":"sh/kb6poru5","slide":16,"text":"레벨 계산","textPreview":"레벨 계산","textChars":5,"textLines":1,"bbox":[78,310,114,48]}
+{"kind":"textbox","id":"sh/7yhoj6tw","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,310,30,48]}
+{"kind":"shape","id":"sh/mxo7q1cb","slide":16,"bbox":[230,310,130,48]}
+{"kind":"textbox","id":"sh/25cjyp0v","slide":16,"text":"보상 지급","textPreview":"보상 지급","textChars":5,"textLines":1,"bbox":[238,310,114,48]}
+{"kind":"textbox","id":"sh/36l07uhg","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,310,30,48]}
+{"kind":"shape","id":"sh/47u10zi1","slide":16,"bbox":[390,310,130,48]}
+{"kind":"textbox","id":"sh/p83i94z6","slide":16,"text":"업적 평가","textPreview":"업적 평가","textChars":5,"textLines":1,"bbox":[398,310,114,48]}
+{"kind":"textbox","id":"sh/uhszup0j","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[520,310,30,48]}
+{"kind":"shape","id":"sh/f2103uh4","slide":16,"bbox":[550,310,130,48]}
+{"kind":"textbox","id":"sh/g3u1wzip","slide":16,"text":"도감 갱신","textPreview":"도감 갱신","textChars":5,"textLines":1,"bbox":[558,310,114,48]}
+{"kind":"shape","id":"sh/h43i54za","slide":16,"bbox":[70,430,210,48]}
+{"kind":"textbox","id":"sh/edwj6903","slide":16,"text":"GrowthResult 조합","textPreview":"GrowthResult 조합","textChars":15,"textLines":1,"bbox":[78,430,194,48]}
+{"kind":"textbox","id":"sh/zy50feho","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[280,430,30,48]}
+{"kind":"shape","id":"sh/9s7m58jq","slide":16,"bbox":[310,430,130,48]}
+{"kind":"textbox","id":"sh/o7ylcn25","slide":16,"text":"DTO 반환","textPreview":"DTO 반환","textChars":6,"textLines":1,"bbox":[318,430,114,48]}
+{"kind":"textbox","id":"sh/n6p43i1k","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[440,430,30,48]}
+{"kind":"shape","id":"sh/m5g3adkz","slide":16,"bbox":[470,430,172,48]}
+{"kind":"textbox","id":"sh/147218je","slide":16,"text":"Provider 갱신","textPreview":"Provider 갱신","textChars":11,"textLines":1,"bbox":[478,430,156,48]}
+{"kind":"textbox","id":"sh/03yl8329","slide":16,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[642,430,30,48]}
+{"kind":"shape","id":"sh/z2pkzy1o","slide":16,"bbox":[672,430,130,48]}
+{"kind":"textbox","id":"sh/e1w36tk3","slide":16,"text":"결과 화면","textPreview":"결과 화면","textChars":5,"textLines":1,"bbox":[680,430,114,48]}
+{"kind":"textbox","id":"sh/l0rmdcjy","slide":16,"text":"부분 성공을 허용하지 않는 하나의 완료 단위","textPreview":"부분 성공을 허용하지 않는 하나의 완료 단위","textChars":24,"textLines":1,"bbox":[160,560,960,50]}
+{"kind":"notes","id":"nt/1mvv7j","slide":16,"text":""}
+{"kind":"slide","id":"sl/i55pq6","slide":17,"title":"TECHNICAL SPECIFICATION","textShapes":24}
+{"kind":"textbox","id":"sh/mx4zup47","slide":17,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/90vi5k3y","slide":17,"text":"JWT와 역할 기반 인가가 데이터 접근 경계를 만든다","textPreview":"JWT와 역할 기반 인가가 데이터 접근 경계를 만든다","textChars":29,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/ozmhwz2d","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/zutgzalw","slide":17,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/etkzq54b","slide":17,"bbox":[70,190,130,48]}
+{"kind":"textbox","id":"sh/1wbi1k3m","slide":17,"text":"Login","textPreview":"Login","textChars":5,"textLines":1,"bbox":[78,190,114,48]}
+{"kind":"textbox","id":"sh/0v2hsfmh","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,190,30,48]}
+{"kind":"shape","id":"sh/jqx0bel0","slide":17,"bbox":[230,190,130,48]}
+{"kind":"textbox","id":"sh/ipoz29kf","slide":17,"text":"자격 검증","textPreview":"자격 검증","textChars":5,"textLines":1,"bbox":[238,190,114,48]}
+{"kind":"textbox","id":"sh/ovelwbih","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,190,30,48]}
+{"kind":"shape","id":"sh/pwn25gzm","slide":17,"bbox":[390,190,130,48]}
+{"kind":"textbox","id":"sh/2tw3ul0b","slide":17,"text":"JWT 발급","textPreview":"JWT 발급","textChars":6,"textLines":1,"bbox":[398,190,114,48]}
+{"kind":"textbox","id":"sh/3u5k3qhw","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[520,190,30,48]}
+{"kind":"shape","id":"sh/g7ulsbi5","slide":17,"bbox":[550,190,136,48]}
+{"kind":"textbox","id":"sh/1sn21gzq","slide":17,"text":"Token 저장","textPreview":"Token 저장","textChars":8,"textLines":1,"bbox":[558,190,120,48]}
+{"kind":"shape","id":"sh/e5c3q10z","slide":17,"bbox":[70,310,130,48]}
+{"kind":"textbox","id":"sh/f6lkz6hk","slide":17,"text":"API 요청","textPreview":"API 요청","textChars":6,"textLines":1,"bbox":[78,310,114,48]}
+{"kind":"textbox","id":"sh/s3ulori9","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,310,30,48]}
+{"kind":"shape","id":"sh/t432xwzu","slide":17,"bbox":[230,310,172,48]}
+{"kind":"textbox","id":"sh/9oba5o76","slide":17,"text":"Security 인증","textPreview":"Security 인증","textChars":11,"textLines":1,"bbox":[238,310,156,48]}
+{"kind":"textbox","id":"sh/8n29c36l","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[402,310,30,48]}
+{"kind":"shape","id":"sh/nmts3yp0","slide":17,"bbox":[432,310,130,48]}
+{"kind":"textbox","id":"sh/mlkratov","slide":17,"text":"사용자 식별","textPreview":"사용자 식별","textChars":6,"textLines":1,"bbox":[440,310,114,48]}
+{"kind":"textbox","id":"sh/lkba1o7a","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[562,310,30,48]}
+{"kind":"shape","id":"sh/0j298j6p","slide":17,"bbox":[592,310,130,48]}
+{"kind":"textbox","id":"sh/zi9szep4","slide":17,"text":"소유권 검증","textPreview":"소유권 검증","textChars":6,"textLines":1,"bbox":[600,310,114,48]}
+{"kind":"shape","id":"sh/yh0r69oj","slide":17,"bbox":[70,430,184,48]}
+{"kind":"textbox","id":"sh/5gvad8ne","slide":17,"text":"USER / ADMIN","textPreview":"USER / ADMIN","textChars":12,"textLines":1,"bbox":[78,430,168,48]}
+{"kind":"textbox","id":"sh/kfmtkn6t","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[254,430,30,48]}
+{"kind":"shape","id":"sh/2lg7e54b","slide":17,"bbox":[284,430,130,48]}
+{"kind":"textbox","id":"sh/3mpo7a5w","slide":17,"text":"도메인 접근","textPreview":"도메인 접근","textChars":6,"textLines":1,"bbox":[292,430,114,48]}
+{"kind":"textbox","id":"sh/onypgfmh","slide":17,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[414,430,30,48]}
+{"kind":"shape","id":"sh/po769kn2","slide":17,"bbox":[444,430,130,48]}
+{"kind":"textbox","id":"sh/exw7a54f","slide":17,"text":"응답","textPreview":"응답","textChars":2,"textLines":1,"bbox":[452,430,114,48]}
+{"kind":"textbox","id":"sh/fy5o3a5k","slide":17,"text":"클라이언트가 보낸 userId보다 인증 컨텍스트를 신뢰합니다.","textPreview":"클라이언트가 보낸 userId보다 인증 컨텍스트를 신뢰합니다.","textChars":34,"textLines":1,"bbox":[130,560,1020,48]}
+{"kind":"notes","id":"nt/i55pq6","slide":17,"text":""}
+{"kind":"slide","id":"sl/a2spt8","slide":18,"title":"TECHNICAL SPECIFICATION","textShapes":18}
+{"kind":"textbox","id":"sh/ixczetwf","slide":18,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/503ipov6","slide":18,"text":"위치 인증은 클라이언트 권한과 서버 검증을 분리한다","textPreview":"위치 인증은 클라이언트 권한과 서버 검증을 분리한다","textChars":28,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/kzuhgjel","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/vu10jedo","slide":18,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/atsza9wj","slide":18,"bbox":[70,205,136,48]}
+{"kind":"textbox","id":"sh/xw3ilovu","slide":18,"text":"위치 권한 확인","textPreview":"위치 권한 확인","textChars":8,"textLines":1,"bbox":[78,205,120,48]}
+{"kind":"textbox","id":"sh/wvuhcje9","slide":18,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[206,205,30,48]}
+{"kind":"shape","id":"sh/fq50vid8","slide":18,"bbox":[236,205,130,48]}
+{"kind":"textbox","id":"sh/upwzmdcn","slide":18,"text":"좌표 취득","textPreview":"좌표 취득","textChars":5,"textLines":1,"bbox":[244,205,114,48]}
+{"kind":"textbox","id":"sh/s7yhk7e9","slide":18,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[366,205,30,48]}
+{"kind":"shape","id":"sh/t87ydcfe","slide":18,"bbox":[396,205,210,48]}
+{"kind":"textbox","id":"sh/6lwzihg3","slide":18,"text":"questId + 좌표 전송","textPreview":"questId + 좌표 전송","textChars":15,"textLines":1,"bbox":[404,205,194,48]}
+{"kind":"shape","id":"sh/76pgbmxo","slide":18,"bbox":[70,345,136,48]}
+{"kind":"textbox","id":"sh/kjehg7yx","slide":18,"text":"목표 좌표 조회","textPreview":"목표 좌표 조회","textChars":8,"textLines":1,"bbox":[78,345,120,48]}
+{"kind":"textbox","id":"sh/5kny9cfi","slide":18,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[206,345,30,48]}
+{"kind":"shape","id":"sh/ihwzexgr","slide":18,"bbox":[236,345,130,48]}
+{"kind":"textbox","id":"sh/ji5g72xc","slide":18,"text":"거리 계산","textPreview":"거리 계산","textChars":5,"textLines":1,"bbox":[244,345,114,48]}
+{"kind":"textbox","id":"sh/wfehcny1","slide":18,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[366,345,30,48]}
+{"kind":"shape","id":"sh/xgny5sfm","slide":18,"bbox":[396,345,136,48]}
+{"kind":"textbox","id":"sh/d0v6tk3y","slide":18,"text":"반경 조건 검증","textPreview":"반경 조건 검증","textChars":8,"textLines":1,"bbox":[404,345,120,48]}
+{"kind":"textbox","id":"sh/czm5kzmd","slide":18,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[532,345,30,48]}
+{"kind":"shape","id":"sh/bydoruls","slide":18,"bbox":[562,345,130,48]}
+{"kind":"textbox","id":"sh/qx4nip4n","slide":18,"text":"완료 처리","textPreview":"완료 처리","textChars":5,"textLines":1,"bbox":[570,345,114,48]}
+{"kind":"shape","id":"sh/pwb6pk32","slide":18,"bbox":[190,500,900,105]}
+{"kind":"shape","id":"sh/ov25gfmh","slide":18,"bbox":[190,500,8,105]}
+{"kind":"textbox","id":"sh/3utonalw","slide":18,"text":"신뢰 경계","textPreview":"신뢰 경계","textChars":5,"textLines":1,"bbox":[214,514,858,34]}
+{"kind":"textbox","id":"sh/2tkne54b","slide":18,"text":"앱은 권한과 위치를 수집하고, 서버가 최종 완료 조건을 판단합니다.","textPreview":"앱은 권한과 위치를 수집하고, 서버가 최종 완료 조건을 판단합니다.","textChars":37,"textLines":1,"bbox":[214,552,858,41]}
+{"kind":"notes","id":"nt/a2spt8","slide":18,"text":""}
+{"kind":"slide","id":"sl/73sss6","slide":19,"title":"TECHNICAL SPECIFICATION","textShapes":15}
+{"kind":"textbox","id":"sh/dcjet4zy","slide":19,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/q9svip07","slide":19,"text":"운영 변경은 기록을 보존하면서 신규 사용자 경험에 반영한다","textPreview":"운영 변경은 기록을 보존하면서 신규 사용자 경험에 반영한다","textChars":32,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/ba1wruhs","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/0zudoji9","slide":19,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/l03ex4zu","slide":19,"bbox":[70,210,208,48]}
+{"kind":"textbox","id":"sh/yxcvm903","slide":19,"text":"Admin Quest 수정","textPreview":"Admin Quest 수정","textChars":14,"textLines":1,"bbox":[78,210,192,48]}
+{"kind":"textbox","id":"sh/zylwveho","slide":19,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[278,210,30,48]}
+{"kind":"shape","id":"sh/g3qdcfi5","slide":19,"bbox":[308,210,130,48]}
+{"kind":"textbox","id":"sh/14zulkjq","slide":19,"text":"권한 검증","textPreview":"권한 검증","textChars":5,"textLines":1,"bbox":[316,210,114,48]}
+{"kind":"textbox","id":"sh/tczapsza","slide":19,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[438,210,30,48]}
+{"kind":"shape","id":"sh/sbqtgnip","slide":19,"bbox":[468,210,160,48]}
+{"kind":"textbox","id":"sh/rqhsnih4","slide":19,"text":"Catalog 저장","textPreview":"Catalog 저장","textChars":10,"textLines":1,"bbox":[476,210,144,48]}
+{"kind":"shape","id":"sh/6p8bex0j","slide":19,"bbox":[70,350,148,48]}
+{"kind":"textbox","id":"sh/1gjatcz6","slide":19,"text":"사용자 앱 재조회","textPreview":"사용자 앱 재조회","textChars":9,"textLines":1,"bbox":[78,350,132,48]}
+{"kind":"textbox","id":"sh/gfqtk7il","slide":19,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[218,350,30,48]}
+{"kind":"shape","id":"sh/fehsr2h0","slide":19,"bbox":[248,350,136,48]}
+{"kind":"textbox","id":"sh/ed8bix0v","slide":19,"text":"신규 할당 반영","textPreview":"신규 할당 반영","textChars":8,"textLines":1,"bbox":[256,350,120,48]}
+{"kind":"textbox","id":"sh/pkjuhczi","slide":19,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[384,350,30,48]}
+{"kind":"shape","id":"sh/ojato7ix","slide":19,"bbox":[414,350,172,48]}
+{"kind":"textbox","id":"sh/8z2l0fa5","slide":19,"text":"기존 완료 기록 보존","textPreview":"기존 완료 기록 보존","textChars":11,"textLines":1,"bbox":[422,350,156,48]}
+{"kind":"textbox","id":"sh/90bm9kbq","slide":19,"text":"카탈로그 정의와 사용자 수행 이력을 분리해 운영 안정성을 확보했습니다.","textPreview":"카탈로그 정의와 사용자 수행 이력을 분리해 운영 안정성을 확보했습니다.","textChars":39,"textLines":1,"bbox":[130,525,1020,60]}
+{"kind":"notes","id":"nt/73sss6","slide":19,"text":""}
+{"kind":"slide","id":"sl/0raj92","slide":20,"title":"TECHNICAL SPECIFICATION","textShapes":13}
+{"kind":"textbox","id":"sh/4bylobq9","slide":20,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/ja5kf69o","slide":20,"text":"세 가지 문제를 서비스 경계로 해결했다","textPreview":"세 가지 문제를 서비스 경계로 해결했다","textChars":21,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/i9w3m183","slide":20,"text":"20","textPreview":"20","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/h8n2dwri","slide":20,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/w7elkbqx","slide":20,"bbox":[70,155,540,145]}
+{"kind":"shape","id":"sh/v65kb69c","slide":20,"bbox":[70,155,8,145]}
+{"kind":"textbox","id":"sh/u5w3i18r","slide":20,"text":"성장 데이터 일관성","textPreview":"성장 데이터 일관성","textChars":10,"textLines":1,"bbox":[94,169,498,34]}
+{"kind":"textbox","id":"sh/14rmp0rm","slide":20,"text":"완료 서비스의 트랜잭션과 중복 방지 규칙으로 해결","textPreview":"완료 서비스의 트랜잭션과 중복 방지 규칙으로 해결","textChars":27,"textLines":1,"bbox":[94,207,498,81]}
+{"kind":"shape","id":"sh/g3ilwvq1","slide":20,"bbox":[670,155,540,145]}
+{"kind":"shape","id":"sh/qlo36loz","slide":20,"bbox":[670,155,8,145]}
+{"kind":"textbox","id":"sh/bmxkzqpk","slide":20,"text":"다중 클라이언트","textPreview":"다중 클라이언트","textChars":8,"textLines":1,"bbox":[694,169,498,34]}
+{"kind":"textbox","id":"sh/c76l8v65","slide":20,"text":"앱·관리자 웹의 단일 REST API 진입점으로 해결","textPreview":"앱·관리자 웹의 단일 REST API 진입점으로 해결","textChars":29,"textLines":1,"bbox":[694,207,498,81]}
+{"kind":"shape","id":"sh/d8fm107q","slide":20,"bbox":[70,340,540,145]}
+{"kind":"shape","id":"sh/2h432l83","slide":20,"bbox":[70,340,8,145]}
+{"kind":"textbox","id":"sh/3idkvqp8","slide":20,"text":"위치 예외 상황","textPreview":"위치 예외 상황","textChars":8,"textLines":1,"bbox":[94,354,498,34]}
+{"kind":"textbox","id":"sh/ojml4b6t","slide":20,"text":"권한 확인과 서버 거리 검증의 책임 분리로 해결","textPreview":"권한 확인과 서버 거리 검증의 책임 분리로 해결","textChars":26,"textLines":1,"bbox":[94,392,498,81]}
+{"kind":"shape","id":"sh/pkv2xg7e","slide":20,"bbox":[670,340,540,145]}
+{"kind":"shape","id":"sh/md83e5o7","slide":20,"bbox":[670,340,8,145]}
+{"kind":"textbox","id":"sh/neh47aps","slide":20,"text":"협업 충돌","textPreview":"협업 충돌","textChars":5,"textLines":1,"bbox":[694,354,498,34]}
+{"kind":"textbox","id":"sh/ji90z254","slide":20,"text":"공통 DTO·API 계약·Flyway 마이그레이션으로 해결","textPreview":"공통 DTO·API 계약·Flyway 마이그레이션으로 해결","textChars":32,"textLines":1,"bbox":[694,392,498,81]}
+{"kind":"textbox","id":"sh/ix0zqxoj","slide":20,"text":"기능 수보다 경계와 연결 규칙이 프로젝트 완성도를 결정했습니다.","textPreview":"기능 수보다 경계와 연결 규칙이 프로젝트 완성도를 결정했습니다.","textChars":35,"textLines":1,"bbox":[130,550,1020,50]}
+{"kind":"notes","id":"nt/0raj92","slide":20,"text":""}
+{"kind":"slide","id":"sl/9zrf2x","slide":21,"title":"TECHNICAL SPECIFICATION","textShapes":10}
+{"kind":"textbox","id":"sh/5kjutore","slide":21,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/ixsbytsn","slide":21,"text":"프로젝트를 통해 전체 데이터 흐름을 이해했다","textPreview":"프로젝트를 통해 전체 데이터 흐름을 이해했다","textChars":24,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/ji1cry98","slide":21,"text":"21","textPreview":"21","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/snat43qp","slide":21,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/to3ux8ra","slide":21,"bbox":[90,185,350,310]}
+{"kind":"shape","id":"sh/6lsb2tsz","slide":21,"bbox":[90,185,8,310]}
+{"kind":"textbox","id":"sh/rm1cvy9k","slide":21,"text":"기능 간 연결","textPreview":"기능 간 연결","textChars":7,"textLines":1,"bbox":[114,199,308,34]}
+{"kind":"textbox","id":"sh/grud83q1","slide":21,"text":"완료 하나가 성장·수집·소셜 데이터에 주는 영향을 추적했습니다.","textPreview":"완료 하나가 성장·수집·소셜 데이터에 주는 영향을 추적했습니다.","textChars":35,"textLines":1,"bbox":[114,237,308,246]}
+{"kind":"shape","id":"sh/1s3u18rm","slide":21,"bbox":[480,185,350,310]}
+{"kind":"shape","id":"sh/pofmx4rq","slide":21,"bbox":[480,185,8,310]}
+{"kind":"textbox","id":"sh/on6l4zq5","slide":21,"text":"클라이언트–서버","textPreview":"클라이언트–서버","textChars":8,"textLines":1,"bbox":[504,199,308,34]}
+{"kind":"textbox","id":"sh/3mx4vu9k","slide":21,"text":"사용자 행동부터 DB와 다시 화면 반영까지 전 과정을 구현했습니다.","textPreview":"사용자 행동부터 DB와 다시 화면 반영까지 전 과정을 구현했습니다.","textChars":37,"textLines":1,"bbox":[504,237,308,246]}
+{"kind":"shape","id":"sh/2l43298z","slide":21,"bbox":[870,185,350,310]}
+{"kind":"shape","id":"sh/dcfm1orm","slide":21,"bbox":[870,185,8,310]}
+{"kind":"textbox","id":"sh/cb6l8jq1","slide":21,"text":"협업 기준","textPreview":"협업 기준","textChars":5,"textLines":1,"bbox":[894,199,308,34]}
+{"kind":"textbox","id":"sh/bax4ze9w","slide":21,"text":"API 계약과 데이터 구조를 팀의 공통 언어로 사용했습니다.","textPreview":"API 계약과 데이터 구조를 팀의 공통 언어로 사용했습니다.","textChars":33,"textLines":1,"bbox":[894,237,308,246]}
+{"kind":"notes","id":"nt/9zrf2x","slide":21,"text":""}
+{"kind":"slide","id":"sl/d92de3","slide":22,"title":"TECHNICAL SPECIFICATION","textShapes":26}
+{"kind":"textbox","id":"sh/tob210ny","slide":22,"text":"TECHNICAL SPECIFICATION","textPreview":"TECHNICAL SPECIFICATION","textChars":23,"textLines":1,"bbox":[64,28,640,24]}
+{"kind":"textbox","id":"sh/6lkj6lon","slide":22,"text":"LifeQuest는 행동을 성장으로 연결하는 하나의 시스템이다","textPreview":"LifeQuest는 행동을 성장으로 연결하는 하나의 시스템이다","textChars":34,"textLines":1,"bbox":[64,58,1110,62]}
+{"kind":"textbox","id":"sh/rmtkzq58","slide":22,"text":"22","textPreview":"22","textChars":2,"textLines":1,"bbox":[1160,35,56,26]}
+{"kind":"textbox","id":"sh/gbm1cv6p","slide":22,"text":"LifeQuest | Technical Specification","textPreview":"LifeQuest | Technical Specification","textChars":35,"textLines":1,"bbox":[64,682,430,18]}
+{"kind":"shape","id":"sh/1cv250na","slide":22,"bbox":[70,190,172,48]}
+{"kind":"textbox","id":"sh/epkja5oj","slide":22,"text":"Flutter App","textPreview":"Flutter App","textChars":11,"textLines":1,"bbox":[78,190,156,48]}
+{"kind":"textbox","id":"sh/fqdk3q54","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[242,190,30,48]}
+{"kind":"shape","id":"sh/wfi10b6l","slide":22,"bbox":[272,190,136,48]}
+{"kind":"textbox","id":"sh/xgr2tgnq","slide":22,"text":"REST API","textPreview":"REST API","textChars":8,"textLines":1,"bbox":[280,190,120,48]}
+{"kind":"textbox","id":"sh/10v2hw3a","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[408,190,30,48]}
+{"kind":"shape","id":"sh/0zmlor2p","slide":22,"bbox":[438,190,172,48]}
+{"kind":"textbox","id":"sh/zydkfml4","slide":22,"text":"Spring Boot","textPreview":"Spring Boot","textChars":11,"textLines":1,"bbox":[446,190,156,48]}
+{"kind":"textbox","id":"sh/ex43mhkj","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[610,190,30,48]}
+{"kind":"shape","id":"sh/94fmlw36","slide":22,"bbox":[640,190,172,48]}
+{"kind":"textbox","id":"sh/o3mlsr2l","slide":22,"text":"JPA / MySQL","textPreview":"JPA / MySQL","textChars":11,"textLines":1,"bbox":[648,190,156,48]}
+{"kind":"shape","id":"sh/n2dkjml0","slide":22,"bbox":[70,320,130,48]}
+{"kind":"textbox","id":"sh/m143qhkv","slide":22,"text":"QUEST","textPreview":"QUEST","textChars":5,"textLines":1,"bbox":[78,320,114,48]}
+{"kind":"textbox","id":"sh/xsfmpg3i","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,320,30,48]}
+{"kind":"shape","id":"sh/wr6lwb2x","slide":22,"bbox":[230,320,130,48]}
+{"kind":"textbox","id":"sh/gnyx8je5","slide":22,"text":"GROWTH","textPreview":"GROWTH","textChars":6,"textLines":1,"bbox":[238,320,114,48]}
+{"kind":"textbox","id":"sh/ho7eh4fq","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,320,30,48]}
+{"kind":"shape","id":"sh/ulgv69wz","slide":22,"bbox":[390,320,160,48]}
+{"kind":"textbox","id":"sh/fmpwfexk","slide":22,"text":"COLLECTION","textPreview":"COLLECTION","textChars":10,"textLines":1,"bbox":[398,320,144,48]}
+{"kind":"textbox","id":"sh/4byxcjeh","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[550,320,30,48]}
+{"kind":"shape","id":"sh/pc7elovm","slide":22,"bbox":[580,320,130,48]}
+{"kind":"textbox","id":"sh/29gfa9wb","slide":22,"text":"SOCIAL","textPreview":"SOCIAL","textChars":6,"textLines":1,"bbox":[588,320,114,48]}
+{"kind":"shape","id":"sh/3apwjedw","slide":22,"bbox":[70,450,130,48]}
+{"kind":"textbox","id":"sh/kfed0zex","slide":22,"text":"AI","textPreview":"AI","textChars":2,"textLines":1,"bbox":[78,450,114,48]}
+{"kind":"textbox","id":"sh/lgne9kfi","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[200,450,30,48]}
+{"kind":"shape","id":"sh/nat0f2x0","slide":22,"bbox":[230,450,130,48]}
+{"kind":"textbox","id":"sh/m9kz6xgf","slide":22,"text":"GPS","textPreview":"GPS","textChars":3,"textLines":1,"bbox":[238,450,114,48]}
+{"kind":"textbox","id":"sh/9cvihsf6","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[360,450,30,48]}
+{"kind":"shape","id":"sh/ob2h8nyl","slide":22,"bbox":[390,450,130,48]}
+{"kind":"textbox","id":"sh/z6tgbih4","slide":22,"text":"ADMIN","textPreview":"ADMIN","textChars":5,"textLines":1,"bbox":[398,450,114,48]}
+{"kind":"textbox","id":"sh/e5kz2dgj","slide":22,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[520,450,30,48]}
+{"kind":"shape","id":"sh/18bydsfu","slide":22,"bbox":[550,450,130,48]}
+{"kind":"textbox","id":"sh/072h4nyp","slide":22,"text":"JWT","textPreview":"JWT","textChars":3,"textLines":1,"bbox":[558,450,114,48]}
+{"kind":"textbox","id":"sh/ri9g7ihs","slide":22,"text":"현실의 행동을 퀘스트로 만들고, 퀘스트의 기록을 사용자의 성장으로 연결한다.","textPreview":"현실의 행동을 퀘스트로 만들고, 퀘스트의 기록을 사용자의 성장으로 연결한다.","textChars":42,"textLines":1,"bbox":[80,585,1120,46]}
+{"kind":"notes","id":"nt/d92de3","slide":22,"text":""}
