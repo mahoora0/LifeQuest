@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface QuestRepository extends JpaRepository<Quest, Long> {
 
@@ -34,4 +35,10 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
     long countByActiveTrue();
 
     long countByCadence(com.lifequest.quest.domain.QuestCadence cadence);
+
+    @Query("""
+            select avg(q.expReward) from Quest q
+            where q.active = true and q.ownerUserId is null
+            """)
+    Double averageExpRewardForPublicActiveQuests();
 }

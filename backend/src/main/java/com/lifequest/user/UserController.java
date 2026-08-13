@@ -124,7 +124,7 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(userService.getRewards(userId(jwt)));
+        return ApiResponse.success(userService.getRewards(userId(jwt), page, size));
     }
 
     @GetMapping("/quests/history")

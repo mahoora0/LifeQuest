@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_quest/core/network/api_exception.dart';
@@ -36,6 +36,52 @@ void main() {
     expect(find.text('칭호 · 어제'), findsOneWidget);
     expect(find.text('은빛 나침반'), findsOneWidget);
     expect(find.text('아이템 · 3일 전 · Lv.12 달성'), findsOneWidget);
+  });
+
+  testWidgets('EXP가 완료 화면처럼 0부터 세어 올라간다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          rewardRepositoryProvider.overrideWithValue(
+            const _FakeRewardRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: RewardScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.textContaining('EXP 0 / 1200'), findsOneWidget);
+
+    await tester.pump(rewardScreenSequenceDuration);
+    expect(find.textContaining('EXP 840 / 1200'), findsOneWidget);
+  });
+
+  test('확장된 서버 응답을 화면 모델로 변환한다', () {
+    final overview = RewardOverview.fromJson({
+      'level': 3,
+      'exp': 50,
+      'expForNextLevel': 300,
+      'questsToNextLevel': 4,
+      'nextMilestone': {'level': 5, 'rewardLine': 'Lv.5 · 칭호 "골목대장"'},
+      'received': [
+        {
+          'level': 2,
+          'name': '동네 탐험가',
+          'kind': 'PROFILE_ITEM',
+          'timeLabel': '오늘',
+          'note': 'Lv.2 달성',
+        },
+      ],
+      'weeklyExp': [
+        {'dayLabel': '월', 'exp': 120},
+      ],
+    });
+
+    expect(overview.level, 3);
+    expect(overview.nextMilestone?.level, 5);
+    expect(overview.received.single.kind, LqRewardKind.item);
+    expect(overview.weeklyExp.single.exp, 120);
   });
 
   testWidgets('남은 퀘스트 수는 서버가 줄 때만 문구로 보여준다', (tester) async {

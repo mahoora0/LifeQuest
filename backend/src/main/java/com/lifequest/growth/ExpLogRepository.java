@@ -20,6 +20,9 @@ public interface ExpLogRepository extends JpaRepository<ExpLog, Long> {
 
     List<ExpLog> findTop10ByUserIdOrderByCreatedAtDescIdDesc(Long userId);
 
+    List<ExpLog> findAllByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+        Long userId, Instant from, Instant to);
+
     @Query("select coalesce(sum(e.expAmount), 0) from ExpLog e")
     long sumExpAmount();
 }

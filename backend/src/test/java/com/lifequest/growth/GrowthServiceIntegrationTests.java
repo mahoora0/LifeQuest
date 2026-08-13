@@ -7,6 +7,7 @@ import com.lifequest.auth.dto.SignupRequest;
 import com.lifequest.user.User;
 import com.lifequest.user.UserRepository;
 import com.lifequest.user.UserService;
+import com.lifequest.user.dto.RewardHistoryResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -64,6 +65,19 @@ class GrowthServiceIntegrationTests {
         assertThat(userService.getAccessories(user.getId()).accessories())
                 .extracting("requiredLevel")
                 .containsExactly(2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28);
+
+        RewardHistoryResponse rewards = userService.getRewards(user.getId(), 0, 20);
+        assertThat(rewards.level()).isEqualTo(3);
+        assertThat(rewards.exp()).isEqualTo(50);
+        assertThat(rewards.expForNextLevel()).isEqualTo(300);
+        assertThat(rewards.nextMilestone()).isNotNull();
+        assertThat(rewards.nextMilestone().level()).isEqualTo(5);
+        assertThat(rewards.received())
+                .extracting(RewardHistoryResponse.ReceivedReward::name)
+                .containsExactly("동네 탐험가", "새내기 모험가");
+        assertThat(rewards.weeklyExp().stream()
+                .mapToInt(RewardHistoryResponse.DailyExp::exp)
+                .sum()).isEqualTo(350);
 
         userService.selectAccessory(user.getId(), 4L);
         growthService.grantExp(user.getId(), "QUEST_COMPLETION", 9002L, 650);
