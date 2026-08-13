@@ -21,7 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 시드 퀘스트 카탈로그(V6의 id 1~42 + V22의 43~68)가 업무 규칙의 불변식을 지키는지 검증한다.
+ * 시드 퀘스트 카탈로그(V6의 id 1~42 · V22의 43~68 · V33의 69~105 · V34의 106~279)가 업무 규칙의
+ * 불변식을 지키는지 검증한다.
  *
  * <p>시드는 SQL 리터럴 수백 개로 이루어져 있어 사람 눈으로는 등급별 EXP 구간 이탈이나 위경도 뒤바뀜 같은
  * 오타가 걸러지지 않는다. 잘못된 행이 들어가도 배정에서만 드러나며, 그것도 특정 퀘스트가
@@ -48,8 +49,11 @@ class QuestCatalogSeedTest {
     /** V33 지역·템플릿 LOCATION 시드의 첫 id. 추가는 계속 뒤에 붙는다(V6 머리말). */
     private static final long LOCATION_SEED_FIRST_ID = 69L;
 
+    /** V34 전국 확장분(29개 도시 × 6)의 첫 id. */
+    private static final long NATIONWIDE_SEED_FIRST_ID = 106L;
+
     /** 마지막 시드 id. 카탈로그를 늘렸으면 이 값도 함께 올린다. */
-    private static final long LAST_SEED_ID = 105L;
+    private static final long LAST_SEED_ID = 279L;
 
     /**
      * 배정이 후보를 좁히는 거리(m). {@code QuestAssignmentCreator}와 같은 값이며 트랙마다 다르다.
@@ -71,6 +75,63 @@ class QuestCatalogSeedTest {
 
     /** docs/05-business-rules.md §3-1의 가장 넓은 반경 구간 상한. */
     private static final int MAX_RADIUS_M = 500;
+
+    /** 일간 트랙의 슬롯 수. {@code QuestAssignmentCreator.DAILY_SLOTS}와 같은 값이다. */
+    private static final int DAILY_SLOT_COUNT = 3;
+
+    /**
+     * 시드가 덮기로 한 도시와 그 중심 좌표. V33의 6개(서울·5대 광역시)에 V34의 29개를 더한 값이다.
+     *
+     * <p>목록으로 두는 이유는 <b>커버리지가 데이터의 성질이 아니라 약속</b>이기 때문이다. 시드를
+     * 늘리거나 줄일 때 "어느 도시를 덮기로 했는가"가 여기 남아 있지 않으면, 한 도시가 통째로
+     * 빠져도 전체 건수만 보고는 드러나지 않는다 — 그 지역 사용자에게만 보이는 결손이 된다.
+     */
+    /**
+     * {@code QuestLocationTargetingTests}가 "주변에 시드가 없는 사용자"를 세울 때 쓰는 좌표(완도).
+     *
+     * <p>그 테스트는 좌표가 아니라 <b>조건</b>을 필요로 하는데, 조건을 깨는 것은 이 파일이
+     * 지키는 카탈로그 쪽이다. 실제로 V34가 제주를 덮으면서 제주를 쓰던 그 테스트 세 건이
+     * 함께 깨졌고, 원인이 시드 확장이라는 것은 전체 테스트를 돌린 뒤에야 드러났다.
+     * 여기서 먼저 잰다 — 카탈로그를 고친 사람이 카탈로그 테스트를 돌리면 걸린다.
+     */
+    private static final double[] NO_SEED_SPOT = {34.3110, 126.7550};
+
+    private static final Map<String, double[]> CITIES = Map.ofEntries(
+            Map.entry("서울", new double[] {37.5665, 126.9780}),
+            Map.entry("부산", new double[] {35.1796, 129.0756}),
+            Map.entry("대구", new double[] {35.8714, 128.6014}),
+            Map.entry("인천", new double[] {37.4563, 126.7052}),
+            Map.entry("대전", new double[] {36.3504, 127.3845}),
+            Map.entry("광주", new double[] {35.1595, 126.8526}),
+            Map.entry("수원", new double[] {37.2636, 127.0286}),
+            Map.entry("성남", new double[] {37.4200, 127.1265}),
+            Map.entry("고양", new double[] {37.6584, 126.8320}),
+            Map.entry("용인", new double[] {37.2411, 127.1776}),
+            Map.entry("부천", new double[] {37.5035, 126.7660}),
+            Map.entry("안산", new double[] {37.3219, 126.8309}),
+            Map.entry("남양주", new double[] {37.6360, 127.2165}),
+            Map.entry("평택", new double[] {36.9921, 127.1129}),
+            Map.entry("청주", new double[] {36.6424, 127.4890}),
+            Map.entry("충주", new double[] {36.9910, 127.9260}),
+            Map.entry("천안", new double[] {36.8151, 127.1139}),
+            Map.entry("세종", new double[] {36.4800, 127.2890}),
+            Map.entry("전주", new double[] {35.8242, 127.1480}),
+            Map.entry("군산", new double[] {35.9676, 126.7368}),
+            Map.entry("여수", new double[] {34.7604, 127.6622}),
+            Map.entry("순천", new double[] {34.9507, 127.4872}),
+            Map.entry("목포", new double[] {34.8118, 126.3922}),
+            Map.entry("울산", new double[] {35.5384, 129.3114}),
+            Map.entry("창원", new double[] {35.2280, 128.6811}),
+            Map.entry("김해", new double[] {35.2285, 128.8894}),
+            Map.entry("진주", new double[] {35.1800, 128.1076}),
+            Map.entry("포항", new double[] {36.0190, 129.3435}),
+            Map.entry("경주", new double[] {35.8562, 129.2247}),
+            Map.entry("안동", new double[] {36.5684, 128.7294}),
+            Map.entry("춘천", new double[] {37.8813, 127.7300}),
+            Map.entry("원주", new double[] {37.3422, 127.9202}),
+            Map.entry("강릉", new double[] {37.7519, 128.8761}),
+            Map.entry("제주", new double[] {33.4996, 126.5312}),
+            Map.entry("서귀포", new double[] {33.2541, 126.5601}));
 
     @Autowired
     private QuestRepository questRepository;
@@ -298,20 +359,12 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 도시마다_일간_주간_등급이_고루_갖춰져_있다() {
-        Map<String, double[]> cities = Map.of(
-                "서울", new double[] {37.5665, 126.9780},
-                "부산", new double[] {35.1796, 129.0756},
-                "대구", new double[] {35.8714, 128.6014},
-                "인천", new double[] {37.4563, 126.7052},
-                "대전", new double[] {36.3504, 127.3845},
-                "광주", new double[] {35.1595, 126.8526});
-
         List<Quest> located = seededQuests().stream()
                 .filter(Quest::isLocationBased)
                 .filter(quest -> !quest.isLocationTemplate())
                 .toList();
 
-        for (Map.Entry<String, double[]> city : cities.entrySet()) {
+        for (Map.Entry<String, double[]> city : CITIES.entrySet()) {
             for (QuestCadence cadence : QuestCadence.values()) {
                 // 반경이 트랙마다 다르므로 도시로 좁히는 것도 트랙 안에서 해야 한다 —
                 // 바깥에서 한 번 좁혀 두면 두 트랙이 같은 반경을 쓰게 된다
@@ -366,6 +419,40 @@ class QuestCatalogSeedTest {
                                 + "그 지역 사용자에게는 정상으로 보인다");
             }
         }
+    }
+
+    /**
+     * 템플릿 경로를 검증할 수 있는 <b>빈 지점이 남아 있어야 한다.</b>
+     *
+     * <p>카탈로그가 국토를 촘촘히 덮을수록 "주변에 시드가 없는 사용자"를 세울 곳이 사라진다.
+     * 그 사용자가 없어지면 템플릿 배정·override 좌표·완료 판정을 재는 경로가 통째로 검증 밖으로
+     * 나가는데, 기능이 죽은 것이 아니라 <b>재는 방법이 없어진 것</b>이라 조용하다.
+     *
+     * <p>시드를 더 넣어 이 테스트가 실패하면 둘 중 하나를 한다 — 더 먼 지점을 찾아
+     * {@link #NO_SEED_SPOT}과 {@code QuestLocationTargetingTests}를 함께 옮기거나,
+     * 그 지역을 덮지 않기로 한다.
+     */
+    @Test
+    void 템플릿_경로를_잴_수_있는_빈_지점이_남아_있다() {
+        List<Quest> real = seededQuests().stream()
+                .filter(Quest::isLocationBased)
+                .filter(quest -> !quest.isLocationTemplate())
+                .toList();
+
+        Quest nearest = real.stream()
+                .min((a, b) -> Double.compare(distanceFromNoSeedSpot(a), distanceFromNoSeedSpot(b)))
+                .orElseThrow();
+        double distance = distanceFromNoSeedSpot(nearest);
+
+        assertTrue(distance > WEEKLY_RADIUS_M,
+                "빈 지점으로 쓰던 좌표에서 %s까지 %.0fkm뿐이다 — 판정 반경(%.0fkm) 안이라 "
+                        .formatted(nearest.getPlaceName(), distance / 1000, WEEKLY_RADIUS_M / 1000)
+                        + "그 사용자에게 실재 장소가 배정되고, 템플릿 경로를 재던 테스트가 함께 깨진다");
+    }
+
+    private static double distanceFromNoSeedSpot(Quest quest) {
+        return meters(NO_SEED_SPOT[0], NO_SEED_SPOT[1],
+                quest.getLatitude().doubleValue(), quest.getLongitude().doubleValue());
     }
 
     private static boolean withinCity(Quest quest, double[] center, double radiusM) {
@@ -431,18 +518,36 @@ class QuestCatalogSeedTest {
     }
 
     /**
-     * 하루 배정은 일간 퀘스트에서 나온다. 일간이 전부 위치 인증이면 밖에 나가기 어려운 날
-     * 하루치가 통째로 잠기므로, 이동 없이 끝낼 수 있는 후보가 다수를 차지해야 한다.
+     * <b>이동 없이 끝낼 수 있는 후보가 슬롯을 채우고도 남아야 한다.</b>
+     *
+     * <p>비율이 아니라 절대 건수를 재는 이유는 배정이 슬롯 단위이기 때문이다. 일간 슬롯은
+     * A={@code {LOCATION}} · B={@code {SELF_REPORT}} · C={@code {전부}} 구성이고
+     * ({@code QuestAssignmentCreator.DAILY_SLOTS}), 슬롯 A는 LOCATION만 가져가므로 B 차례에는
+     * SELF_REPORT 후보가 그대로 남아 있다. <b>배정 3칸 중 한 칸은 구조적으로 이동이 필요 없고</b>,
+     * 카탈로그에서 LOCATION이 늘어도 그 보장은 흔들리지 않는다.
+     *
+     * <p>보장이 깨지는 경로는 완화 ②(완료 타입 제약 해제, {@code QuestSlotDrawer})뿐이며 발동
+     * 조건은 <b>두 풀 모두에 SELF_REPORT가 없는 것</b>이다. 배정이 위치로 좁히는 것은 LOCATION
+     * 후보뿐이므로({@code QuestAssignmentCreator#createForTrack}) SELF_REPORT는 어느 지역
+     * 사용자에게나 전량 남는다 — 지역 시드를 늘려도 이 조건에 가까워지지 않는다.
+     *
+     * <p>배수 2는 슬롯 B와 C가 <b>둘 다</b> SELF_REPORT를 가져가는 경우와 직전 주기 제외를 함께
+     * 흡수한다.
+     *
+     * <p>이전 기준은 "일간 직접 완료가 과반"이었다. 그것이 막으려던 상황은 <i>하루치가 통째로
+     * 잠기는 것</i>인데 슬롯 B가 있는 한 성립하지 않으며, 대신 지역 확장의 상한이 되어 있었다
+     * — 실제 필요치의 다섯 배를 요구했다.
      */
     @Test
-    void 일간_퀘스트는_이동_없이_완료할_수_있는_후보가_다수다() {
-        List<Quest> daily = seededQuests().stream()
-                .filter(q -> q.getCadence() == QuestCadence.DAILY)
-                .toList();
-        long selfReport = daily.stream().filter(q -> !q.isLocationBased()).count();
+    void 일간_배정에는_이동_없이_끝낼_수_있는_후보가_남는다() {
+        long selfReport = seededQuests().stream()
+                .filter(quest -> quest.getCadence() == QuestCadence.DAILY)
+                .filter(quest -> !quest.isLocationBased())
+                .count();
 
-        assertTrue(selfReport * 2 > daily.size(),
-                "일간 %d건 중 직접 완료가 %d건뿐이다 — 이동이 어려운 날 배정이 막힌다"
-                        .formatted(daily.size(), selfReport));
+        assertTrue(selfReport >= DAILY_SLOT_COUNT * 2,
+                "일간 직접 완료 후보가 %d건뿐이다 — 슬롯 B가 완화 ②로 넘어가면 배정 %d칸이 "
+                        .formatted(selfReport, DAILY_SLOT_COUNT)
+                        + "전부 이동을 요구할 수 있다");
     }
 }
