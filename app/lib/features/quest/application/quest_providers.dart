@@ -46,42 +46,6 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
     );
   }
 
-  /// 위치를 최선 노력으로 얻는다. 얻지 못하면 `null`.
-  ///
-  /// **캐시된 마지막 위치를 먼저 쓴다.** 서버가 이 좌표로 하는 일은 "어느 동네인가"를
-  /// 15km·50km 단위로 가르는 것뿐이라(`05-business-rules.md` §1-C) 몇 분 전 위치로
-  /// 충분하고, 그쪽은 즉시 돌아온다.
-  ///
-  /// 새 fix부터 기다리면 안 되는 이유는 **이 좌표가 쓰이는 순간이 하필 GPS가 가장
-  /// 느린 때**이기 때문이다. 배정은 주기당 한 번 만들어지고 그 뒤로는 좌표가 무시되는데,
-  /// 그 한 번이 앱을 처음 연 직후다. 콜드 스타트의 fix는 10초를 넘기는 일이 흔해
-  /// 타임아웃으로 떨어지고, 그러면 사용자는 그 주기 내내 엉뚱한 지역 퀘스트를 받는다.
-  /// 에뮬레이터 실측에서 실제로 이렇게 됐다 — 제주에 둔 기기가 대전 퀘스트를 받았다.
-  ///
-  /// 실패를 삼키는 것은 여기서 위치가 **있으면 좋은 값**이기 때문이다. 권한 거부·GPS
-  /// 꺼짐·fix 실패는 모두 정상적인 상황이고, 예외를 올리면 오늘의 퀘스트 화면 전체가
-  /// 오류로 바뀐다 — 잃어야 할 것은 "주변에서 고른다"는 이점뿐이다.
-  static Future<Position?> _bestEffortPosition(
-    LocationService locationService,
-  ) async {
-    try {
-      final lastKnown = await locationService.getLastKnownPosition();
-      if (lastKnown != null) {
-        return lastKnown;
-      }
-    } catch (_) {
-      // 캐시 조회 실패는 새 fix를 막지 않는다.
-    }
-
-    try {
-      return await locationService.getCurrentPosition().timeout(
-        const Duration(seconds: 8),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
   /// 퀘스트 완료. 성공 시 해당 배정 건을 즉시 완료 상태로 반영하고
   /// 레벨 정보를 무효화해 홈/마이의 EXP 표시를 갱신한다.
   ///
@@ -177,6 +141,40 @@ class NearbyQuests {
         ),
       );
     return sorted.first;
+  }
+}
+
+/// 위치를 최선 노력으로 얻는다. 얻지 못하면 `null`.
+///
+/// **캐시된 마지막 위치를 먼저 쓴다.** 서버가 이 좌표로 하는 일은 "어느 동네인가"를
+/// 15km·50km 단위로 가르는 것뿐이라(`05-business-rules.md` §1-C) 몇 분 전 위치로
+/// 충분하고, 그쪽은 즉시 돌아온다.
+///
+/// 새 fix부터 기다리면 안 되는 이유는 **이 좌표가 쓰이는 순간이 하필 GPS가 가장
+/// 느린 때**이기 때문이다. 배정은 주기당 한 번 만들어지고 그 뒤로는 좌표가 무시되는데,
+/// 그 한 번이 앱을 처음 연 직후다. 콜드 스타트의 fix는 10초를 넘기는 일이 흔해
+/// 타임아웃으로 떨어지고, 그러면 사용자는 그 주기 내내 엉뚱한 지역 퀘스트를 받는다.
+/// 에뮬레이터 실측에서 실제로 이렇게 됐다 — 제주에 둔 기기가 대전 퀘스트를 받았다.
+///
+/// 실패를 삼키는 것은 여기서 위치가 **있으면 좋은 값**이기 때문이다. 권한 거부·GPS
+/// 꺼짐·fix 실패는 모두 정상적인 상황이고, 예외를 올리면 오늘의 퀘스트 화면 전체가
+/// 오류로 바뀐다 — 잃어야 할 것은 "주변에서 고른다"는 이점뿐이다.
+Future<Position?> _bestEffortPosition(LocationService locationService) async {
+  try {
+    final lastKnown = await locationService.getLastKnownPosition();
+    if (lastKnown != null) {
+      return lastKnown;
+    }
+  } catch (_) {
+    // 캐시 조회 실패는 새 fix를 막지 않는다.
+  }
+
+  try {
+    return await locationService.getCurrentPosition().timeout(
+      const Duration(seconds: 8),
+    );
+  } catch (_) {
+    return null;
   }
 }
 
