@@ -20,8 +20,6 @@ import '../support/stub_location_service.dart';
 /// `getLastKnownPosition()`은 새 fix를 잡지 않아 그 경로를 타지 않는다. 그래서 여기서
 /// 지켜야 할 계약은 "좌표가 맞는가"가 아니라 **"캐시가 있으면 새 fix를 부르지 않는가"**다.
 /// 좌표만 단언하면 두 경로 중 무엇을 썼든 통과해서 아무것도 막지 못한다.
-///
-/// 상세: 볼트 `plugin-cleanup-blocks-main-thread`
 void main() {
   final seoul = testPosition(37.5665, 126.9780);
   final busan = testPosition(35.1796, 129.0756);

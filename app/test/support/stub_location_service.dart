@@ -60,8 +60,8 @@ class StubLocationService implements LocationService {
 /// **캐시(`getLastKnownPosition`)와 새 fix(`getCurrentPosition`)는 비용이 다르다.**
 /// 앞쪽은 즉시 돌아오지만 뒤쪽은 콜드 스타트에서 10초를 넘길 수 있고, 게다가 조회를
 /// 끝낸 뒤 geolocator가 NMEA 리스너를 메인 스레드 동기 binder로 해제해 화면이 굳는
-/// 일까지 있다(볼트 `plugin-cleanup-blocks-main-thread`). 그래서 "어느 쪽을 불렀나"가
-/// 곧 계약이고, 이 스텁은 그것을 재기 위해 있다.
+/// 일까지 있다(지도 탭 ANR). 그래서 "어느 쪽을 불렀나"가 곧 계약이고,
+/// 이 스텁은 그것을 재기 위해 있다.
 ///
 /// 실제로 느리게 만들지는 않는다 — 재려는 것은 "기다렸는가"가 아니라 "불렀는가"다.
 class RecordingLocationService extends StubLocationService {

@@ -184,7 +184,8 @@ Future<Position?> _bestEffortPosition(LocationService locationService) async {
 /// geolocator가 조회를 끝낸 뒤 NMEA 리스너를 해제하는데, 그 해제가 메인 스레드
 /// 동기 binder 호출이라 시스템이 늦게 응답하면 화면이 굳는다. 실제로 지도 탭에서
 /// ANR(`Input dispatching timed out`)이 났고 **Dart 예외는 한 건도 없었다** —
-/// 앱 코드로는 보이지 않는 경로다. 상세: 볼트 `plugin-cleanup-blocks-main-thread`.
+/// 앱 코드로는 보이지 않는 경로라, 원인은 `dumpsys dropbox --print data_app_anr`로
+/// 앱과 `system_server` 스택을 대조해야 잡힌다.
 ///
 /// 대가는 **이동 직후 첫 진입에서 이전 위치를 볼 수 있다**는 것이다. 반경 3km 조회라
 /// 웬만한 오차는 묻히고, 캐시가 없을 때만 새 fix로 넘어간다. 굳는 화면보다는
