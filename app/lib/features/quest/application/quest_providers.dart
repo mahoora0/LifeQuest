@@ -178,15 +178,30 @@ Future<Position?> _bestEffortPosition(LocationService locationService) async {
   }
 }
 
-/// 현재 위치 조회 → `GET /quests/nearby`.
+/// 위치 조회 → `GET /quests/nearby`.
+///
+/// **캐시된 마지막 위치를 먼저 쓴다**([_bestEffortPosition]). 새 fix를 요청하면
+/// geolocator가 조회를 끝낸 뒤 NMEA 리스너를 해제하는데, 그 해제가 메인 스레드
+/// 동기 binder 호출이라 시스템이 늦게 응답하면 화면이 굳는다. 실제로 지도 탭에서
+/// ANR(`Input dispatching timed out`)이 났고 **Dart 예외는 한 건도 없었다** —
+/// 앱 코드로는 보이지 않는 경로다. 상세: 볼트 `plugin-cleanup-blocks-main-thread`.
+///
+/// 대가는 **이동 직후 첫 진입에서 이전 위치를 볼 수 있다**는 것이다. 반경 3km 조회라
+/// 웬만한 오차는 묻히고, 캐시가 없을 때만 새 fix로 넘어간다. 굳는 화면보다는
+/// 조금 낡은 좌표가 낫다는 판단이다.
 final nearbyQuestsProvider = FutureProvider<NearbyQuests>((ref) async {
-  // GPS fix는 10초 넘게 걸릴 수 있다. 그 사이 provider가 무효화되면
-  // await 뒤의 ref는 이미 dispose된 상태라 사용할 수 없으므로,
-  // 의존성은 첫 await 전에 모두 읽어 둔다.
+  // 위치 조회 도중 provider가 무효화되면 await 뒤의 ref는 이미 dispose된 상태라
+  // 사용할 수 없으므로, 의존성은 첫 await 전에 모두 읽어 둔다.
   final locationService = ref.watch(locationServiceProvider);
   final repository = ref.watch(questRepositoryProvider);
 
-  final position = await locationService.getCurrentPosition();
+  // 오늘의 퀘스트와 달리 여기서는 위치가 **필수**다. 좌표 없이는 "주변"을 정의할
+  // 수 없어 조회 자체가 성립하지 않으므로, 못 얻으면 오류 화면으로 보낸다.
+  final position = await _bestEffortPosition(locationService);
+  if (position == null) {
+    throw const LocationServiceException('현재 위치를 확인할 수 없습니다.');
+  }
+
   final quests = await repository.fetchNearby(
     latitude: position.latitude,
     longitude: position.longitude,
