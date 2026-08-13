@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/core/location/location_service.dart';
 import 'package:life_quest/core/network/api_exception.dart';
 
 /// 조회 실패 시 provider를 다시 부를지 정하는 정책.
@@ -13,6 +14,12 @@ import 'package:life_quest/core/network/api_exception.dart';
 ///
 /// 5xx와 연결 실패(상태 코드 없음)만 기본 정책에 맡긴다. 그쪽은 잠시 뒤 성공할 수 있다.
 Duration? lqProviderRetry(int retryCount, Object error) {
+  // 위치 실패도 즉시 확정한다. 권한 거부·GPS 꺼짐·fix 실패는 몇 초 뒤 다시 물어도
+  // 같은 답이 오고, 사용자가 설정을 바꿔야 풀리는 종류다. 상태 코드가 없어서
+  // 아래 4xx 규칙에 걸리지 않으므로 여기서 따로 가른다 — 걸러 내지 않으면 지도가
+  // 오류 안내 대신 40초 가까이 로딩만 돈다.
+  if (error is LocationServiceException) return null;
+
   final status = ApiException.from(error).statusCode;
   if (status != null && status >= 400 && status < 500) return null;
 
