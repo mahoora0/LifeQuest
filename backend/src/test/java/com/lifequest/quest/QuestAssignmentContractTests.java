@@ -30,9 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 배정 API가 계약대로 응답하는지 고정한다. 계약 원본은 {@code docs/04-api-spec.md} §3,
  * 배정 규칙은 {@code docs/05-business-rules.md} §1.
  *
- * <p>설계 정본(볼트 {@code 2026-08-05-quest-assignment-core-design})의 테스트 표 중
- * <b>9(잠금)·10(멱등)</b>을 여기서 닫는다. 11(경합)·12(재조회)는 H2로 재현되지 않아
- * MySQL 실측이 필요하며 이 파일 밖이다.
+ * <p>배정 설계가 요구하는 검증 중 <b>잠금·멱등</b>을 여기서 닫는다. <b>경합·재조회</b>는
+ * H2로 재현되지 않아(MVCC 구현이 MySQL과 다르다) MySQL 실측이 필요하며 이 파일 밖이다.
  *
  * <p><b>{@code @Transactional}을 붙이지 않는다.</b> 생성 트랜잭션이 {@code REQUIRES_NEW}라
  * 테스트 트랜잭션이 롤백돼도 배정은 커밋된다 — 롤백에 기대면 오염이 조용히 남는다.

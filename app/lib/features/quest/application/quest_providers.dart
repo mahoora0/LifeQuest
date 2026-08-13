@@ -46,42 +46,6 @@ class TodayQuestsNotifier extends AsyncNotifier<TodayQuests> {
     );
   }
 
-  /// 위치를 최선 노력으로 얻는다. 얻지 못하면 `null`.
-  ///
-  /// **캐시된 마지막 위치를 먼저 쓴다.** 서버가 이 좌표로 하는 일은 "어느 동네인가"를
-  /// 15km·50km 단위로 가르는 것뿐이라(`05-business-rules.md` §1-C) 몇 분 전 위치로
-  /// 충분하고, 그쪽은 즉시 돌아온다.
-  ///
-  /// 새 fix부터 기다리면 안 되는 이유는 **이 좌표가 쓰이는 순간이 하필 GPS가 가장
-  /// 느린 때**이기 때문이다. 배정은 주기당 한 번 만들어지고 그 뒤로는 좌표가 무시되는데,
-  /// 그 한 번이 앱을 처음 연 직후다. 콜드 스타트의 fix는 10초를 넘기는 일이 흔해
-  /// 타임아웃으로 떨어지고, 그러면 사용자는 그 주기 내내 엉뚱한 지역 퀘스트를 받는다.
-  /// 에뮬레이터 실측에서 실제로 이렇게 됐다 — 제주에 둔 기기가 대전 퀘스트를 받았다.
-  ///
-  /// 실패를 삼키는 것은 여기서 위치가 **있으면 좋은 값**이기 때문이다. 권한 거부·GPS
-  /// 꺼짐·fix 실패는 모두 정상적인 상황이고, 예외를 올리면 오늘의 퀘스트 화면 전체가
-  /// 오류로 바뀐다 — 잃어야 할 것은 "주변에서 고른다"는 이점뿐이다.
-  static Future<Position?> _bestEffortPosition(
-    LocationService locationService,
-  ) async {
-    try {
-      final lastKnown = await locationService.getLastKnownPosition();
-      if (lastKnown != null) {
-        return lastKnown;
-      }
-    } catch (_) {
-      // 캐시 조회 실패는 새 fix를 막지 않는다.
-    }
-
-    try {
-      return await locationService.getCurrentPosition().timeout(
-        const Duration(seconds: 8),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
   /// 퀘스트 완료. 성공 시 해당 배정 건을 즉시 완료 상태로 반영하고
   /// 레벨 정보를 무효화해 홈/마이의 EXP 표시를 갱신한다.
   ///
@@ -180,15 +144,65 @@ class NearbyQuests {
   }
 }
 
-/// 현재 위치 조회 → `GET /quests/nearby`.
+/// 위치를 최선 노력으로 얻는다. 얻지 못하면 `null`.
+///
+/// **캐시된 마지막 위치를 먼저 쓴다.** 서버가 이 좌표로 하는 일은 "어느 동네인가"를
+/// 15km·50km 단위로 가르는 것뿐이라(`05-business-rules.md` §1-C) 몇 분 전 위치로
+/// 충분하고, 그쪽은 즉시 돌아온다.
+///
+/// 새 fix부터 기다리면 안 되는 이유는 **이 좌표가 쓰이는 순간이 하필 GPS가 가장
+/// 느린 때**이기 때문이다. 배정은 주기당 한 번 만들어지고 그 뒤로는 좌표가 무시되는데,
+/// 그 한 번이 앱을 처음 연 직후다. 콜드 스타트의 fix는 10초를 넘기는 일이 흔해
+/// 타임아웃으로 떨어지고, 그러면 사용자는 그 주기 내내 엉뚱한 지역 퀘스트를 받는다.
+/// 에뮬레이터 실측에서 실제로 이렇게 됐다 — 제주에 둔 기기가 대전 퀘스트를 받았다.
+///
+/// 실패를 삼키는 것은 여기서 위치가 **있으면 좋은 값**이기 때문이다. 권한 거부·GPS
+/// 꺼짐·fix 실패는 모두 정상적인 상황이고, 예외를 올리면 오늘의 퀘스트 화면 전체가
+/// 오류로 바뀐다 — 잃어야 할 것은 "주변에서 고른다"는 이점뿐이다.
+Future<Position?> _bestEffortPosition(LocationService locationService) async {
+  try {
+    final lastKnown = await locationService.getLastKnownPosition();
+    if (lastKnown != null) {
+      return lastKnown;
+    }
+  } catch (_) {
+    // 캐시 조회 실패는 새 fix를 막지 않는다.
+  }
+
+  try {
+    return await locationService.getCurrentPosition().timeout(
+      const Duration(seconds: 8),
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+/// 위치 조회 → `GET /quests/nearby`.
+///
+/// **캐시된 마지막 위치를 먼저 쓴다**([_bestEffortPosition]). 새 fix를 요청하면
+/// geolocator가 조회를 끝낸 뒤 NMEA 리스너를 해제하는데, 그 해제가 메인 스레드
+/// 동기 binder 호출이라 시스템이 늦게 응답하면 화면이 굳는다. 실제로 지도 탭에서
+/// ANR(`Input dispatching timed out`)이 났고 **Dart 예외는 한 건도 없었다** —
+/// 앱 코드로는 보이지 않는 경로라, 원인은 `dumpsys dropbox --print data_app_anr`로
+/// 앱과 `system_server` 스택을 대조해야 잡힌다.
+///
+/// 대가는 **이동 직후 첫 진입에서 이전 위치를 볼 수 있다**는 것이다. 반경 3km 조회라
+/// 웬만한 오차는 묻히고, 캐시가 없을 때만 새 fix로 넘어간다. 굳는 화면보다는
+/// 조금 낡은 좌표가 낫다는 판단이다.
 final nearbyQuestsProvider = FutureProvider<NearbyQuests>((ref) async {
-  // GPS fix는 10초 넘게 걸릴 수 있다. 그 사이 provider가 무효화되면
-  // await 뒤의 ref는 이미 dispose된 상태라 사용할 수 없으므로,
-  // 의존성은 첫 await 전에 모두 읽어 둔다.
+  // 위치 조회 도중 provider가 무효화되면 await 뒤의 ref는 이미 dispose된 상태라
+  // 사용할 수 없으므로, 의존성은 첫 await 전에 모두 읽어 둔다.
   final locationService = ref.watch(locationServiceProvider);
   final repository = ref.watch(questRepositoryProvider);
 
-  final position = await locationService.getCurrentPosition();
+  // 오늘의 퀘스트와 달리 여기서는 위치가 **필수**다. 좌표 없이는 "주변"을 정의할
+  // 수 없어 조회 자체가 성립하지 않으므로, 못 얻으면 오류 화면으로 보낸다.
+  final position = await _bestEffortPosition(locationService);
+  if (position == null) {
+    throw const LocationServiceException('현재 위치를 확인할 수 없습니다.');
+  }
+
   final quests = await repository.fetchNearby(
     latitude: position.latitude,
     longitude: position.longitude,
