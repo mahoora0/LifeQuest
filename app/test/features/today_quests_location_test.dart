@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:life_quest/core/location/location_service.dart';
 import 'package:life_quest/features/quest/application/quest_providers.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
@@ -21,8 +20,8 @@ import '../support/stub_location_service.dart';
 /// 조용히 깨지는 종류라 여기서 잡는다.
 void main() {
   /// 서울시청 부근. 값 자체는 뜻이 없고 "이 좌표가 그대로 실렸는가"만 본다.
-  final seoul = _position(37.5665, 126.9780);
-  final busan = _position(35.1796, 129.0756);
+  final seoul = testPosition(37.5665, 126.9780);
+  final busan = testPosition(35.1796, 129.0756);
 
   Future<_RecordingQuestRepository> fetchWith(LocationService location) async {
     final repository = _RecordingQuestRepository();
@@ -49,7 +48,7 @@ void main() {
   /// **순서가 계약이다.** 새 fix부터 기다리면 콜드 스타트에서 타임아웃에 걸려
   /// 좌표가 통째로 빠진다 — 실측에서 실제로 그랬다. 캐시가 있으면 그쪽을 쓴다.
   test('캐시가 있으면 새 fix를 기다리지 않는다', () async {
-    final location = _SlowFixLocationService(lastKnown: seoul, fresh: busan);
+    final location = RecordingLocationService(lastKnown: seoul, fresh: busan);
 
     final repository = await fetchWith(location);
 
@@ -63,7 +62,7 @@ void main() {
 
   test('캐시가 없으면 새 fix로 떨어진다', () async {
     final repository = await fetchWith(
-      _SlowFixLocationService(lastKnown: null, fresh: busan),
+      RecordingLocationService(lastKnown: null, fresh: busan),
     );
 
     expect(repository.calls.single.latitude, busan.latitude);
@@ -74,7 +73,7 @@ void main() {
   /// 정상적인 상황이고, 그때 잃어야 할 것은 "주변에서 고른다"는 이점뿐이다 —
   /// 오늘의 퀘스트 화면 전체가 아니다.
   test('위치를 못 얻어도 좌표 없이 조회는 진행한다', () async {
-    final repository = await fetchWith(const _BrokenLocationService());
+    final repository = await fetchWith(const BrokenLocationService());
 
     expect(repository.calls, hasLength(1));
     expect(repository.calls.single.latitude, isNull);
@@ -85,7 +84,7 @@ void main() {
   /// 기기에서 위치 타게팅이 통째로 사라진다.
   test('캐시 조회가 실패해도 새 fix를 시도한다', () async {
     final repository = await fetchWith(
-      _SlowFixLocationService(
+      RecordingLocationService(
         lastKnown: null,
         fresh: busan,
         throwOnLastKnown: true,
@@ -95,19 +94,6 @@ void main() {
     expect(repository.calls.single.latitude, busan.latitude);
   });
 }
-
-Position _position(double latitude, double longitude) => Position(
-  latitude: latitude,
-  longitude: longitude,
-  timestamp: DateTime.utc(2026, 8, 10),
-  accuracy: 10,
-  altitude: 0,
-  altitudeAccuracy: 0,
-  heading: 0,
-  headingAccuracy: 0,
-  speed: 0,
-  speedAccuracy: 0,
-);
 
 /// `fetchToday`가 받은 좌표를 그대로 모아 둔다.
 class _RecordingQuestRepository extends QuestRepository {
@@ -120,47 +106,4 @@ class _RecordingQuestRepository extends QuestRepository {
     calls.add((latitude: latitude, longitude: longitude));
     return const TodayQuests(assignedDate: '2026-08-10', quests: []);
   }
-}
-
-/// 새 fix가 요청됐는지를 기록한다. 실제로 느리게 만들 필요는 없다 —
-/// 재려는 것은 "기다렸는가"가 아니라 "부르기는 했는가"다.
-class _SlowFixLocationService extends StubLocationService {
-  _SlowFixLocationService({
-    required this.lastKnown,
-    required this.fresh,
-    this.throwOnLastKnown = false,
-  });
-
-  final Position? lastKnown;
-  final Position fresh;
-  final bool throwOnLastKnown;
-
-  bool freshFixRequested = false;
-
-  @override
-  Future<Position?> getLastKnownPosition() async {
-    if (throwOnLastKnown) {
-      throw const LocationServiceException('테스트: 캐시 조회 실패');
-    }
-    return lastKnown;
-  }
-
-  @override
-  Future<Position> getCurrentPosition() async {
-    freshFixRequested = true;
-    return fresh;
-  }
-}
-
-/// 위치를 어느 경로로도 얻지 못하는 기기.
-class _BrokenLocationService extends StubLocationService {
-  const _BrokenLocationService();
-
-  @override
-  Future<Position?> getLastKnownPosition() =>
-      throw const LocationServiceException('테스트: 캐시 없음');
-
-  @override
-  Future<Position> getCurrentPosition() =>
-      throw const LocationServiceException('테스트: fix 실패');
 }

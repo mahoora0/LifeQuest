@@ -55,6 +55,75 @@ class StubLocationService implements LocationService {
   Future<bool> openAppSettings() async => true;
 }
 
+/// 어느 경로로 위치를 얻었는지 기록한다.
+///
+/// **캐시(`getLastKnownPosition`)와 새 fix(`getCurrentPosition`)는 비용이 다르다.**
+/// 앞쪽은 즉시 돌아오지만 뒤쪽은 콜드 스타트에서 10초를 넘길 수 있고, 게다가 조회를
+/// 끝낸 뒤 geolocator가 NMEA 리스너를 메인 스레드 동기 binder로 해제해 화면이 굳는
+/// 일까지 있다(볼트 `plugin-cleanup-blocks-main-thread`). 그래서 "어느 쪽을 불렀나"가
+/// 곧 계약이고, 이 스텁은 그것을 재기 위해 있다.
+///
+/// 실제로 느리게 만들지는 않는다 — 재려는 것은 "기다렸는가"가 아니라 "불렀는가"다.
+class RecordingLocationService extends StubLocationService {
+  RecordingLocationService({
+    required this.lastKnown,
+    required this.fresh,
+    this.throwOnLastKnown = false,
+  });
+
+  /// 캐시가 돌려줄 위치. `null`이면 캐시 없음.
+  final Position? lastKnown;
+
+  /// 새 fix가 돌려줄 위치.
+  final Position fresh;
+
+  /// 캐시 조회 자체가 터지는 기기를 흉내 낸다.
+  final bool throwOnLastKnown;
+
+  bool freshFixRequested = false;
+
+  @override
+  Future<Position?> getLastKnownPosition() async {
+    if (throwOnLastKnown) {
+      throw const LocationServiceException('테스트: 캐시 조회 실패');
+    }
+    return lastKnown;
+  }
+
+  @override
+  Future<Position> getCurrentPosition() async {
+    freshFixRequested = true;
+    return fresh;
+  }
+}
+
+/// 위치를 어느 경로로도 얻지 못하는 기기.
+class BrokenLocationService extends StubLocationService {
+  const BrokenLocationService();
+
+  @override
+  Future<Position?> getLastKnownPosition() =>
+      throw const LocationServiceException('테스트: 캐시 없음');
+
+  @override
+  Future<Position> getCurrentPosition() =>
+      throw const LocationServiceException('테스트: fix 실패');
+}
+
+/// 테스트용 좌표. 값 자체에는 뜻이 없고 "이 좌표가 그대로 흘러갔는가"만 본다.
+Position testPosition(double latitude, double longitude) => Position(
+  latitude: latitude,
+  longitude: longitude,
+  timestamp: DateTime.utc(2026, 8, 10),
+  accuracy: 10,
+  altitude: 0,
+  altitudeAccuracy: 0,
+  heading: 0,
+  headingAccuracy: 0,
+  speed: 0,
+  speedAccuracy: 0,
+);
+
 /// 화면 테스트의 ProviderScope에 얹는다. 위치를 쓰지 않는 화면도 포함해서 두는 편이 안전하다 —
 /// 어느 화면이 오늘의 퀘스트를 읽는지는 위젯 트리를 따라가 봐야 알 수 있다.
 ///
