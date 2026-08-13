@@ -180,7 +180,7 @@
 | `PATCH /users/me/title` | `titleId`(해제는 `null`) | `representativeTitle` | `RESOURCE_NOT_FOUND`, `FORBIDDEN`(미보유 칭호) |
 | `GET /users/me/badges` | 없음 | `badges[]`, `representativeBadgeId` | `UNAUTHORIZED` |
 | `PATCH /users/me/badge` | `badgeId`(해제는 `null`) | `representativeBadge` | `FORBIDDEN`(미보유 배지) |
-| `GET /users/me/rewards` | `page`, `size` | 획득한 `titles[]`, `profileItems[]`와 획득 근거·일시 | `UNAUTHORIZED` |
+| `GET /users/me/rewards` | `page`, `size` | `level`, 현재 구간 `exp`, `expForNextLevel`, `questsToNextLevel`, `nextMilestone`, `received[]`, `weeklyExp[]`; 기존 프로필용 `titles[]`, `profileItems[]`도 유지 | `UNAUTHORIZED`, `VALIDATION_FAILED` |
 
 **퀘스트·수집**
 

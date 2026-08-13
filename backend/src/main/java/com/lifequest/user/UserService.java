@@ -12,7 +12,12 @@ import com.lifequest.user.dto.TitleCollectionResponse;
 import com.lifequest.user.dto.TitleResponse;
 import com.lifequest.user.dto.UserProfileResponse;
 import com.lifequest.growth.GrowthService;
+import com.lifequest.growth.ExpLog;
+import com.lifequest.growth.ExpLogRepository;
+import com.lifequest.growth.LevelReward;
+import com.lifequest.growth.LevelRewardRepository;
 import com.lifequest.quest.domain.QuestFeature;
+import com.lifequest.quest.repository.QuestRepository;
 import com.lifequest.quest.service.QuestUnlockPolicy;
 import com.lifequest.profile.AvatarCharacter;
 import com.lifequest.profile.AvatarCharacterRepository;
@@ -25,6 +30,14 @@ import com.lifequest.profile.UserCharacterAccessory;
 import com.lifequest.profile.UserCharacterAccessoryRepository;
 import com.lifequest.profile.UserTitle;
 import com.lifequest.profile.UserTitleRepository;
+import com.lifequest.profile.TitleRepository;
+import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,6 +64,11 @@ public class UserService {
     private final ProfileItemRepository profileItemRepository;
     private final ProfileImageStorage profileImageStorage;
     private final QuestUnlockPolicy questUnlockPolicy;
+    private final ExpLogRepository expLogRepository;
+    private final LevelRewardRepository levelRewardRepository;
+    private final QuestRepository questRepository;
+    private final TitleRepository titleRepository;
+    private final Clock clock;
 
     public UserService(
             UserRepository userRepository,
@@ -60,7 +78,12 @@ public class UserService {
             UserCharacterAccessoryRepository userCharacterAccessoryRepository,
             ProfileItemRepository profileItemRepository,
             ProfileImageStorage profileImageStorage,
-            QuestUnlockPolicy questUnlockPolicy) {
+            QuestUnlockPolicy questUnlockPolicy,
+            ExpLogRepository expLogRepository,
+            LevelRewardRepository levelRewardRepository,
+            QuestRepository questRepository,
+            TitleRepository titleRepository,
+            Clock clock) {
         this.userRepository = userRepository;
         this.characterRepository = characterRepository;
         this.userTitleRepository = userTitleRepository;
@@ -69,6 +92,11 @@ public class UserService {
         this.profileItemRepository = profileItemRepository;
         this.profileImageStorage = profileImageStorage;
         this.questUnlockPolicy = questUnlockPolicy;
+        this.expLogRepository = expLogRepository;
+        this.levelRewardRepository = levelRewardRepository;
+        this.questRepository = questRepository;
+        this.titleRepository = titleRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -235,15 +263,129 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public RewardHistoryResponse getRewards(Long userId) {
-        getUser(userId);
+    public RewardHistoryResponse getRewards(Long userId, int page, int size) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        }
+        User user = getUser(userId);
+        List<UserTitle> ownedTitles =
+                userTitleRepository.findAllByUserIdOrderByAcquiredAtDesc(userId);
+        List<UserProfileItem> ownedItems =
+                userProfileItemRepository.findAllByUserIdOrderByAcquiredAtDesc(userId);
+
+        int levelStartExp = GrowthService.cumulativeExpForLevel(user.getLevel());
+        int currentLevelExp = user.getTotalExp() - levelStartExp;
+        int nextLevelExp = GrowthService.requiredExpForNextLevel(user.getLevel());
+        int remainingExp = Math.max(0, nextLevelExp - currentLevelExp);
+        Double averageReward = questRepository.averageExpRewardForPublicActiveQuests();
+        Integer questsToNextLevel = averageReward == null || averageReward <= 0
+                ? null
+                : (int) Math.ceil(remainingExp / averageReward);
+
+        List<RewardHistoryResponse.ReceivedReward> received = receivedRewards(
+                ownedTitles, ownedItems, page, size);
         return new RewardHistoryResponse(
-                userTitleRepository.findAllByUserIdOrderByAcquiredAtDesc(userId).stream()
+                user.getLevel(),
+                currentLevelExp,
+                nextLevelExp,
+                questsToNextLevel,
+                nextMilestone(user.getLevel()),
+                received,
+                weeklyExp(userId),
+                ownedTitles.stream()
                         .map(TitleResponse::from)
                         .toList(),
-                userProfileItemRepository.findAllByUserIdOrderByAcquiredAtDesc(userId).stream()
+                ownedItems.stream()
                         .map(ProfileItemResponse::from)
                         .toList());
+    }
+
+    private RewardHistoryResponse.NextMilestone nextMilestone(int currentLevel) {
+        List<LevelReward> future = levelRewardRepository.findAllByOrderByLevelAscIdAsc().stream()
+                .filter(reward -> reward.getLevel() > currentLevel)
+                .toList();
+        if (future.isEmpty()) {
+            return null;
+        }
+        int level = future.get(0).getLevel();
+        String rewards = future.stream()
+                .filter(reward -> reward.getLevel() == level)
+                .map(this::rewardName)
+                .collect(Collectors.joining(" · "));
+        return new RewardHistoryResponse.NextMilestone(
+                level, "Lv." + level + " · " + rewards);
+    }
+
+    private String rewardName(LevelReward reward) {
+        if (reward.getRewardType() == LevelReward.RewardType.TITLE) {
+            return titleRepository.findById(reward.getRewardRefId())
+                    .map(title -> "칭호 \"" + title.getName() + "\"")
+                    .orElse("칭호");
+        }
+        return profileItemRepository.findById(reward.getRewardRefId())
+                .map(item -> "아이템 \"" + item.getName() + "\"")
+                .orElse("아이템");
+    }
+
+    private List<RewardHistoryResponse.ReceivedReward> receivedRewards(
+            List<UserTitle> titles,
+            List<UserProfileItem> items,
+            int page,
+            int size) {
+        List<RewardHistoryResponse.ReceivedReward> rewards = new ArrayList<>();
+        titles.stream()
+                .filter(title -> "LEVEL".equals(title.getSourceType()))
+                .map(title -> new RewardHistoryResponse.ReceivedReward(
+                        title.getSourceId().intValue(),
+                        title.getTitle().getName(),
+                        "TITLE",
+                        title.getAcquiredAt(),
+                        relativeTime(title.getAcquiredAt()),
+                        "Lv." + title.getSourceId() + " 달성"))
+                .forEach(rewards::add);
+        items.stream()
+                .filter(item -> "LEVEL".equals(item.getSourceType()))
+                .map(item -> new RewardHistoryResponse.ReceivedReward(
+                        item.getSourceId().intValue(),
+                        item.getProfileItem().getName(),
+                        "PROFILE_ITEM",
+                        item.getAcquiredAt(),
+                        relativeTime(item.getAcquiredAt()),
+                        "Lv." + item.getSourceId() + " 달성"))
+                .forEach(rewards::add);
+        rewards.sort(Comparator.comparing(
+                RewardHistoryResponse.ReceivedReward::acquiredAt).reversed());
+        int from = Math.min(page * size, rewards.size());
+        int to = Math.min(from + size, rewards.size());
+        return List.copyOf(rewards.subList(from, to));
+    }
+
+    private String relativeTime(Instant acquiredAt) {
+        LocalDate acquiredDate = acquiredAt.atZone(clock.getZone()).toLocalDate();
+        LocalDate today = LocalDate.now(clock);
+        long days = ChronoUnit.DAYS.between(acquiredDate, today);
+        if (days <= 0) return "오늘";
+        if (days == 1) return "어제";
+        if (days < 7) return days + "일 전";
+        return acquiredDate.toString().replace('-', '.');
+    }
+
+    private List<RewardHistoryResponse.DailyExp> weeklyExp(Long userId) {
+        LocalDate today = LocalDate.now(clock);
+        LocalDate monday = today.with(DayOfWeek.MONDAY);
+        Instant from = monday.atStartOfDay(clock.getZone()).toInstant();
+        Instant to = monday.plusDays(7).atStartOfDay(clock.getZone()).toInstant();
+        int[] totals = new int[7];
+        for (ExpLog log : expLogRepository
+                .findAllByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+                        userId, from, to)) {
+            int index = log.getCreatedAt().atZone(clock.getZone()).getDayOfWeek().getValue() - 1;
+            totals[index] += log.getExpAmount();
+        }
+        String[] labels = {"월", "화", "수", "목", "금", "토", "일"};
+        return IntStream.range(0, labels.length)
+                .mapToObj(index -> new RewardHistoryResponse.DailyExp(labels[index], totals[index]))
+                .toList();
     }
 
     @Transactional

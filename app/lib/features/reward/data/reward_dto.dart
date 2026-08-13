@@ -11,7 +11,7 @@ enum LqRewardKind {
   final String label;
 
   static LqRewardKind parse(String? raw) => switch (raw) {
-    'ITEM' || 'item' => item,
+    'ITEM' || 'item' || 'PROFILE_ITEM' => item,
     'CURRENCY' || 'currency' => currency,
     _ => title,
   };

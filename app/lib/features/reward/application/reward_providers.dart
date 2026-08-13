@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/core/network/api_client.dart';
 import 'package:life_quest/features/reward/data/reward_dto.dart';
 import 'package:life_quest/features/reward/data/reward_repository.dart';
 
 final rewardRepositoryProvider = Provider<RewardRepository>((ref) {
-  return const RewardRepository();
+  return RewardRepository(ref.watch(dioProvider));
 });
 
 /// S-05 레벨 · 보상.

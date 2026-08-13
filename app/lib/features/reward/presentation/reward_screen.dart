@@ -8,6 +8,18 @@ import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_progress_bar.dart';
+import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
+import 'package:life_quest/shared/widgets/lq_timeline.dart';
+
+/// 완료 화면보다 짧게, 현재 레벨 → 다음 관문 → 이력 → 주간 그래프 순으로 읽힌다.
+const rewardScreenSequenceDuration = Duration(milliseconds: 1150);
+
+abstract final class _RewardBeat {
+  static const level = (0.0, 0.30);
+  static const milestone = (0.16, 0.48);
+  static const received = (0.34, 0.76);
+  static const weekly = (0.58, 1.0);
+}
 
 /// S-05 레벨 · 보상 (화면맵 2c).
 ///
@@ -34,27 +46,57 @@ class RewardScreen extends ConsumerWidget {
                 onRetry: () => ref.invalidate(rewardOverviewProvider),
                 notReadyMessage: '레벨 · 보상은 아직 준비 중이에요',
                 notReadyHint: '레벨과 EXP는 마이페이지에서 확인할 수 있어요.',
-                data: (value) => ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    LqSpacing.screen,
-                    4,
-                    LqSpacing.screen,
-                    24,
+                data: (value) => LqTimeline(
+                  duration: rewardScreenSequenceDuration,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      LqSpacing.screen,
+                      4,
+                      LqSpacing.screen,
+                      24,
+                    ),
+                    children: [
+                      LqTimelineStep(
+                        start: _RewardBeat.level.$1,
+                        end: _RewardBeat.level.$2,
+                        fromScale: 0.88,
+                        from: Offset.zero,
+                        curve: LqMotion.bounce,
+                        child: LqCountUp(
+                          value: value.exp,
+                          start: 0.04,
+                          end: 0.34,
+                          builder: (context, exp) =>
+                              _LevelCard(overview: value, displayedExp: exp),
+                        ),
+                      ),
+                      const SizedBox(height: LqSpacing.gap),
+                      if (value.nextMilestone != null) ...[
+                        LqTimelineStep(
+                          start: _RewardBeat.milestone.$1,
+                          end: _RewardBeat.milestone.$2,
+                          child: _NextMilestoneCard(
+                            milestone: value.nextMilestone!,
+                          ),
+                        ),
+                        const SizedBox(height: LqSpacing.gap),
+                      ],
+                      if (value.received.isNotEmpty) ...[
+                        LqTimelineStep(
+                          start: _RewardBeat.received.$1,
+                          end: _RewardBeat.received.$2,
+                          child: _ReceivedCard(rewards: value.received),
+                        ),
+                        const SizedBox(height: LqSpacing.gap),
+                      ],
+                      if (value.weeklyExp.isNotEmpty)
+                        LqTimelineStep(
+                          start: _RewardBeat.weekly.$1,
+                          end: _RewardBeat.weekly.$2,
+                          child: _WeeklyExpCard(days: value.weeklyExp),
+                        ),
+                    ],
                   ),
-                  children: [
-                    _LevelCard(overview: value),
-                    const SizedBox(height: LqSpacing.gap),
-                    if (value.nextMilestone != null) ...[
-                      _NextMilestoneCard(milestone: value.nextMilestone!),
-                      const SizedBox(height: LqSpacing.gap),
-                    ],
-                    if (value.received.isNotEmpty) ...[
-                      _ReceivedCard(rewards: value.received),
-                      const SizedBox(height: LqSpacing.gap),
-                    ],
-                    if (value.weeklyExp.isNotEmpty)
-                      _WeeklyExpCard(days: value.weeklyExp),
-                  ],
                 ),
               ),
             ),
@@ -66,9 +108,10 @@ class RewardScreen extends ConsumerWidget {
 }
 
 class _LevelCard extends StatelessWidget {
-  const _LevelCard({required this.overview});
+  const _LevelCard({required this.overview, required this.displayedExp});
 
   final RewardOverview overview;
+  final int displayedExp;
 
   @override
   Widget build(BuildContext context) {
@@ -80,14 +123,20 @@ class _LevelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Lv. ${overview.level}', style: LqText.levelNumber),
+          Row(
+            children: [
+              Text('Lv. ${overview.level}', style: LqText.levelNumber),
+              const Spacer(),
+              const LqStamp(label: 'MY LEVEL', angleDegrees: -2, fontSize: 11),
+            ],
+          ),
           const SizedBox(height: 3),
           Text.rich(
             TextSpan(
               children: [
                 TextSpan(
                   text:
-                      'EXP ${overview.exp} / ${overview.expForNextLevel} · 다음 레벨까지 ',
+                      'EXP $displayedExp / ${overview.expForNextLevel} · 다음 레벨까지 ',
                   style: LqText.bodySm,
                 ),
                 TextSpan(
@@ -101,7 +150,7 @@ class _LevelCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 9),
-          LqProgressBar(value: overview.exp, max: overview.expForNextLevel),
+          LqProgressBar(value: displayedExp, max: overview.expForNextLevel),
           // 남은 퀘스트 수는 서버 계산값이다. 없으면 문구 자체를 감춘다.
           if (questsLeft != null) ...[
             const SizedBox(height: 7),
@@ -189,7 +238,12 @@ class _ReceivedCard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: LqDashedDivider(),
               ),
-            _ReceivedRow(reward: rewards[i]),
+            LqTimelineStep(
+              start: (0.40 + i * 0.055).clamp(0.40, 0.72).toDouble(),
+              end: (0.66 + i * 0.055).clamp(0.66, 0.94).toDouble(),
+              from: const Offset(12, 0),
+              child: _ReceivedRow(reward: rewards[i]),
+            ),
           ],
         ],
       ),
@@ -323,11 +377,12 @@ class _ExpBar extends StatelessWidget {
     // 최고치를 100%로 두고 비율을 잡는다. 0이어도 테두리는 보이게 최소 높이를 준다.
     final ratio = peak <= 0 ? 0.0 : exp / peak;
 
-    return Semantics(
+    final timeline = LqTimeline.maybeOf(context);
+    Widget bar(double progress) => Semantics(
       label: 'EXP $exp',
       child: FractionallySizedBox(
         alignment: Alignment.bottomCenter,
-        heightFactor: ratio.clamp(0.08, 1.0),
+        heightFactor: (ratio * progress).clamp(0.08, 1.0),
         child: Container(
           decoration: BoxDecoration(
             color: exp == 0 ? LqColors.lockedTile : LqColors.expFill,
@@ -338,6 +393,17 @@ class _ExpBar extends StatelessWidget {
             border: Border.all(color: LqColors.ink, width: 1.6),
           ),
         ),
+      ),
+    );
+    if (timeline == null) return bar(1);
+    return AnimatedBuilder(
+      animation: timeline,
+      builder: (context, _) => bar(
+        const Interval(
+          0.64,
+          0.96,
+          curve: LqMotion.standard,
+        ).transform(timeline.value),
       ),
     );
   }
