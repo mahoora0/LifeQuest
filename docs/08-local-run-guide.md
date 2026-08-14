@@ -156,6 +156,88 @@ curl http://localhost:8080/api/system/ping
 
 PowerShell에서는 `Invoke-RestMethod`를 사용해도 된다.
 
+### 시연용 더미 데이터
+
+빈 DB로 앱을 실행하면 친구·그룹·인증 게시물·알림 화면이 모두 비어 있어 대부분의 흐름을
+눌러 볼 수 없다. `demo` 프로파일을 켜면 시연용 사용자 12명과 그 관계가 한 번 적재된다.
+
+```powershell
+# Windows
+cd backend
+.\gradlew.bat bootRun "--args=--spring.profiles.active=demo"
+```
+
+```bash
+# macOS
+cd backend
+./gradlew bootRun --args='--spring.profiles.active=demo'
+```
+
+적재되는 것은 다음과 같다. 각 항목은 화면 분기를 눌러 볼 수 있도록 **상태를 섞어** 넣는다.
+
+| 대상 | 들어가는 상태 |
+| --- | --- |
+| 사용자 12명 | 레벨 1~22. 가입 직후(활동 0) 계정도 하나 포함 |
+| 친구 | 친구 4명 · 받은 요청 2건 · 보낸 요청 1건 · 거절된 요청 1건 |
+| 그룹 6개 | 내가 만든 곳 · 참여 중 · 초대받음 · 가입 신청 중 · 미참여 공개 · 비공개 |
+| 그룹 멤버 | 활동 중 · 승인 대기 · 초대 대기 · 탈퇴 |
+| 그룹 퀘스트 | 예정(참가 신청함/안 함) · 완료(보상 지급됨) · 취소 |
+| 그룹 채팅 | 두 그룹에 여러 사람이 주고받은 대화 |
+| 퀘스트 이력 | 위치 인증·직접 완료 12건, 오늘 진행 중 1건 |
+| 인증 게시물 | 투표 중 · 검증됨 · 애매함, 투표·댓글 포함 |
+| 알림 | 읽음·안읽음 혼재 |
+| 도감·칭호 | 일부만 수집(전부 채우면 "수집 중" 상태가 사라진다) |
+
+로그인 계정은 `demo@lifequest.test`, 비밀번호는 `demo1234!`이다. 열두 명 모두 같은 비밀번호를
+쓰므로 다른 사람 화면도 로그인해서 볼 수 있다. 모든 관계는 주인공을 중심으로 짜여 있다.
+
+프로파일을 켜지 않으면 아무것도 적재되지 않고, 이미 적재된 DB에서 다시 켜도 중복으로 쌓이지
+않는다.
+
+> [!warning] 이 데이터를 막는 것은 프로파일 하나뿐이다
+> `demo`를 켜면 대상이 어디든 시연용 가짜 사용자가 들어간다. **운영 DB에 켜지 않도록 확인하는
+> 책임은 실행하는 사람에게 있다.** 적재 직전 경고 로그에 그 DB의 기존 사용자 수가 찍히므로,
+> 예상과 다르면 즉시 멈춘다.
+
+### 시연 데이터 회수
+
+**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 참조하는 테이블이 열세 개이고
+대부분 `ON DELETE CASCADE`가 없어 FK 위반으로 실패한다. 아래 순서로 지운다.
+
+```sql
+SET @demo := '%@lifequest.test';
+
+DELETE FROM quest_proof_votes    WHERE voter_user_id  IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_proof_comments WHERE author_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_proof_photos   WHERE post_id IN (SELECT id FROM quest_proof_posts
+                                  WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM quest_proof_posts    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_completions    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_daily_quests    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_quest_participants WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_quests         WHERE group_id IN (SELECT id FROM quest_groups
+                                  WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM group_chat_messages  WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_members        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_groups         WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM friendships          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR friend_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM friend_requests      WHERE sender_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR receiver_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM notifications        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_lifedex         WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_titles          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_profile_items   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_achievements    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM exp_logs             WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
+DELETE FROM users                WHERE email LIKE @demo;
+```
+
+지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(`uploads/proof/demo-proof-*.png`)은
+남아 있어도 무해하며 재실행 시 덮어쓴다.
+
 ## 5. Flutter 공통 실행
 
 ### IDE에서 ▶ 한 번으로 실행
