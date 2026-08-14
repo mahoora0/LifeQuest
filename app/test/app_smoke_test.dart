@@ -186,7 +186,7 @@ void main() {
 
     expect(find.text('나의 기록'), findsOneWidget);
     expect(find.text('도감'), findsOneWidget);
-    expect(find.text('42개 수집'), findsOneWidget);
+    expect(find.text('일일 퀘스트 · 42개 수집'), findsOneWidget);
     expect(find.text('업적 / 칭호'), findsOneWidget);
     expect(find.text('달성 1 / 3 · 칭호 2개 보유'), findsOneWidget);
 

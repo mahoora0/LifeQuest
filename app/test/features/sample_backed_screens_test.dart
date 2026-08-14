@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,10 +96,7 @@ void main() {
 
       expect(find.text('일일 퀘스트 도감은 아직 준비 중이에요'), findsNothing);
       expect(find.text('일일 퀘스트 전용'), findsOneWidget);
-      expect(
-        find.text('도감 표시가 있는 일일 퀘스트를 완료하면 새로운 기록이 등록돼요.'),
-        findsOneWidget,
-      );
+      expect(find.text('도감 표시가 있는 일일 퀘스트를 완료하면 새로운 기록이 등록돼요.'), findsOneWidget);
       // 카테고리는 필터 칩과 격자 타일 양쪽에 나온다.
       expect(find.text('카페'), findsWidgets);
       expect(find.text('공원 · 산책로'), findsWidgets);
