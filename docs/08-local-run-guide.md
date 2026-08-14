@@ -188,13 +188,55 @@ cd backend
 | 알림 | 읽음·안읽음 혼재 |
 | 도감·칭호 | 일부만 수집(전부 채우면 "수집 중" 상태가 사라진다) |
 
-로그인 정보는 부팅 로그의 `[demo]` 줄에 출력된다. 주인공 계정은
-`demo@lifequest.test`이며 모든 관계가 이 사용자를 중심으로 짜여 있다.
+로그인 계정은 `demo@lifequest.test`, 비밀번호는 `demo1234!`이다. 열두 명 모두 같은 비밀번호를
+쓰므로 다른 사람 화면도 로그인해서 볼 수 있다. 모든 관계는 주인공을 중심으로 짜여 있다.
 
-프로파일을 켜지 않으면 아무것도 적재되지 않는다. 이미 적재된 DB에서 다시 켜도 중복으로
-쌓이지 않으며, 다시 넣으려면 `demo@lifequest.test` 사용자를 지우고 실행한다.
+프로파일을 켜지 않으면 아무것도 적재되지 않고, 이미 적재된 DB에서 다시 켜도 중복으로 쌓이지
+않는다.
 
-> 이 데이터는 시연·개발용이다. `prod` 프로파일과 함께 켜면 부팅이 실패한다.
+> [!warning] 이 데이터를 막는 것은 프로파일 하나뿐이다
+> `demo`를 켜면 대상이 어디든 시연용 가짜 사용자가 들어간다. **운영 DB에 켜지 않도록 확인하는
+> 책임은 실행하는 사람에게 있다.** 적재 직전 경고 로그에 그 DB의 기존 사용자 수가 찍히므로,
+> 예상과 다르면 즉시 멈춘다.
+
+### 시연 데이터 회수
+
+**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 참조하는 테이블이 열세 개이고
+대부분 `ON DELETE CASCADE`가 없어 FK 위반으로 실패한다. 아래 순서로 지운다.
+
+```sql
+SET @demo := '%@lifequest.test';
+
+DELETE FROM quest_proof_votes    WHERE voter_user_id  IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_proof_comments WHERE author_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_proof_photos   WHERE post_id IN (SELECT id FROM quest_proof_posts
+                                  WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM quest_proof_posts    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_completions    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_daily_quests    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_quest_participants WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_quests         WHERE group_id IN (SELECT id FROM quest_groups
+                                  WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM group_chat_messages  WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_members        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_groups         WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM friendships          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR friend_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM friend_requests      WHERE sender_id IN (SELECT id FROM users WHERE email LIKE @demo)
+                                    OR receiver_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM notifications        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_lifedex         WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_titles          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_profile_items   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_achievements    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM exp_logs             WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
+DELETE FROM users                WHERE email LIKE @demo;
+```
+
+지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(`uploads/proof/demo-proof-*.png`)은
+남아 있어도 무해하며 재실행 시 덮어쓴다.
 
 ## 5. Flutter 공통 실행
 

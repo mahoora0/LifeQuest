@@ -26,6 +26,8 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * 시연·개발용 더미 데이터를 넣는다. <b>운영 데이터가 아니다.</b>
@@ -43,15 +45,29 @@ import org.springframework.transaction.annotation.Transactional;
  * ./gradlew bootRun --args='--spring.profiles.active=demo'
  * </pre>
  *
- * <h2>회수 장치</h2>
- * {@code prod}와 함께 켜지면 <b>부팅을 실패시킨다</b>. 데모 데이터가 운영에 들어가는 것보다
- * 배포가 실패하는 편이 낫고, 실패해야 누군가 알아챈다(docs 작성 기준 — 임시 구현에는 표식과
- * 회수 장치를 함께 붙인다).
+ * <h2>무엇이 이것을 막는가 — 프로파일 하나뿐이다</h2>
+ * 실질적인 방어는 {@link Profile @Profile("demo")} 하나다. 프로파일을 <b>명시적으로 켜야만</b>
+ * 빈이 만들어지고, 켜지 않으면 이 클래스는 존재하지 않는 것과 같다.
  *
- * <h2>멱등</h2>
- * 주인공 계정({@link #DEMO_EMAIL})이 이미 있으면 통째로 건너뛴다. 부분 재실행은 하지 않는다 —
- * 관계 데이터가 얽혀 있어 중간부터 채우면 어긋난 상태가 남는다. 다시 넣으려면 데모 사용자를
- * 지우고 재실행한다.
+ * <p>처음에는 {@code prod} 프로파일과 함께 켜지면 부팅을 실패시키는 가드를 두었으나 걷어냈다.
+ * <b>이 저장소에는 {@code prod} 프로파일이 없다</b> — {@code application-prod.yml}도,
+ * {@code SPRING_PROFILES_ACTIVE} 설정도 어디에도 없다. 그 조건은 참이 될 수 없었고, 그런데도
+ * 문서와 주석이 그것을 작동하는 안전장치라고 단언해 <b>없는 보호를 있다고 믿게 만들었다</b>.
+ * 도달하지 않는 코드보다 정확한 설명이 낫다.
+ *
+ * <p>그래서 남은 위험을 그대로 적는다 — <b>운영 환경에서 이 프로파일을 켜면 시연용 가짜
+ * 사용자가 그대로 들어간다.</b> 켜기 전에 대상 DB를 확인하는 것 외에 막는 장치는 없다.
+ * 적재 직전 경고 로그를 남기는 이유가 이것이다.
+ *
+ * <h2>멱등과 재적재</h2>
+ * 시연 계정({@code *@lifequest.test})이 <b>하나라도</b> 있으면 통째로 건너뛴다. 주인공 계정만
+ * 보면, 그 계정만 지우고 재실행했을 때 나머지 11명이 남아 있어 이메일·닉네임·친구코드
+ * UNIQUE에 걸린다.
+ *
+ * <p>전체가 한 트랜잭션이라 중간에 실패하면 DB에는 아무것도 남지 않는다. 다만 <b>지우는 것은
+ * 사용자 한 명을 지우는 것으로 끝나지 않는다</b> — 친구·그룹·게시물·알림 등 열세 테이블이
+ * {@code users.id}를 FK로 참조하므로 역순으로 지워야 한다. 절차는
+ * {@code docs/08-local-run-guide.md}에 적어 두었다.
  */
 @Component
 @Profile("demo")
@@ -79,18 +95,23 @@ public class DemoDataSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (List.of(environment.getActiveProfiles()).contains("prod")) {
-            throw new IllegalStateException(
-                "demo 프로파일이 prod와 함께 켜졌다. 시연용 가짜 사용자가 운영 데이터에 섞이므로 "
-                    + "부팅을 중단한다 — demo를 빼고 다시 띄울 것.");
-        }
-
+        // 시연 계정이 하나라도 있으면 건너뛴다. 주인공 계정만 보면, 그것만 지우고 재실행했을 때
+        // 나머지 11명이 남아 이메일·닉네임·친구코드 UNIQUE에 걸려 부팅이 죽는다.
         Integer existing = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM users WHERE email = ?", Integer.class, DEMO_EMAIL);
+            "SELECT COUNT(*) FROM users WHERE email LIKE ?", Integer.class, "%" + DEMO_DOMAIN);
         if (existing != null && existing > 0) {
-            log.info("[demo] 더미 데이터가 이미 있다 — 건너뛴다. 다시 넣으려면 {} 사용자를 지울 것.", DEMO_EMAIL);
+            log.info("[demo] 시연 데이터가 이미 있다({}명) — 건너뛴다. 다시 넣으려면 "
+                + "docs/08-local-run-guide.md의 회수 절차를 따를 것.", existing);
             return;
         }
+
+        // 대상 DB에 이미 사람이 쓰고 있는지 알린다. 막지는 않는다 — 로컬 개발 DB에도 테스트
+        // 계정이 흔히 남아 있어 중단시키면 정작 필요할 때 못 쓴다. 다만 운영 DB에 이 프로파일을
+        // 켰다면 이 줄이 유일한 신호이므로 반드시 남긴다.
+        Integer others = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM users WHERE email NOT LIKE ?", Integer.class, "%" + DEMO_DOMAIN);
+        log.warn("[demo] 시연용 가짜 데이터를 적재한다. 이 DB에 이미 있는 사용자: {}명. "
+            + "운영 DB가 아닌지 확인할 것 — 프로파일 외에 이것을 막는 장치는 없다.", others);
 
         LocalDateTime now = LocalDateTime.now();
         Map<String, Long> users = seedUsers(now);
@@ -104,8 +125,10 @@ public class DemoDataSeeder implements ApplicationRunner {
         seedAchievements(users, now);
         seedNotifications(users, now);
 
-        log.info("[demo] 더미 데이터 적재 완료 — 사용자 {}명. 로그인: {} / {}",
-            users.size(), DEMO_EMAIL, DEMO_PASSWORD);
+        // 비밀번호는 로그에 찍지 않는다. 공용 계정이라 값 자체는 비밀이 아니지만, 운영 로그
+        // 수집기에 평문 비밀번호가 남는 모양을 만들면 그 습관이 다른 자리로 옮겨 간다.
+        log.info("[demo] 시연 데이터 적재 완료 — 사용자 {}명. 로그인 계정은 {} (비밀번호는 "
+            + "docs/08-local-run-guide.md 참조)", users.size(), DEMO_EMAIL);
     }
 
     // ------------------------------------------------------------------ 사용자
@@ -301,8 +324,10 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private void addMember(Long groupId, Long userId, String role, String status,
                            Long invitedBy, LocalDateTime at) {
-        // 실제로 들어와 있는 사람만 joined_at을 갖는다 — 초대·신청 단계는 아직 멤버가 아니다
-        LocalDateTime joinedAt = "ACTIVE".equals(status) ? at : null;
+        // 한 번이라도 들어왔던 사람은 joined_at을 갖는다. 도메인의 leave()가 그 값을 지우지
+        // 않으므로 탈퇴자에게 NULL을 넣으면 앱이 만들 수 없는 조합이 된다.
+        // 초대·가입신청 단계는 아직 멤버가 아니므로 비운다.
+        LocalDateTime joinedAt = List.of("ACTIVE", "LEFT", "REMOVED").contains(status) ? at : null;
         LocalDateTime respondedAt = List.of("ACTIVE", "REJECTED", "LEFT").contains(status) ? at : null;
         // 초대는 방치되면 만료된다. 만료 시각이 없으면 영영 남는 초대가 된다
         LocalDateTime expiresAt = "INVITED".equals(status) ? at.plusDays(7) : null;
@@ -346,9 +371,11 @@ public class DemoDataSeeder implements ApplicationRunner {
         Long done = insertGroupQuest(insert, g.get("running"), u.get("demo"),
             "여의도 벚꽃 야간 러닝", "여의서로를 따라 5km. 사진 찍느라 기록은 포기했습니다.",
             "여의도한강공원", doneAt, "COMPLETED", 40, doneAt.plusHours(2));
-        applyParticipant(done, u.get("demo"), "APPLIED", doneAt.minusDays(4), null, doneAt.plusHours(2));
-        applyParticipant(done, u.get("mina"), "APPLIED", doneAt.minusDays(4), null, doneAt.plusHours(2));
-        applyParticipant(done, u.get("nayoung"), "APPLIED", doneAt.minusDays(3), null, doneAt.plusHours(2));
+        // 보상까지 끝난 참가자는 REWARDED다 — GroupQuestParticipant.reward()가 그렇게 바꾼다.
+        // APPLIED로 두면 rewarded_at이 있는데도 화면에는 "신청함"으로 보이고, 철회 가드도 걸리지 않는다.
+        applyParticipant(done, u.get("demo"), "REWARDED", doneAt.minusDays(4), null, doneAt.plusHours(2));
+        applyParticipant(done, u.get("mina"), "REWARDED", doneAt.minusDays(4), null, doneAt.plusHours(2));
+        applyParticipant(done, u.get("nayoung"), "REWARDED", doneAt.minusDays(3), null, doneAt.plusHours(2));
 
         // 취소 — 목록에서 어떻게 보이는지 확인할 자리
         insertGroupQuest(insert, g.get("running"), u.get("demo"),
@@ -378,8 +405,16 @@ public class DemoDataSeeder implements ApplicationRunner {
         row.put("status", status);
         row.put("exp_reward", expReward);
         row.put("completed_at", completedAt);
-        row.put("created_at", scheduledAt.minusDays(7));
-        row.put("updated_at", completedAt != null ? completedAt : scheduledAt.minusDays(7));
+        // 생성 시각을 "일정 −7일"로 고정하면 먼 미래의 일정이 <b>아직 오지 않은 시각에 만들어진</b>
+        // 것이 된다(일정 +9일 → 생성 +2일). 상대시간 표시가 음수가 되고 목록 정렬도 어긋난다.
+        // 참가 신청보다 늦어지는 경우도 같은 이유로 생긴다. 지금보다 뒤로 갈 수 없게 잡는다.
+        LocalDateTime createdAt = scheduledAt.minusDays(7);
+        LocalDateTime notFuture = LocalDateTime.now().minusDays(5);
+        if (createdAt.isAfter(notFuture)) {
+            createdAt = notFuture;
+        }
+        row.put("created_at", createdAt);
+        row.put("updated_at", completedAt != null ? completedAt : createdAt);
         return insert.executeAndReturnKey(row).longValue();
     }
 
@@ -447,8 +482,13 @@ public class DemoDataSeeder implements ApplicationRunner {
             "SELECT id FROM quests WHERE completion_type = 'SELF_REPORT' AND is_active = TRUE "
                 + "ORDER BY id LIMIT 6", Long.class);
 
-        if (locationQuests.isEmpty() || selfQuests.isEmpty()) {
-            log.warn("[demo] 퀘스트 카탈로그가 비어 있어 완료 이력을 만들지 않는다");
+        // 아래 entries가 인덱스 0~5를 전부 쓰므로 6건 미만이면 IndexOutOfBounds가 난다.
+        // isEmpty()로 두면 팀원이 위치 퀘스트를 비활성으로 내리는 순간 경고가 아니라 부팅 실패다.
+        int needed = 6;
+        if (locationQuests.size() < needed || selfQuests.size() < needed) {
+            log.warn("[demo] 퀘스트 카탈로그가 모자라 완료 이력을 만들지 않는다 "
+                + "(LOCATION {}건 / SELF_REPORT {}건, 각 {}건 필요)",
+                locationQuests.size(), selfQuests.size(), needed);
             return List.of();
         }
 
@@ -513,8 +553,13 @@ public class DemoDataSeeder implements ApplicationRunner {
                 userId, completionIds.get(completionIds.size() - 1), reward, completedAt);
         }
 
-        // 오늘 배정 중 아직 안 끝낸 것 — 홈 화면이 "0/3 완료"가 아니라 진행 중으로 보이게
+        // ★ 오늘 일간 배정은 슬롯 수(3)를 채워야 한다.
+        //
+        // getTodayQuests는 그 트랙의 미만료 배정이 하나라도 있으면 지연 생성을 건너뛴다. 두
+        // 건만 넣으면 나머지 한 칸을 아무도 채우지 않아 "트랙당 3개" 계약과 어긋난 홈 화면이
+        // 하루 종일 시연된다 — 화면은 정상으로 보이므로 눈으로는 안 걸린다.
         assignPending(assignInsert, u.get("demo"), selfQuests.get(3), now);
+        assignPending(assignInsert, u.get("demo"), selfQuests.get(4), now);
 
         // ★ 서울권 LOCATION 하나를 오늘 자리에 고정한다.
         //
@@ -572,8 +617,11 @@ public class DemoDataSeeder implements ApplicationRunner {
      * 드러난다.
      */
     private void seedProofPosts(Map<String, Long> u, List<Long> completions, LocalDateTime now) {
-        if (completions.size() < 8) {
-            log.warn("[demo] 완료 이력이 모자라 인증 게시물을 만들지 않는다");
+        // 아래에서 인덱스 9까지 참조하므로 10건이 있어야 한다. 8로 두면 목록이 8~9건일 때
+        // 경고 대신 IndexOutOfBounds로 죽는다.
+        if (completions.size() < 10) {
+            log.warn("[demo] 완료 이력이 {}건뿐이라 인증 게시물을 만들지 않는다(10건 필요)",
+                completions.size());
             return;
         }
 
@@ -606,12 +654,18 @@ public class DemoDataSeeder implements ApplicationRunner {
         comment(voted, u.get("demo"), "새벽 등산 모임 초대 감사합니다. 이번 주에 답 드릴게요", now.minusDays(2).withHour(9).withMinute(5));
 
         // 애매함 — 판정이 갈린 글
+        // ★ 판정은 UNSURE를 세지 않는다 — ProofPostStatus.of는 decided = AGREE + REJECT로
+        // 정족수를 재고 그 안의 찬성 비율만 본다. UNSURE만 모으면 정족수에 닿지 않아 규칙상
+        // VOTING이고, 시연 중 누가 한 표를 던지는 순간 재판정으로 상태가 되돌아간다.
+        // 실제로 UNCLEAR이 되려면 찬반이 갈려야 하므로 REJECT 표를 넣는다.
         Long unclear = insertPost(insert, u.get("junho"), completions.get(8),
             "사진을 깜빡해서 영수증만 남았습니다. 다녀온 건 확실한데 증거가 약하네요.",
             "UNCLEAR", now.minusDays(6).withHour(21));
-        vote(unclear, u.get("demo"), "UNSURE", now.minusDays(6).withHour(22));
         vote(unclear, u.get("mina"), "AGREE", now.minusDays(5).withHour(10));
-        vote(unclear, u.get("sora"), "UNSURE", now.minusDays(5).withHour(12));
+        vote(unclear, u.get("sora"), "AGREE", now.minusDays(5).withHour(12));
+        vote(unclear, u.get("demo"), "REJECT", now.minusDays(6).withHour(22));
+        vote(unclear, u.get("yerin"), "REJECT", now.minusDays(5).withHour(14));
+        vote(unclear, u.get("nayoung"), "UNSURE", now.minusDays(5).withHour(16));
         comment(unclear, u.get("mina"), "영수증에 시간 찍혀 있으면 저는 인정합니다", now.minusDays(5).withHour(10).withMinute(30));
 
         // 주인공이 올린 글 — 내 게시물 목록이 비지 않게
@@ -714,24 +768,48 @@ public class DemoDataSeeder implements ApplicationRunner {
 
         for (int i = 0; i < postIds.size(); i++) {
             String fileName = "demo-proof-" + (i + 1) + ".png";
-            Path file = dir.resolve(fileName);
-            try {
-                BufferedImage image = new BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB);
-                Graphics2D g = image.createGraphics();
-                g.setColor(colors[i % colors.length]);
-                g.fillRect(0, 0, 480, 360);
-                g.setColor(Color.WHITE);
-                g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
-                g.drawString(captions[i % captions.length], 40, 190);
-                g.dispose();
-                ImageIO.write(image, "png", file.toFile());
-            } catch (IOException | RuntimeException e) {
-                log.warn("[demo] 인증 사진 {} 생성 실패 ({}) — 이 게시물은 사진 없이 남는다",
-                    fileName, e.getMessage());
-                continue;
-            }
             jdbc.update("INSERT INTO quest_proof_photos (post_id, image_url, sort_order) VALUES (?, ?, ?)",
                 postIds.get(i), "/uploads/proof/" + fileName, 0);
+
+            // 파일은 커밋이 끝난 뒤에 쓴다. 트랜잭션 안에서 쓰면 뒤 단계가 실패해 롤백될 때
+            // 디스크에만 남는 고아 파일이 생긴다 — 롤백은 파일을 되돌리지 못한다.
+            Path file = dir.resolve(fileName);
+            String caption = captions[i % captions.length];
+            Color color = colors[i % colors.length];
+            afterCommit(() -> writePlaceholderImage(file, caption, color));
+        }
+    }
+
+
+    /** 트랜잭션이 커밋된 뒤에 실행한다. 동기화가 없으면(트랜잭션 밖) 즉시 실행한다. */
+    private void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
+    }
+
+    /** 단색 배경에 글자 몇 자를 얹은 자리표 이미지. 실패해도 예외를 밖으로 내보내지 않는다. */
+    private void writePlaceholderImage(Path file, String caption, Color color) {
+        try {
+            BufferedImage image = new BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            g.setColor(color);
+            g.fillRect(0, 0, 480, 360);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+            g.drawString(caption, 40, 190);
+            g.dispose();
+            ImageIO.write(image, "png", file.toFile());
+        } catch (IOException | RuntimeException e) {
+            log.warn("[demo] 인증 사진 {} 생성 실패 ({}) — 그 게시물은 이미지가 깨져 보인다",
+                file.getFileName(), e.getMessage());
         }
     }
 

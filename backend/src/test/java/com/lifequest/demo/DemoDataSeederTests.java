@@ -29,6 +29,12 @@ import org.springframework.test.context.TestPropertySource;
     "spring.datasource.url=jdbc:h2:mem:demoseed;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE")
 class DemoDataSeederTests {
 
+    /** docs/05 §의 인증 정족수. {@code app.proof.min-votes} 기본값과 같다. */
+    private static final int MIN_VOTES = 3;
+
+    /** 일간 트랙의 슬롯 수. {@code QuestAssignmentCreator.DAILY_SLOTS}와 같다. */
+    private static final int DAILY_SLOT_COUNT = 3;
+
     @Autowired
     private JdbcTemplate jdbc;
 
@@ -228,6 +234,125 @@ class DemoDataSeederTests {
 
         assertThat(achieved).as("달성한 업적이 없으면 달성 표시를 볼 수 없다").isPositive();
         assertThat(inProgress).as("진행 중인 업적이 없으면 진행률 안내가 사라진다").isPositive();
+    }
+
+    /**
+     * <b>시연 데이터가 도메인이 만들 수 있는 상태여야 한다.</b>
+     *
+     * <p>보상까지 끝난 그룹 퀘스트 참가자는 {@code REWARDED}다 —
+     * {@code GroupQuestParticipant.reward()}가 그렇게 바꾼다. {@code APPLIED}인 채로
+     * {@code rewarded_at}만 채우면 완료된 퀘스트가 화면에 "신청함"으로 보이고, 철회를 막는
+     * 가드도 걸리지 않는다. <b>DB 제약으로는 걸러지지 않는 종류</b>라 여기서 잰다.
+     */
+    @Test
+    void 보상을_받은_그룹퀘스트_참가자는_REWARDED다() {
+        Integer wrong = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_quest_participants "
+                + "WHERE rewarded_at IS NOT NULL AND status <> 'REWARDED'", Integer.class);
+        assertThat(wrong).as("rewarded_at이 있는데 status가 REWARDED가 아닌 참가자").isZero();
+    }
+
+    /**
+     * 인증 게시물의 저장된 상태가 <b>앱의 판정 규칙과 같아야 한다.</b>
+     *
+     * <p>{@code ProofPostStatus.of}는 {@code decided = AGREE + REJECT}로 정족수를 재고
+     * UNSURE는 세지 않는다. 규칙과 어긋난 상태를 저장해 두면 시연 중 누군가 한 표를 던지는
+     * 순간 재판정으로 <b>눈앞에서 상태가 바뀐다</b>.
+     */
+    @Test
+    void 게시물_상태가_앱의_판정_규칙과_일치한다() {
+        List<Map<String, Object>> posts = jdbc.queryForList(
+            "SELECT id, status, agree_count, reject_count FROM quest_proof_posts");
+
+        for (Map<String, Object> post : posts) {
+            int agree = ((Number) post.get("agree_count")).intValue();
+            int reject = ((Number) post.get("reject_count")).intValue();
+            String stored = (String) post.get("status");
+            int decided = agree + reject;
+
+            if ("VOTING".equals(stored)) {
+                assertThat(decided)
+                    .as("게시물 %s: VOTING인데 정족수(%d)를 이미 채웠다", post.get("id"), MIN_VOTES)
+                    .isLessThan(MIN_VOTES);
+            } else {
+                assertThat(decided)
+                    .as("게시물 %s: 상태가 %s인데 결정표가 %d뿐이라 규칙상 VOTING이다 — "
+                            + "UNSURE는 정족수에 들어가지 않는다", post.get("id"), stored, decided)
+                    .isGreaterThanOrEqualTo(MIN_VOTES);
+            }
+        }
+    }
+
+    /** 반대표가 하나도 없으면 REJECT 투표 경로와 그 결과 상태를 눌러 볼 수 없다. */
+    @Test
+    void 반대표가_있는_게시물이_존재한다() {
+        Integer rejects = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM quest_proof_votes WHERE choice = 'REJECT'", Integer.class);
+        assertThat(rejects).as("REJECT 표가 0건이면 반대 경로가 시연에서 빠진다").isPositive();
+    }
+
+    /**
+     * <b>주인공의 오늘 일간 배정이 슬롯 수만큼 있어야 한다.</b>
+     *
+     * <p>{@code getTodayQuests}는 그 트랙의 미만료 배정이 하나라도 있으면 지연 생성을
+     * 건너뛴다. 두 건만 넣으면 나머지 칸을 아무도 채우지 않아 "트랙당 3개" 계약과 어긋난
+     * 홈 화면이 하루 종일 시연되는데, <b>화면은 정상으로 보여 눈으로는 안 걸린다.</b>
+     */
+    @Test
+    void 주인공의_오늘_일간_배정이_슬롯_수를_채운다() {
+        Long demoUserId = jdbc.queryForObject(
+            "SELECT id FROM users WHERE email = ?", Long.class, DemoDataSeeder.DEMO_EMAIL);
+
+        Integer daily = jdbc.queryForObject("""
+            SELECT COUNT(*) FROM user_daily_quests d JOIN quests q ON q.id = d.quest_id
+            WHERE d.user_id = ? AND d.status = 'ASSIGNED' AND q.cadence = 'DAILY'
+            """, Integer.class, demoUserId);
+
+        assertThat(daily)
+            .as("일간 슬롯은 %d개다 — 모자라면 지연 생성이 건너뛰어 그 상태가 하루 유지된다",
+                DAILY_SLOT_COUNT)
+            .isEqualTo(DAILY_SLOT_COUNT);
+    }
+
+    /**
+     * 그룹 멤버의 시각 필드가 상태와 맞아야 한다.
+     *
+     * <p>도메인의 {@code leave()}는 {@code joinedAt}을 지우지 않으므로, 한 번이라도 들어왔던
+     * 사람은 그 값을 갖는다. 앱이 만들 수 없는 조합을 시연 데이터가 만들면 그 화면의 동작을
+     * 잘못 판단하게 된다.
+     */
+    @Test
+    void 그룹_멤버의_시각_필드가_상태와_맞는다() {
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_members WHERE status = 'ACTIVE' AND joined_at IS NULL",
+            Integer.class)).as("ACTIVE인데 가입 시각이 없다").isZero();
+
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_members WHERE status = 'LEFT' AND joined_at IS NULL",
+            Integer.class)).as("탈퇴자인데 가입 시각이 없다 — 도메인은 그 값을 보존한다").isZero();
+
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_members WHERE status = 'INVITED' AND expires_at IS NULL",
+            Integer.class)).as("초대인데 만료 시각이 없으면 영영 남는 초대가 된다").isZero();
+
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_members "
+                + "WHERE status IN ('INVITED', 'PENDING_APPROVAL') AND joined_at IS NOT NULL",
+            Integer.class)).as("아직 멤버가 아닌데 가입 시각이 있다").isZero();
+    }
+
+    /** 만들어진 시각이 미래이거나, 그것을 참조하는 행동보다 늦으면 상대시간 표시가 음수가 된다. */
+    @Test
+    void 그룹_퀘스트의_생성_시각이_미래가_아니다() {
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_quests WHERE created_at > CURRENT_TIMESTAMP",
+            Integer.class)).as("생성 시각이 미래인 그룹 퀘스트").isZero();
+
+        assertThat(jdbc.queryForObject(
+            "SELECT COUNT(*) FROM group_quest_participants p "
+                + "JOIN group_quests q ON q.id = p.group_quest_id "
+                + "WHERE p.applied_at < q.created_at", Integer.class))
+            .as("퀘스트가 만들어지기 전에 신청한 참가자").isZero();
     }
 
     /** 친구 코드는 사람이 불러 주는 값이라 접두사와 겹치면 읽기 어색하다. */
