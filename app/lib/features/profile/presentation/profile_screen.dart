@@ -488,7 +488,10 @@ class _MyRecordCard extends ConsumerWidget {
           _RecordRow(
             leading: const _RecordTile(asset: LqAssets.book, width: 42),
             label: '도감',
-            caption: _caption(lifedex, (value) => '${value.ownedCount}개 수집'),
+            caption: _caption(
+              lifedex,
+              (value) => '일일 퀘스트 · ${value.ownedCount}개 수집',
+            ),
             onTap: () => context.push('/lifedex'),
           ),
           const LqDashedDivider(),
