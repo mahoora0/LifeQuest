@@ -8,12 +8,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lifequest.quest.repository.QuestRepository;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,8 +26,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 시드 퀘스트 카탈로그(V6의 id 1~42 · V22의 43~68 · V33의 69~105 · V34의 106~279)가 업무 규칙의
- * 불변식을 지키는지 검증한다.
+ * 시드 퀘스트 카탈로그가 업무 규칙의 불변식을 지키는지 검증한다.
+ *
+ * <p>검사는 두 갈래다. <b>id가 계약인 구간</b>(V6의 1~42는 업적이 참조 · V22의 43~68 · V33의
+ * 69~105)은 번호로 재고, <b>V34 이후의 전국 시드</b>는 명시 id를 쓰지 않으므로 좌표와 장소로
+ * 잰다({@link #allCatalogQuests()}).
  *
  * <p>시드는 SQL 리터럴 수백 개로 이루어져 있어 사람 눈으로는 등급별 EXP 구간 이탈이나 위경도 뒤바뀜 같은
  * 오타가 걸러지지 않는다. 잘못된 행이 들어가도 배정에서만 드러나며, 그것도 특정 퀘스트가
@@ -49,11 +57,18 @@ class QuestCatalogSeedTest {
     /** V33 지역·템플릿 LOCATION 시드의 첫 id. 추가는 계속 뒤에 붙는다(V6 머리말). */
     private static final long LOCATION_SEED_FIRST_ID = 69L;
 
-    /** V34 전국 확장분(29개 도시 × 6)의 첫 id. */
-    private static final long NATIONWIDE_SEED_FIRST_ID = 106L;
-
-    /** 마지막 시드 id. 카탈로그를 늘렸으면 이 값도 함께 올린다. */
-    private static final long LAST_SEED_ID = 279L;
+    /**
+     * <b>명시 id를 쓰는 시드의 마지막 번호.</b> V34(전국 확장)부터는 id를 적지 않는다.
+     *
+     * <p>주간 AI 퀘스트가 개인 전용 행을 같은 {@code quests} 테이블에 AUTO_INCREMENT로 넣기
+     * 때문이다({@code Quest.createPrivateAiWeekly}). AI 추천을 받은 적 있는 DB는 id가 이미
+     * 100번대를 넘어서 있어, 거기에 명시 id 시드를 적용하면 duplicate key로 Flyway가 죽는다.
+     * CI와 H2는 매번 새 DB라 통과하므로 <b>테스트로는 드러나지 않는 종류</b>다.
+     *
+     * <p>그래서 이 아래의 검사는 두 갈래다 — id가 계약인 구간(업적이 참조하는 1~42 등)은
+     * 번호로 재고, 그 밖은 <b>좌표와 장소</b>로 잰다. 배정이 실제로 보는 것도 좌표다.
+     */
+    private static final long LAST_SEED_ID = 105L;
 
     /**
      * 배정이 후보를 좁히는 거리(m). {@code QuestAssignmentCreator}와 같은 값이며 트랙마다 다르다.
@@ -136,6 +151,19 @@ class QuestCatalogSeedTest {
     @Autowired
     private QuestRepository questRepository;
 
+    /**
+     * 공용 카탈로그 전체(AI 개인 퀘스트 제외).
+     *
+     * <p>id 범위 대신 이것을 쓰는 검사가 있다. V34부터 시드가 명시 id를 쓰지 않으므로
+     * 번호로는 그 행들을 집을 수 없고, 애초에 <b>좌표·타입 불변식은 id와 무관</b>하다.
+     * 개인 전용 AI 퀘스트는 카탈로그가 아니므로 {@code ownerUserId}로 제외한다.
+     */
+    private List<Quest> allCatalogQuests() {
+        return questRepository.findAll().stream()
+                .filter(quest -> quest.getOwnerUserId() == null)
+                .toList();
+    }
+
     private List<Quest> seededQuests() {
         return questRepository.findAllById(
                 LongStream.rangeClosed(FIRST_SEED_ID, LAST_SEED_ID).boxed().toList());
@@ -162,8 +190,9 @@ class QuestCatalogSeedTest {
         assertEquals(LAST_SEED_ID - FIRST_SEED_ID + 1, seededQuests().size(),
                 "id 1~%d가 모두 있어야 한다 — 1~42는 업적의 target_quest_id가 참조하고, "
                         .formatted(LAST_SEED_ID)
-                        + "43~%d은 슬롯 등급 결손을(V22), %d~%d은 지역·템플릿 결손을(V33) 메운다"
-                                .formatted(EXTENDED_SEED_LAST_ID, LOCATION_SEED_FIRST_ID, LAST_SEED_ID));
+                        + "43~%d은 슬롯 등급 결손을(V22), %d~%d은 지역·템플릿 결손을(V33) 메운다. "
+                                .formatted(EXTENDED_SEED_LAST_ID, LOCATION_SEED_FIRST_ID, LAST_SEED_ID)
+                        + "V34 이후는 명시 id를 쓰지 않으므로 이 검사의 대상이 아니다");
     }
 
     /**
@@ -260,7 +289,7 @@ class QuestCatalogSeedTest {
 
     @Test
     void 모든_등급과_주기에_배정_후보가_존재한다() {
-        List<Quest> seeded = seededQuests();
+        List<Quest> seeded = allCatalogQuests();
 
         for (QuestGrade grade : QuestGrade.values()) {
             assertTrue(seeded.stream().anyMatch(q -> q.getGrade() == grade),
@@ -359,7 +388,7 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 도시마다_일간_주간_등급이_고루_갖춰져_있다() {
-        List<Quest> located = seededQuests().stream()
+        List<Quest> located = allCatalogQuests().stream()
                 .filter(Quest::isLocationBased)
                 .filter(quest -> !quest.isLocationTemplate())
                 .toList();
@@ -392,14 +421,14 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 템플릿_자리표_좌표는_어느_도시에서도_멀다() {
-        List<Quest> templates = seededQuests().stream()
+        List<Quest> templates = allCatalogQuests().stream()
                 .filter(Quest::isLocationTemplate)
                 .toList();
 
         assertFalse(templates.isEmpty(),
                 "템플릿이 없으면 시드된 도시 밖 사용자는 위치 퀘스트를 받지 못한다");
 
-        List<Quest> real = seededQuests().stream()
+        List<Quest> real = allCatalogQuests().stream()
                 .filter(Quest::isLocationBased)
                 .filter(quest -> !quest.isLocationTemplate())
                 .toList();
@@ -434,7 +463,7 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 템플릿_경로를_잴_수_있는_빈_지점이_남아_있다() {
-        List<Quest> real = seededQuests().stream()
+        List<Quest> real = allCatalogQuests().stream()
                 .filter(Quest::isLocationBased)
                 .filter(quest -> !quest.isLocationTemplate())
                 .toList();
@@ -455,6 +484,43 @@ class QuestCatalogSeedTest {
                 quest.getLatitude().doubleValue(), quest.getLongitude().doubleValue());
     }
 
+    /**
+     * <b>V34 이후의 시드 마이그레이션은 id를 적지 않아야 한다.</b>
+     *
+     * <p>주간 AI 퀘스트가 개인 전용 행을 같은 {@code quests} 테이블에 AUTO_INCREMENT로 넣으므로
+     * ({@code Quest.createPrivateAiWeekly}), AI 추천을 받은 적 있는 DB는 id가 이미 전진해 있다.
+     * 거기에 명시 id 시드를 적용하면 duplicate key로 Flyway가 죽고, 그 사람의 앱은 부팅되지 않는다.
+     *
+     * <p><b>이 결함은 데이터가 아니라 SQL 텍스트의 성질이라 적재 결과로는 잴 수 없다.</b> CI와
+     * H2는 매번 새 DB라 명시 id가 그대로 들어가 전부 통과한다 — 그래서 파일을 직접 읽는다.
+     *
+     * <p>V33 이하는 이미 팀원 DB에 적용돼 checksum이 고정되어 있어 고칠 수 없다. 규칙은
+     * <b>앞으로 추가되는 것</b>에만 적용한다.
+     */
+    @Test
+    void 전국_시드_이후의_마이그레이션은_퀘스트_id를_명시하지_않는다() throws Exception {
+        Path migrations = Path.of("src/main/resources/db/migration");
+        assertTrue(Files.isDirectory(migrations), "마이그레이션 디렉터리를 찾지 못했다: " + migrations);
+
+        Pattern versioned = Pattern.compile("^V(\\d+)__.*\\.sql$");
+        try (Stream<Path> files = Files.list(migrations)) {
+            for (Path file : files.sorted().toList()) {
+                Matcher matcher = versioned.matcher(file.getFileName().toString());
+                if (!matcher.matches() || Integer.parseInt(matcher.group(1)) < 34) {
+                    continue;
+                }
+                String sql = Files.readString(file);
+                if (!sql.contains("INSERT INTO quests")) {
+                    continue;
+                }
+                assertFalse(sql.matches("(?s).*INSERT INTO quests\\s*\\(\\s*id\\s*,.*"),
+                        file.getFileName() + ": INSERT INTO quests에 id를 명시했다 — "
+                                + "AI 퀘스트가 같은 테이블의 AUTO_INCREMENT를 쓰므로 "
+                                + "그 기능을 사용한 DB에서는 duplicate key로 부팅이 실패한다");
+            }
+        }
+    }
+
     private static boolean withinCity(Quest quest, double[] center, double radiusM) {
         return meters(center[0], center[1],
                 quest.getLatitude().doubleValue(), quest.getLongitude().doubleValue()) <= radiusM;
@@ -472,7 +538,7 @@ class QuestCatalogSeedTest {
 
     @Test
     void LOCATION_퀘스트는_전부_GPS로_판정할_수_있다() {
-        List<Quest> located = seededQuests().stream().filter(Quest::isLocationBased).toList();
+        List<Quest> located = allCatalogQuests().stream().filter(Quest::isLocationBased).toList();
         assertFalse(located.isEmpty(), "위치 인증 퀘스트가 하나도 없으면 GPS 인증 경로를 시연할 수 없다");
 
         for (Quest quest : located) {
@@ -497,7 +563,7 @@ class QuestCatalogSeedTest {
         BigDecimal minLng = new BigDecimal("124.0");
         BigDecimal maxLng = new BigDecimal("132.0");
 
-        for (Quest quest : seededQuests().stream().filter(Quest::isLocationBased).toList()) {
+        for (Quest quest : allCatalogQuests().stream().filter(Quest::isLocationBased).toList()) {
             assertTrue(quest.getLatitude().compareTo(minLat) >= 0
                             && quest.getLatitude().compareTo(maxLat) <= 0,
                     quest.getTitle() + ": 위도 " + quest.getLatitude() + "는 대한민국 범위 밖이다");
@@ -509,7 +575,7 @@ class QuestCatalogSeedTest {
 
     @Test
     void SELF_REPORT_퀘스트에는_위치_항목이_남아있지_않는다() {
-        for (Quest quest : seededQuests().stream().filter(q -> !q.isLocationBased()).toList()) {
+        for (Quest quest : allCatalogQuests().stream().filter(q -> !q.isLocationBased()).toList()) {
             assertNull(quest.getLatitude(), quest.getTitle() + ": 직접 완료인데 위도가 있다");
             assertNull(quest.getLongitude(), quest.getTitle() + ": 직접 완료인데 경도가 있다");
             assertNull(quest.getRadiusM(), quest.getTitle() + ": 직접 완료인데 반경이 있다");
@@ -540,7 +606,7 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 일간_배정에는_이동_없이_끝낼_수_있는_후보가_남는다() {
-        long selfReport = seededQuests().stream()
+        long selfReport = allCatalogQuests().stream()
                 .filter(quest -> quest.getCadence() == QuestCadence.DAILY)
                 .filter(quest -> !quest.isLocationBased())
                 .count();
