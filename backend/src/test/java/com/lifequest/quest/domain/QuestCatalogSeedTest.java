@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lifequest.quest.repository.QuestRepository;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumMap;
@@ -499,8 +500,13 @@ class QuestCatalogSeedTest {
      */
     @Test
     void 전국_시드_이후의_마이그레이션은_퀘스트_id를_명시하지_않는다() throws Exception {
-        Path migrations = Path.of("src/main/resources/db/migration");
-        assertTrue(Files.isDirectory(migrations), "마이그레이션 디렉터리를 찾지 못했다: " + migrations);
+        // 상대 경로가 아니라 클래스패스에서 찾는다. 작업 디렉터리는 실행 방법마다 달라서
+        // (Gradle은 backend/, IDE는 저장소 루트일 수 있다) 상대 경로로 두면 어떤 사람의
+        // 환경에서만 실패한다 — 마이그레이션은 어차피 빌드 산출물로 복사되므로 그쪽을 읽는다.
+        URL resource = getClass().getClassLoader().getResource("db/migration");
+        assertNotNull(resource, "클래스패스에서 db/migration을 찾지 못했다");
+        Path migrations = Path.of(resource.toURI());
+        assertTrue(Files.isDirectory(migrations), "마이그레이션 디렉터리가 아니다: " + migrations);
 
         Pattern versioned = Pattern.compile("^V(\\d+)__.*\\.sql$");
         try (Stream<Path> files = Files.list(migrations)) {
