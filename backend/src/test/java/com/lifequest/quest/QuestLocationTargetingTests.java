@@ -59,9 +59,16 @@ class QuestLocationTargetingTests {
     private static final double BUSAN_LAT = 35.1796;
     private static final double BUSAN_LNG = 129.0756;
 
-    /** 시드된 6개 도시 중 어느 곳에서도 50km 밖이다 — 가장 가까운 광주까지 약 185km. */
-    private static final double JEJU_LAT = 33.4996;
-    private static final double JEJU_LNG = 126.5312;
+    /**
+     * 시드된 장소 어디에서도 50km 밖인 지점(완도) — 가장 가까운 시드까지 약 62km다.
+     *
+     * <p>여기 쓰이는 것은 좌표가 아니라 <b>"주변에 시드가 없다"는 조건</b>이다. 카탈로그가
+     * 넓어지면 그 조건을 만족하는 곳이 줄어든다 — 원래 제주를 썼는데 V34가 제주를 덮으면서
+     * 이 테스트 세 건이 함께 깨졌다. 시드를 늘릴 때 그 사실이 여기까지 전해지지 않으므로,
+     * {@code QuestCatalogSeedTest}가 이 좌표의 여유를 따로 지킨다.
+     */
+    private static final double NO_SEED_LAT = 34.3110;
+    private static final double NO_SEED_LNG = 126.7550;
 
     @Autowired
     private MockMvc mockMvc;
@@ -101,9 +108,9 @@ class QuestLocationTargetingTests {
     @Test
     void 주변에_시드된_도시가_없으면_템플릿에_현재_위치_기반_좌표가_붙는다() throws Exception {
         String email = "target-remote@lifequest.test";
-        String token = signUpAndGetAccessToken(email, "제주탐험가");
+        String token = signUpAndGetAccessToken(email, "변방탐험가");
 
-        getToday(token, JEJU_LAT, JEJU_LNG);
+        getToday(token, NO_SEED_LAT, NO_SEED_LNG);
 
         List<UserDailyQuest> assigned = assignmentsOf(email);
         List<UserDailyQuest> templates = assigned.stream()
@@ -124,7 +131,7 @@ class QuestLocationTargetingTests {
                 .isNotNull();
 
             double distance = haversineMeters(
-                JEJU_LAT, JEJU_LNG,
+                NO_SEED_LAT, NO_SEED_LNG,
                 assignment.getOverrideLatitude().doubleValue(),
                 assignment.getOverrideLongitude().doubleValue());
 
@@ -167,7 +174,7 @@ class QuestLocationTargetingTests {
         String email = "target-complete@lifequest.test";
         String token = signUpAndGetAccessToken(email, "완료탐험가");
 
-        getToday(token, JEJU_LAT, JEJU_LNG);
+        getToday(token, NO_SEED_LAT, NO_SEED_LNG);
 
         UserDailyQuest template = assignmentsOf(email).stream()
             .filter(assignment -> questOf(assignment).isLocationTemplate())
@@ -176,7 +183,7 @@ class QuestLocationTargetingTests {
 
         Quest quest = questOf(template);
 
-        // 원본 좌표(국토 중앙 자리표)는 제주에서 수백 km 밖이다. 판정이 그쪽을 보고 있으면
+        // 원본 좌표(울릉 자리표)는 이 지점에서 수백 km 밖이다. 판정이 그쪽을 보고 있으면
         // 여기서 성공해 버린다
         mockMvc.perform(completeRequest(token, template.getId(),
                 quest.getLatitude().doubleValue(), quest.getLongitude().doubleValue()))
@@ -201,7 +208,7 @@ class QuestLocationTargetingTests {
         String email = "target-response@lifequest.test";
         String token = signUpAndGetAccessToken(email, "응답탐험가");
 
-        MvcResult result = getToday(token, JEJU_LAT, JEJU_LNG);
+        MvcResult result = getToday(token, NO_SEED_LAT, NO_SEED_LNG);
 
         UserDailyQuest template = assignmentsOf(email).stream()
             .filter(assignment -> questOf(assignment).isLocationTemplate())
