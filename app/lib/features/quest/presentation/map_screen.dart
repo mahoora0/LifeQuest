@@ -138,9 +138,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           label: quest.placeName ?? quest.title,
           color: _gradeColor(quest.grade),
           selected: dailyQuest.dailyQuestId == _selectedDailyQuestId,
-          onTap: () => setState(
-            () => _selectedDailyQuestId = dailyQuest.dailyQuestId,
-          ),
+          onTap: () =>
+              setState(() => _selectedDailyQuestId = dailyQuest.dailyQuestId),
         ),
       );
     }

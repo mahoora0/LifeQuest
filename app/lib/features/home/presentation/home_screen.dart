@@ -502,11 +502,7 @@ class _MapEntryCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: LqColors.textMuted,
-          ),
+          const Icon(Icons.chevron_right, size: 20, color: LqColors.textMuted),
         ],
       ),
     );
