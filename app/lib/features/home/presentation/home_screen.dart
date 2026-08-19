@@ -103,7 +103,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(height: LqSpacing.gap),
-              const LqStagger(index: 4, child: _ProofPlazaCard()),
+              const LqStagger(index: 4, child: _MapEntryCard()),
+              const SizedBox(height: LqSpacing.gap),
+              const LqStagger(index: 5, child: _ProofPlazaCard()),
             ],
           ),
         ),
@@ -454,6 +456,63 @@ class _TodayQuestCard extends ConsumerWidget {
 /// 보여주는 것은 최신 게시물이 아니라 **아직 표가 모자란 게시물**이다. 최신순으로 두면
 /// 이미 판정이 끝난 글이 앞을 차지해서, 사용자가 몇 명뿐일 때 정작 표가 필요한 글이
 /// 아무에게도 닿지 않는다.
+/// 지역 지도 진입.
+///
+/// 오늘의 퀘스트 바로 아래에 둔다 — 배정을 보고 나서 "그래서 어디서 하지"가
+/// 다음 질문이기 때문이다.
+///
+/// 여기서 주변 퀘스트를 조회하지 않는다. 홈이 뜰 때마다 위치를 잡으면 가장 자주
+/// 보는 화면의 진입 비용이 커지고, 지도 화면이 들어가는 즉시 어차피 조회한다.
+class _MapEntryCard extends StatelessWidget {
+  const _MapEntryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LqCard(
+      background: LqColors.surfaceCard,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      onTap: () => context.push('/map'),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: LqColors.locBg,
+              borderRadius: LqShape.rowRadius,
+              border: Border.all(
+                color: LqColors.locBorder,
+                width: LqShape.borderWidth,
+              ),
+            ),
+            child: const Icon(
+              Icons.map_outlined,
+              size: 22,
+              color: LqColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('지역 지도', style: LqText.cardTitle),
+                const SizedBox(height: 2),
+                Text('주변 위치 퀘스트를 지도에서 확인해요', style: LqText.caption),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right,
+            size: 20,
+            color: LqColors.textMuted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProofPlazaCard extends ConsumerWidget {
   const _ProofPlazaCard();
 

@@ -15,43 +15,173 @@ import 'package:life_quest/shared/widgets/lq_button.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
+import 'package:life_quest/shared/widgets/lq_map.dart';
 import 'package:life_quest/shared/widgets/lq_pulse_ring.dart';
 
 /// S-11 지역 지도.
 ///
-/// 지도 SDK가 아직 선정되지 않아(07 명세 §6-⑥) 지도 영역은 시안의
-/// 탐험 테마 일러스트 placeholder를 유지한다. 실데이터를 쓰는 것은
-/// 하단 요약 카드뿐이며, GPS 인증 로직은 지도 제공자에 의존하지 않는다.
-class MapScreen extends ConsumerWidget {
+/// 주변 위치 퀘스트를 실지도 위의 마커로 보여준다. 지도 키가 없으면([LqMap])
+/// 시안의 탐험 캔버스가 그대로 그려지므로, 키 없이 실행해도 화면이 비지 않는다.
+///
+/// 마커를 탭하면 곧바로 상세로 넘어가지 않고 하단 카드가 그 퀘스트로 바뀐다.
+/// 지도 위에서는 마커가 잘못 눌리기 쉬워, 화면 전환을 한 단계 뒤로 미룬다.
+class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends ConsumerState<MapScreen> {
+  /// 사용자가 고른 마커. 없으면 하단 카드는 가장 가까운 퀘스트를 보여준다.
+  int? _selectedDailyQuestId;
+
+  /// 카메라 되돌리기 신호. 값이 바뀔 때마다 [LqMap]이 시야를 다시 맞춘다.
+  int _focusToken = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final nearby = ref.watch(nearbyQuestsProvider);
+    final result = nearby.hasValue ? nearby.requireValue : null;
+    final quests = result?.quests ?? const <DailyQuest>[];
+    final selected = _selectedOf(quests);
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
       body: SafeArea(
         bottom: false,
         child: Column(
+          // ListView와 달리 Column은 자식을 가로로 늘리지 않아, 두지 않으면 하단
+          // 요약 카드가 글자 길이만큼만 넓어진다.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const LqHeader(title: '지역 지도', showBack: false),
             Expanded(
-              child: ListView(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   LqSpacing.screen,
                   4,
                   LqSpacing.screen,
-                  24,
+                  0,
                 ),
-                children: [
-                  const _ExplorationCanvas(),
-                  const SizedBox(height: LqSpacing.gap),
-                  _NearbySummary(nearby: nearby),
-                ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Stack(
+                    children: [
+                      LqMap(
+                        height: constraints.maxHeight,
+                        fallback: _ExplorationCanvas(
+                          height: constraints.maxHeight,
+                        ),
+                        markers: _markersOf(quests),
+                        focusToken: _focusToken,
+                        myLocation: result == null
+                            ? null
+                            : LqLatLng(
+                                result.origin.latitude,
+                                result.origin.longitude,
+                              ),
+                        onTap: () =>
+                            setState(() => _selectedDailyQuestId = null),
+                      ),
+                      Positioned(
+                        right: 10,
+                        bottom: 10,
+                        child: _RecenterButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedDailyQuestId = null;
+                              _focusToken++;
+                            });
+                            ref.invalidate(nearbyQuestsProvider);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LqSpacing.screen,
+                LqSpacing.gap,
+                LqSpacing.screen,
+                LqSpacing.gap,
+              ),
+              child: _NearbySummary(nearby: nearby, selected: selected),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  DailyQuest? _selectedOf(List<DailyQuest> quests) {
+    final id = _selectedDailyQuestId;
+    if (id == null) return null;
+    for (final quest in quests) {
+      if (quest.dailyQuestId == id) return quest;
+    }
+    // 재조회로 목록이 바뀌어 선택한 퀘스트가 사라진 경우.
+    return null;
+  }
+
+  List<LqMapMarker> _markersOf(List<DailyQuest> quests) {
+    final markers = <LqMapMarker>[];
+    for (final dailyQuest in quests) {
+      final quest = dailyQuest.quest;
+      if (!quest.hasCoordinates) continue;
+      markers.add(
+        LqMapMarker(
+          id: 'quest-${dailyQuest.dailyQuestId}',
+          position: LqLatLng(quest.latitude!, quest.longitude!),
+          label: quest.placeName ?? quest.title,
+          color: _gradeColor(quest.grade),
+          selected: dailyQuest.dailyQuestId == _selectedDailyQuestId,
+          onTap: () => setState(
+            () => _selectedDailyQuestId = dailyQuest.dailyQuestId,
+          ),
+        ),
+      );
+    }
+    return markers;
+  }
+}
+
+/// 등급 색. 목록·인증 화면과 같은 값을 써서 지도가 다른 언어를 쓰지 않게 한다.
+Color _gradeColor(String? grade) => switch (grade) {
+  'RARE' => LqColors.gradeRare,
+  'EPIC' => LqColors.gradeEpic,
+  'LEGENDARY' => LqColors.gradeLegendary,
+  _ => LqColors.gradeNormal,
+};
+
+/// 시야를 되돌리는 버튼.
+///
+/// 내 위치와 주변 퀘스트가 함께 보이도록 카메라를 다시 맞추고, 주변 목록을 다시
+/// 조회한다. **새 GPS fix를 강제하지는 않는다** — 조회는 캐시된 마지막 위치를 먼저
+/// 쓰고([nearbyQuestsProvider]), 새 fix를 잡는 경로가 지도 탭 ANR의 원인이었다.
+class _RecenterButton extends StatelessWidget {
+  const _RecenterButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: LqSpacing.minTouchTarget,
+        height: LqSpacing.minTouchTarget,
+        decoration: BoxDecoration(
+          color: LqColors.surfaceRaised,
+          shape: BoxShape.circle,
+          border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
+        ),
+        child: const Icon(
+          Icons.my_location,
+          size: 20,
+          color: LqColors.textPrimary,
         ),
       ),
     );
@@ -60,16 +190,18 @@ class MapScreen extends ConsumerWidget {
 
 /// 유기적 블롭 지역 4개 · 점선 경로 · 현재 위치 캐릭터 · 펄스 링.
 ///
-/// 이 캔버스의 블롭 위치·라벨은 모두 장식이며 실제 좌표를 매핑하지 않는다.
-/// 지도 SDK 선정 후 이 위젯만 교체하면 된다.
+/// 지도 키가 없을 때의 대체 화면이다. 블롭 위치·라벨은 모두 장식이며 실제 좌표를
+/// 매핑하지 않는다 — 지도가 있는 것처럼 보이되 없는 정보를 지어내지는 않는다.
 class _ExplorationCanvas extends StatelessWidget {
-  const _ExplorationCanvas();
+  const _ExplorationCanvas({required this.height});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return LqCard(
       background: LqColors.surfaceCard,
-      height: 300,
+      height: height,
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: LqShape.cardRadius,
@@ -209,11 +341,16 @@ class _DashedTrailPainter extends CustomPainter {
   bool shouldRepaint(_DashedTrailPainter oldDelegate) => false;
 }
 
-/// 하단 요약 카드 — 이 화면에서 유일하게 실데이터를 쓰는 부분.
+/// 하단 요약 카드.
+///
+/// 마커를 고르면 그 퀘스트를, 고르지 않았으면 가장 가까운 퀘스트를 보여준다.
 class _NearbySummary extends ConsumerWidget {
-  const _NearbySummary({required this.nearby});
+  const _NearbySummary({required this.nearby, this.selected});
 
   final AsyncValue<NearbyQuests> nearby;
+
+  /// 지도에서 고른 퀘스트. `null`이면 최근접을 쓴다.
+  final DailyQuest? selected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -245,7 +382,7 @@ class _NearbySummary extends ConsumerWidget {
     }
 
     final result = nearby.requireValue;
-    final nearest = result.nearest;
+    final nearest = selected ?? result.nearest;
 
     return LqCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -253,7 +390,12 @@ class _NearbySummary extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('근처 퀘스트 ${result.quests.length}개', style: LqText.cardTitle),
+          Text(
+            selected == null
+                ? '근처 퀘스트 ${result.quests.length}개'
+                : selected!.quest.placeName ?? '선택한 퀘스트',
+            style: LqText.cardTitle,
+          ),
           const SizedBox(height: 6),
           if (nearest == null)
             Text('주변에 위치 퀘스트가 없어요', style: LqText.caption)

@@ -20,6 +20,7 @@ import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_dashed.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
+import 'package:life_quest/shared/widgets/lq_map.dart';
 import 'package:life_quest/shared/widgets/lq_pulse_ring.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 import 'package:life_quest/shared/widgets/lq_snack.dart';
@@ -423,7 +424,9 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
                     ),
                   ],
                   const SizedBox(height: LqSpacing.gap),
-                  _RadarCard(
+                  _VerifyMap(
+                    quest: quest,
+                    position: _position,
                     radiusM: _radiusM,
                     inRadius: _stage == _VerifyStage.inRadius,
                     locating:
@@ -529,6 +532,70 @@ class _QuestVerifyScreenState extends ConsumerState<QuestVerifyScreen> {
       return _radiusM == null ? '인증 반경은 서버가 확인해요' : '인증 반경 ${_radiusM}m';
     }
     return '목표까지 ${distance.round()}m · GPS 정확도 ±${accuracy.round()}m';
+  }
+}
+
+/// 목표와 내 위치를 함께 보여주는 지도.
+///
+/// 카메라가 둘을 모두 담으므로 멀면 자동으로 줄고 가까워질수록 커진다 — 원 안으로
+/// 들어가는 과정이 눈에 보인다. 거리 숫자만으로는 어느 방향으로 가야 하는지 알 수
+/// 없었다.
+///
+/// **판정은 그리지 않는다.** 서버 거절은 배너가 유지하고, 이 지도는 지금 내가 어디
+/// 있는지만 그린다. 둘을 엮으면 위치 스트림이 흐를 때마다 서버 판정이 덮인다.
+///
+/// 좌표가 없거나 지도 키가 없으면 [_RadarCard]로 되돌아간다.
+class _VerifyMap extends StatelessWidget {
+  const _VerifyMap({
+    required this.quest,
+    required this.position,
+    required this.radiusM,
+    required this.inRadius,
+    required this.locating,
+  });
+
+  final Quest quest;
+  final Position? position;
+  final int? radiusM;
+  final bool inRadius;
+  final bool locating;
+
+  static const _height = 238.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = _RadarCard(
+      radiusM: radiusM,
+      inRadius: inRadius,
+      locating: locating,
+    );
+
+    if (!quest.hasCoordinates) return fallback;
+
+    final target = LqLatLng(quest.latitude!, quest.longitude!);
+    final me = position;
+
+    return LqMap(
+      height: _height,
+      interactive: false,
+      fallback: fallback,
+      markers: [
+        LqMapMarker(
+          id: 'verify-target',
+          position: target,
+          label: quest.placeName,
+          color: inRadius ? LqColors.primary : LqColors.accent,
+        ),
+      ],
+      circle: radiusM == null
+          ? null
+          : LqMapCircle(
+              center: target,
+              radiusM: radiusM!.toDouble(),
+              satisfied: inRadius,
+            ),
+      myLocation: me == null ? null : LqLatLng(me.latitude, me.longitude),
+    );
   }
 }
 
