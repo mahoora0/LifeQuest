@@ -163,16 +163,36 @@ class _LqMapState extends State<LqMap> {
   /// 핀 이미지는 색마다 하나씩만 만든다. 마커 수가 아니라 등급 수만큼 렌더링된다.
   static final Map<int, NOverlayImage> _pinCache = {};
 
+  /// 인증 실패 여부. **인스턴스가 아니라 앱 전체의 상태다.**
+  ///
+  /// 초기화가 한 번뿐이므로 실패 콜백도 먼저 뜬 지도 하나에만 묶인다. 그 화면을
+  /// 떠난 뒤 다른 지도가 열리면 콜백은 다시 오지 않으므로, 인스턴스 필드로 두면
+  /// 두 번째 화면은 키가 죽은 줄 모른 채 빈 지도를 그린다.
+  static final ValueNotifier<bool> _authFailed = ValueNotifier(false);
+
   NaverMapController? _controller;
   Future<bool>? _ready;
 
-  /// 인증 실패는 초기화 성공 뒤에 비동기로 온다 — 그때 대체 화면으로 내린다.
-  bool _authFailed = false;
+  /// 오버레이 갱신 세대. 갱신이 겹치면 뒤늦게 끝난 이전 호출이 방금 지운 것을
+  /// 다시 그리거나 같은 id를 두 번 추가한다.
+  int _overlayGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    if (AppConfig.isMapEnabled) _ready = _initializeSdk();
+    if (!AppConfig.isMapEnabled) return;
+    _ready = _initializeSdk();
+    _authFailed.addListener(_onAuthFailedChanged);
+  }
+
+  @override
+  void dispose() {
+    _authFailed.removeListener(_onAuthFailedChanged);
+    super.dispose();
+  }
+
+  void _onAuthFailedChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<bool> _initializeSdk() {
@@ -182,7 +202,7 @@ class _LqMapState extends State<LqMap> {
           onAuthFailed: (_) {
             // 키가 틀렸거나 패키지 이름이 콘솔 등록값과 다르면 여기로 온다.
             // 지도 자리를 빈 채로 두지 않고 대체 화면으로 되돌린다.
-            if (mounted) setState(() => _authFailed = true);
+            _authFailed.value = true;
           },
         )
         .then((_) => true)
@@ -231,8 +251,12 @@ class _LqMapState extends State<LqMap> {
     final controller = _controller;
     if (controller == null) return;
 
+    final generation = ++_overlayGeneration;
+    bool stale() => generation != _overlayGeneration || !mounted;
+
     await controller.clearOverlays(type: NOverlayType.marker);
     await controller.clearOverlays(type: NOverlayType.circleOverlay);
+    if (stale()) return;
 
     final circle = widget.circle;
     if (circle != null) {
@@ -254,7 +278,7 @@ class _LqMapState extends State<LqMap> {
         id: marker.id,
         position: NLatLng(marker.position.latitude, marker.position.longitude),
         icon: await _pinImage(marker.color, selected: marker.selected),
-        size: marker.selected ? const Size(40, 50) : const Size(32, 40),
+        size: marker.selected ? _selectedPinSize : _pinSize,
         caption: marker.label == null
             ? null
             : NOverlayCaption(
@@ -266,6 +290,7 @@ class _LqMapState extends State<LqMap> {
       );
       final onTap = marker.onTap;
       if (onTap != null) overlay.setOnTapListener((_) => onTap());
+      if (stale()) return;
       await controller.addOverlay(overlay);
     }
   }
@@ -279,7 +304,7 @@ class _LqMapState extends State<LqMap> {
 
     final image = await NOverlayImage.fromWidget(
       widget: _MapPin(color: color, selected: selected),
-      size: const Size(32, 40),
+      size: selected ? _selectedPinSize : _pinSize,
       context: context,
     );
     return _pinCache[key] = image;
@@ -339,7 +364,7 @@ class _LqMapState extends State<LqMap> {
 
   @override
   Widget build(BuildContext context) {
-    if (!AppConfig.isMapEnabled || _authFailed) {
+    if (!AppConfig.isMapEnabled || _authFailed.value) {
       return SizedBox(height: widget.height, child: widget.fallback);
     }
 
@@ -414,6 +439,9 @@ class _MapLoading extends StatelessWidget {
   }
 }
 
+const _pinSize = Size(32, 40);
+const _selectedPinSize = Size(40, 50);
+
 /// 마커 핀. 앱의 손그림 톤(굵은 ink 테두리)을 지도 위에서도 유지한다.
 class _MapPin extends StatelessWidget {
   const _MapPin({required this.color, required this.selected});
@@ -423,9 +451,10 @@ class _MapPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = selected ? _selectedPinSize : _pinSize;
     return SizedBox(
-      width: 32,
-      height: 40,
+      width: size.width,
+      height: size.height,
       child: CustomPaint(
         painter: _MapPinPainter(color: color, selected: selected),
       ),
