@@ -17,6 +17,15 @@ class AppConfig {
     'GOOGLE_IOS_CLIENT_ID',
   );
 
+  /// 네이버 클라우드 플랫폼 Maps(Dynamic Map) Client ID.
+  ///
+  /// 비어 있으면 지도를 초기화하지 않고 대체 화면으로 넘어간다. CI의 `flutter test`와
+  /// `build apk`는 이 값을 주입하지 않으므로, 비어 있는 상태가 정상 경로 중 하나다.
+  static const naverMapClientId = String.fromEnvironment('NAVER_MAP_CLIENT_ID');
+
+  /// 지도 SDK를 쓸 수 있는지. 키가 없으면 지도 대신 대체 화면을 그린다.
+  static bool get isMapEnabled => naverMapClientId.isNotEmpty;
+
   /// 마이페이지 하단 표기용. `pubspec.yaml`의 version과 함께 올린다.
   static const appVersion = '0.1.0';
 

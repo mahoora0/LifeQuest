@@ -296,7 +296,7 @@ flutter build apk                           # 플래그 없음 → 표본 없음
 | S-08 | 퀘스트 목록 | `/quests` | `quest/presentation/quest_list_screen.dart` |
 | S-09 | 퀘스트 상세 | `/quests/:questId` | `quest/presentation/quest_detail_screen.dart` |
 | S-10 | GPS 위치 인증 | `/quests/:dailyQuestId/verify` | `quest/presentation/quest_verify_screen.dart` |
-| S-11 | 지역 지도 | `/map` | `quest/presentation/map_screen.dart` (SDK 미선정) |
+| S-11 | 지역 지도 | `/map` | `quest/presentation/map_screen.dart` |
 | S-12 | 완료 결과 | `/quests/result` | `quest/presentation/quest_result_screen.dart` |
 | S-13/14 | LifeDex 도감 · 상세 | `/lifedex` | `lifedex/presentation/lifedex_screen.dart` |
 | S-15/16 | 업적 · 칭호 | `/achievements` | `achievement/presentation/achievement_screen.dart` |
@@ -337,7 +337,8 @@ flutter build apk                           # 플래그 없음 → 표본 없음
 
 | 화면 | 진입점 |
 |---|---|
-| 홈 · 퀘스트 · 지도 · 친구 · 마이 | 하단 탭 |
+| 홈 · 퀘스트 · 그룹 · 친구 · 마이 | 하단 탭 |
+| S-11 지역 지도 | 홈 "지역 지도" 카드(오늘의 퀘스트 아래) |
 | S-05 레벨 · 보상 | 마이페이지 EXP 바(› 표식) |
 | S-18 동료 찾기 | 친구 헤더 **+** · 친구 코드 카드 **›** |
 | S-19 받은 요청 | 친구 목록 상단 배너(요청이 있을 때만) |
@@ -375,7 +376,7 @@ flutter build apk                           # 플래그 없음 → 표본 없음
 3. `[TBD]` **보낸 요청 취소** — 취소를 허용할지, 허용한다면 상대에게 어떻게 보이는지
 4. `[TBD]` **응원 보상과 제한** — EXP 5가 서로에게인지, 1일 1회 제한이 있는지
 5. `[TBD]` **랭킹 범위** — 친구 한정인지 전체 사용자 랭킹도 두는지, 집계 기준(주간 EXP)과 초기화 시점이 서버와 일치하는지
-6. `[TBD]` **지도 SDK** — 선정 후 지도 화면의 탐험 캔버스를 실지도로 교체(`_ExplorationCanvas` 위젯만 갈아끼우면 된다)
+6. ~~`[TBD]` **지도 SDK**~~ — 해소. 네이버 Mobile Dynamic Map(`flutter_naver_map`)을 쓴다. SDK 호출은 `shared/widgets/lq_map.dart` 한 파일에 모으고, 화면은 `LqLatLng`·`LqMapMarker`만 다룬다(§3-4의 분리 원칙). 키(`NAVER_MAP_CLIENT_ID`)가 없으면 지도 대신 기존 탐험 캔버스가 그려지므로 키 없이도 앱이 뜬다
 7. `[TBD]` **관리자 콘솔 플랫폼** — 별도 웹으로 확정했으나 인증 방식(같은 JWT 재사용 여부)이 미정
 8. ~~`[TBD]` **위치 권한 재노출 간격**~~ — 해소. §8 규칙 4의 경계를 04:00으로 정의했다
 9. `[TBD]` **동료 찾기에서 상대가 먼저 요청을 보낸 경우의 표시** — 시안은 상태를 셋(친구 / 요청 / 대기)으로만 그린다
