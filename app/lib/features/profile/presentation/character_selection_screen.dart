@@ -134,6 +134,9 @@ class _CharacterSelectionScreenState
             value: accessories,
             onRetry: () => ref.invalidate(accessoryCollectionProvider),
             data: (collection) {
+              final rookieCharacters = characterItems
+                  .where((character) => character.code == 'ROOKIE')
+                  .toList(growable: false);
               final equippedByCharacter = <int, int?>{
                 ...collection.selectedAccessoryIdsByCharacter,
                 ..._accessoryOverrides,
@@ -152,7 +155,10 @@ class _CharacterSelectionScreenState
                   .firstOrNull;
               return CustomScrollView(
                 slivers: [
-                  const _SectionHeader(title: '캐릭터'),
+                  const _SectionHeader(
+                    title: '기본 캐릭터 · 루키',
+                    hint: '루키는 고정 캐릭터예요. 획득한 액세서리로 꾸며 보세요.',
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
                       LqSpacing.screen,
@@ -168,9 +174,9 @@ class _CharacterSelectionScreenState
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
                           ),
-                      itemCount: characterItems.length,
+                      itemCount: rookieCharacters.length,
                       itemBuilder: (context, index) {
-                        final character = characterItems[index];
+                        final character = rookieCharacters[index];
                         final accessoryId = equippedByCharacter[character.id];
                         final characterAccessory = collection.accessories
                             .where((item) => item.id == accessoryId)
@@ -180,9 +186,7 @@ class _CharacterSelectionScreenState
                           accessoryCode: characterAccessory?.code,
                           selected: character.id == selectedId,
                           busy: character.id == _busyId,
-                          onTap: character.unlocked
-                              ? () => _select(character)
-                              : null,
+                          onTap: null,
                         );
                       },
                     ),

@@ -24,3 +24,8 @@ uploads/
 
 # Personal design notes
 /docs/private/
+
+# Local demo and generated presentation artifacts
+/.cache/
+/.codex-ppt/
+/demo-output/
