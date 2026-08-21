@@ -18,12 +18,18 @@ class ProofRepository {
 
   Future<ProofFeedPage> feed({
     required ProofFeedTab tab,
+    ProofQuestCategory? category,
     int? cursor,
     int size = 10,
   }) => _guard(() async {
     final response = await _dio.get<dynamic>(
       '/quest-proofs',
-      queryParameters: {'tab': tab.wire, 'cursor': ?cursor, 'size': size},
+      queryParameters: {
+        'tab': tab.wire,
+        if (category != null) 'category': category.wire,
+        'cursor': ?cursor,
+        'size': size,
+      },
     );
     return ProofFeedPage.fromJson(asMap(response.data));
   });

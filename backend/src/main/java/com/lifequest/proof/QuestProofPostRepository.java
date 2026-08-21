@@ -1,6 +1,7 @@
 package com.lifequest.proof;
 
 import com.lifequest.proof.dto.ProofCandidateResponse;
+import com.lifequest.quest.domain.QuestCategory;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -58,10 +59,14 @@ public interface QuestProofPostRepository extends JpaRepository<QuestProofPost, 
             JOIN FETCH p.author
             JOIN FETCH p.quest
             WHERE p.deletedAt IS NULL
+              AND (:category IS NULL OR p.quest.category = :category)
               AND (:cursor IS NULL OR p.id < :cursor)
             ORDER BY p.id DESC
             """)
-    List<QuestProofPost> findFeed(@Param("cursor") Long cursor, Pageable pageable);
+    List<QuestProofPost> findFeed(
+            @Param("category") QuestCategory category,
+            @Param("cursor") Long cursor,
+            Pageable pageable);
 
     /**
      * 내가 아직 판단하지 않은, 아직 판정되지 않은 남의 게시물. 홈 섹션과 피드의 기본 탭이
@@ -75,6 +80,7 @@ public interface QuestProofPostRepository extends JpaRepository<QuestProofPost, 
             JOIN FETCH p.quest
             WHERE p.status = com.lifequest.proof.ProofPostStatus.VOTING
               AND p.deletedAt IS NULL
+              AND (:category IS NULL OR p.quest.category = :category)
               AND p.author.id <> :userId
               AND NOT EXISTS (
                   SELECT 1 FROM QuestProofVote v
@@ -83,7 +89,10 @@ public interface QuestProofPostRepository extends JpaRepository<QuestProofPost, 
             ORDER BY p.id ASC
             """)
     List<QuestProofPost> findNeedingVotes(
-            @Param("userId") Long userId, @Param("cursor") Long cursor, Pageable pageable);
+            @Param("userId") Long userId,
+            @Param("category") QuestCategory category,
+            @Param("cursor") Long cursor,
+            Pageable pageable);
 
     @Query("""
             SELECT p FROM QuestProofPost p
@@ -91,11 +100,15 @@ public interface QuestProofPostRepository extends JpaRepository<QuestProofPost, 
             JOIN FETCH p.quest
             WHERE p.author.id = :userId
               AND p.deletedAt IS NULL
+              AND (:category IS NULL OR p.quest.category = :category)
               AND (:cursor IS NULL OR p.id < :cursor)
             ORDER BY p.id DESC
             """)
     List<QuestProofPost> findMine(
-            @Param("userId") Long userId, @Param("cursor") Long cursor, Pageable pageable);
+            @Param("userId") Long userId,
+            @Param("category") QuestCategory category,
+            @Param("cursor") Long cursor,
+            Pageable pageable);
 
     /**
      * 아직 게시물을 올리지 않은 내 완료 기록. 작성 화면의 퀘스트 선택 목록이다.

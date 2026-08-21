@@ -85,6 +85,22 @@ class QuestCatalogSeedTest {
             QuestGrade.EPIC, new int[] {60, 100},
             QuestGrade.LEGENDARY, new int[] {150, 300}));
 
+    /** V35에서 제목 추론으로 놓치기 쉬운 고정 시드의 대표 주제. */
+    private static final Map<String, QuestCategory> CATEGORY_EXAMPLES = Map.ofEntries(
+            Map.entry("기념관에서 역사 읽어 보기", QuestCategory.CULTURE_TRAVEL),
+            Map.entry("광명업사이클아트센터에서 그림 보기", QuestCategory.CULTURE_TRAVEL),
+            Map.entry("여수 선소유적 둘러보기", QuestCategory.CULTURE_TRAVEL),
+            Map.entry("김해 봉황동 유적 둘러보기", QuestCategory.CULTURE_TRAVEL),
+            Map.entry("일산 대화동 먹자골목 끝까지 걸어 보기", QuestCategory.FOOD_CAFE),
+            Map.entry("낭만포차거리 끝까지 걸어 보기", QuestCategory.FOOD_CAFE),
+            Map.entry("글로벌푸드타운 끝까지 걸어 보기", QuestCategory.FOOD_CAFE),
+            Map.entry("춘천 명동 닭갈비 골목 끝까지 걸어 보기", QuestCategory.FOOD_CAFE),
+            Map.entry("매탄공원 한 바퀴 걷기", QuestCategory.NATURE_OUTDOOR),
+            Map.entry("건강검진 다녀오기", QuestCategory.HEALTH_FITNESS),
+            Map.entry("책 스무 쪽 읽기", QuestCategory.LEARNING_GROWTH),
+            Map.entry("안부 연락하기", QuestCategory.RELATIONSHIP_COMMUNITY),
+            Map.entry("이불 정리하기", QuestCategory.DAILY_HABIT));
+
     /** §2 등급 표 전체의 하한·상한. 확장분은 이 바깥으로 나가지 않는다. */
     private static final int MIN_EXP = 10;
     private static final int MAX_EXP = 300;
@@ -375,6 +391,18 @@ class QuestCatalogSeedTest {
             assertTrue(quest.isLocationBased(),
                     quest.getTitle() + ": V33은 LOCATION만 넣기로 했다 — "
                             + "SELF_REPORT 결손은 V22이 이미 메웠다");
+        }
+    }
+
+    @Test
+    void 고정_시드의_대표_주제가_의미에_맞게_분류된다() {
+        Map<String, QuestCategory> actual = questRepository.findAll().stream()
+                .filter(quest -> CATEGORY_EXAMPLES.containsKey(quest.getTitle()))
+                .collect(Collectors.toMap(Quest::getTitle, Quest::getCategory));
+
+        assertEquals(CATEGORY_EXAMPLES.keySet(), actual.keySet(), "검증할 고정 시드가 DB에서 빠졌다");
+        for (Map.Entry<String, QuestCategory> expected : CATEGORY_EXAMPLES.entrySet()) {
+            assertEquals(expected.getValue(), actual.get(expected.getKey()), expected.getKey());
         }
     }
 

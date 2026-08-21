@@ -47,6 +47,10 @@ public class Quest {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false, length = 30)
+    private QuestCategory category;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "grade", nullable = false, length = 20)
     private QuestGrade grade;
 
@@ -135,10 +139,19 @@ public class Quest {
                  CompletionType completionType, int expReward, String placeName,
                  BigDecimal latitude, BigDecimal longitude, Integer radiusM, Long lifedexItemId,
                  QuestCreator createdBy, boolean active) {
+        this(title, description, QuestCategory.ETC, grade, cadence, completionType, expReward,
+                placeName, latitude, longitude, radiusM, lifedexItemId, createdBy, active);
+    }
+
+    public Quest(String title, String description, QuestCategory category, QuestGrade grade,
+                 QuestCadence cadence, CompletionType completionType, int expReward,
+                 String placeName, BigDecimal latitude, BigDecimal longitude, Integer radiusM,
+                 Long lifedexItemId, QuestCreator createdBy, boolean active) {
         requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
         requireAiOwnership(createdBy, null);
         this.title = title;
         this.description = description;
+        this.category = java.util.Objects.requireNonNull(category, "category");
         this.grade = grade;
         this.cadence = cadence;
         this.completionType = completionType;
@@ -168,9 +181,10 @@ public class Quest {
      * @param ownerUserId 이 퀘스트를 고른 사용자. 배정 풀과 상세 권한이 이 값으로 갈린다
      */
     public static Quest createPrivateAiWeekly(Long ownerUserId, String title, String description,
-                                              String placeName, String completionGuide) {
+                                              QuestCategory category, String placeName,
+                                              String completionGuide) {
         Quest quest = new Quest(
-            title, description, AI_QUEST_GRADE, QuestCadence.WEEKLY,
+            title, description, category, AI_QUEST_GRADE, QuestCadence.WEEKLY,
             CompletionType.SELF_REPORT, AI_QUEST_EXP_REWARD, placeName,
             null, null, null, null, QuestCreator.SYSTEM, true);
         // 공용 생성자는 ownerUserId를 받지 않는다(그쪽으로 개인 퀘스트가 새지 않게 하려는 것이다).
@@ -180,6 +194,13 @@ public class Quest {
         quest.completionGuide = completionGuide;
         requireAiOwnership(quest.createdBy, quest.ownerUserId);
         return quest;
+    }
+
+    /** 기존 호출부의 호환 경로. 새 생성 경로는 추천 주제를 명시해야 한다. */
+    public static Quest createPrivateAiWeekly(Long ownerUserId, String title, String description,
+                                              String placeName, String completionGuide) {
+        return createPrivateAiWeekly(
+                ownerUserId, title, description, QuestCategory.ETC, placeName, completionGuide);
     }
 
     /**
@@ -235,6 +256,10 @@ public class Quest {
 
     public String getDescription() {
         return description;
+    }
+
+    public QuestCategory getCategory() {
+        return category;
     }
 
     public QuestGrade getGrade() {
@@ -324,6 +349,7 @@ public class Quest {
     public void update(
             String title,
             String description,
+            QuestCategory category,
             QuestGrade grade,
             QuestCadence cadence,
             CompletionType completionType,
@@ -337,6 +363,7 @@ public class Quest {
         requireVerifiableIfLocation(completionType, latitude, longitude, radiusM);
         this.title = title;
         this.description = description;
+        this.category = java.util.Objects.requireNonNull(category, "category");
         this.grade = grade;
         this.cadence = cadence;
         this.completionType = completionType;

@@ -4,6 +4,7 @@ import com.lifequest.common.exception.BusinessException;
 import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestFeature;
 import com.lifequest.quest.domain.UserDailyQuest;
 import com.lifequest.quest.domain.WeeklyAiQuestClaim;
@@ -139,6 +140,7 @@ public class WeeklyAiQuestService {
             userId,
             candidate.getTitle(),
             candidate.getDescription(),
+            questCategory(candidate.getCategory()),
             candidate.getSuggestedPlaceName(),
             candidate.getCompletionGuide()));
 
@@ -148,6 +150,17 @@ public class WeeklyAiQuestService {
         candidate.markClaimed(now);
 
         return DailyQuestResponse.of(assignment, quest);
+    }
+
+    static QuestCategory questCategory(
+            com.lifequest.recommendation.RecommendationCategory category) {
+        return switch (category) {
+            case FOOD, CAFE -> QuestCategory.FOOD_CAFE;
+            case WALK, NATURE -> QuestCategory.NATURE_OUTDOOR;
+            case CULTURE, TRAVEL -> QuestCategory.CULTURE_TRAVEL;
+            case EXERCISE -> QuestCategory.HEALTH_FITNESS;
+            case EXPERIENCE -> QuestCategory.ETC;
+        };
     }
 
     /**

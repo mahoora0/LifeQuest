@@ -140,6 +140,10 @@ public class WeeklyRecommendationCandidate {
         return description;
     }
 
+    public RecommendationCategory getCategory() {
+        return category;
+    }
+
     public String getSuggestedPlaceName() {
         return suggestedPlaceName;
     }

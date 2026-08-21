@@ -200,7 +200,11 @@ class _PostBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ProofQuestBadge(title: post.questTitle, grade: post.questGrade),
+          ProofQuestBadge(
+            title: post.questTitle,
+            grade: post.questGrade,
+            categoryLabel: post.questCategory.label,
+          ),
           const SizedBox(height: 12),
           ProofPhotoCarousel(photoUrls: post.photoUrls),
           if (post.content != null && post.content!.isNotEmpty) ...[

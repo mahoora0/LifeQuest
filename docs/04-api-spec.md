@@ -108,7 +108,7 @@
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
 | POST | /api/quest-proofs | 인증 게시물 등록(multipart: `completionId`, `content`, `photos[]`) | 필요 |
-| GET | /api/quest-proofs | 피드 조회(`tab`=NEEDS_VOTE\|ALL\|MINE, `cursor`, `size`) | 필요 |
+| GET | /api/quest-proofs | 피드 조회(`tab`=NEEDS_VOTE\|ALL\|MINE, 선택 `category`, `cursor`, `size`) | 필요 |
 | GET | /api/quest-proofs/candidates | 아직 인증을 올리지 않은 내 완료 기록 | 필요 |
 | GET | /api/quest-proofs/{postId} | 인증 게시물 상세 | 필요 |
 | DELETE | /api/quest-proofs/{postId} | 인증 게시물 삭제(작성자만) | 필요 |
@@ -117,6 +117,9 @@
 | POST | /api/quest-proofs/{postId}/comments | 댓글 작성 | 필요 |
 
 `GET /api/quest-proofs`는 커서 페이징이다. 응답의 `nextCursor`가 `null`이면 마지막 페이지다.
+`category`는 `HEALTH_FITNESS`, `DAILY_HABIT`, `LEARNING_GROWTH`,
+`RELATIONSHIP_COMMUNITY`, `FOOD_CAFE`, `NATURE_OUTDOOR`, `CULTURE_TRAVEL`, `ETC` 중 하나다.
+생략하면 모든 주제를 조회하며, 게시물 응답의 `questCategory`에도 같은 값을 싣는다.
 게시물 응답에는 **좌표를 싣지 않는다**(`05-business-rules.md` §3-5).
 
 ### 3-3. LifeDex·업적 (담당: 팀원 3)

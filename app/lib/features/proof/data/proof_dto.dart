@@ -16,6 +16,31 @@ enum ProofStatus {
   };
 }
 
+/// 퀘스트의 대표 주제. 서버의 `QuestCategory` wire 값과 일치한다.
+enum ProofQuestCategory {
+  healthFitness('HEALTH_FITNESS', '건강·운동'),
+  dailyHabit('DAILY_HABIT', '생활·습관'),
+  learningGrowth('LEARNING_GROWTH', '학습·성장'),
+  relationshipCommunity('RELATIONSHIP_COMMUNITY', '관계·나눔'),
+  foodCafe('FOOD_CAFE', '음식·카페'),
+  natureOutdoor('NATURE_OUTDOOR', '자연·산책'),
+  cultureTravel('CULTURE_TRAVEL', '문화·여행'),
+  etc('ETC', '기타');
+
+  const ProofQuestCategory(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static ProofQuestCategory parse(Object? value) {
+    final raw = asString(value);
+    return ProofQuestCategory.values.firstWhere(
+      (category) => category.wire == raw,
+      orElse: () => ProofQuestCategory.etc,
+    );
+  }
+}
+
 /// 투표 선택지. 화면 문구가 서버 이름보다 길고 부드러운 것이 의도다 —
 /// `옳음/아님`으로 표시하면 판정하는 쪽이 남을 심판하는 느낌이 된다.
 enum ProofVoteChoice {
@@ -67,6 +92,7 @@ class ProofPost {
     required this.questId,
     required this.questTitle,
     required this.questGrade,
+    required this.questCategory,
     required this.photoUrls,
     required this.status,
     required this.agreeCount,
@@ -86,6 +112,7 @@ class ProofPost {
   final int questId;
   final String questTitle;
   final String questGrade;
+  final ProofQuestCategory questCategory;
   final String? content;
 
   /// 서버가 내려주는 값은 `/uploads/proof/...` 상대 경로다. 표시 직전에 서버 origin을
@@ -120,6 +147,7 @@ class ProofPost {
     questId: asInt(json['questId']) ?? 0,
     questTitle: asString(json['questTitle']) ?? '퀘스트',
     questGrade: asString(json['questGrade']) ?? 'NORMAL',
+    questCategory: ProofQuestCategory.parse(json['questCategory']),
     content: asString(json['content']),
     photoUrls:
         (json['photoUrls'] is List ? json['photoUrls'] as List : const [])

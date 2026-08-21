@@ -54,7 +54,11 @@ class ProofCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ProofQuestBadge(title: post.questTitle, grade: post.questGrade),
+          ProofQuestBadge(
+            title: post.questTitle,
+            grade: post.questGrade,
+            categoryLabel: post.questCategory.label,
+          ),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: onOpen,

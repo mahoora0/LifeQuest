@@ -65,10 +65,16 @@ class ProofStatusBadge extends StatelessWidget {
 
 /// 퀘스트명 배지. 완료 기록에서 따라온 값이라 사용자가 편집할 수 없다.
 class ProofQuestBadge extends StatelessWidget {
-  const ProofQuestBadge({super.key, required this.title, this.grade});
+  const ProofQuestBadge({
+    super.key,
+    required this.title,
+    this.grade,
+    this.categoryLabel,
+  });
 
   final String title;
   final String? grade;
+  final String? categoryLabel;
 
   static const _gradeColors = <String, Color>{
     'NORMAL': LqColors.gradeNormal,
@@ -92,6 +98,18 @@ class ProofQuestBadge extends StatelessWidget {
             style: LqText.cardTitle,
           ),
         ),
+        if (categoryLabel != null) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: LqColors.surfaceRaised,
+              borderRadius: LqShape.pillRadius,
+              border: Border.all(color: LqColors.borderMuted),
+            ),
+            child: Text(categoryLabel!, style: LqText.caption),
+          ),
+        ],
       ],
     );
   }

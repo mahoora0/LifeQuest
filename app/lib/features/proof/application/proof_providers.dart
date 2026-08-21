@@ -78,15 +78,17 @@ void invalidateProofLists(WidgetRef ref) {
 
 /// 탭을 바꿔 돌아왔을 때 지난 목록이 그대로 깔려 있지 않도록 autoDispose로 둔다.
 final proofFeedProvider = AsyncNotifierProvider.autoDispose
-    .family<ProofFeedNotifier, ProofFeedState, ProofFeedTab>(
+    .family<ProofFeedNotifier, ProofFeedState, ProofFeedFilter>(
       ProofFeedNotifier.new,
     );
 
+typedef ProofFeedFilter = ({ProofFeedTab tab, ProofQuestCategory? category});
+
 class ProofFeedNotifier extends AsyncNotifier<ProofFeedState> {
-  ProofFeedNotifier(this.tab);
+  ProofFeedNotifier(this.filter);
 
   /// Riverpod 3의 family는 인자를 `build`가 아니라 Notifier 생성자로 넘긴다.
-  final ProofFeedTab tab;
+  final ProofFeedFilter filter;
 
   static const _pageSize = 10;
 
@@ -94,7 +96,7 @@ class ProofFeedNotifier extends AsyncNotifier<ProofFeedState> {
   Future<ProofFeedState> build() async {
     final page = await ref
         .read(proofRepositoryProvider)
-        .feed(tab: tab, size: _pageSize);
+        .feed(tab: filter.tab, category: filter.category, size: _pageSize);
     return ProofFeedState(posts: page.items, nextCursor: page.nextCursor);
   }
 
@@ -112,7 +114,12 @@ class ProofFeedNotifier extends AsyncNotifier<ProofFeedState> {
     try {
       final page = await ref
           .read(proofRepositoryProvider)
-          .feed(tab: tab, cursor: current.nextCursor, size: _pageSize);
+          .feed(
+            tab: filter.tab,
+            category: filter.category,
+            cursor: current.nextCursor,
+            size: _pageSize,
+          );
 
       state = AsyncData(
         ProofFeedState(
