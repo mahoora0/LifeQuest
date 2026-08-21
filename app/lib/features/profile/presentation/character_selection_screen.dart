@@ -22,31 +22,9 @@ class CharacterSelectionScreen extends ConsumerStatefulWidget {
 class _CharacterSelectionScreenState
     extends ConsumerState<CharacterSelectionScreen> {
   int? _selectedId;
-  int? _busyId;
   final Map<int, int?> _accessoryOverrides = {};
   bool _accessoryBusy = false;
   int? _pendingAccessoryId;
-
-  Future<void> _select(AvatarCharacter character) async {
-    if (_busyId != null || _selectedId == character.id) return;
-    setState(() => _busyId = character.id);
-    try {
-      final updated = await ref
-          .read(userRepositoryProvider)
-          .selectCharacter(character.id);
-      if (!mounted) return;
-      setState(() {
-        _selectedId = updated.selectedCharacter?.id ?? character.id;
-        _busyId = null;
-      });
-      ref.invalidate(myProfileProvider);
-      showLqSnack(context, '${character.name}(으)로 변경했어요.');
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _busyId = null);
-      showLqError(context, error);
-    }
-  }
 
   Future<void> _selectAccessory(
     AvatarAccessory? accessory,
@@ -185,7 +163,7 @@ class _CharacterSelectionScreenState
                           character: character,
                           accessoryCode: characterAccessory?.code,
                           selected: character.id == selectedId,
-                          busy: character.id == _busyId,
+                          busy: false,
                           onTap: null,
                         );
                       },

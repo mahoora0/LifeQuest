@@ -29,3 +29,6 @@ uploads/
 /.cache/
 /.codex-ppt/
 /demo-output/
+
+# Local screen-recording tooling and captures
+/tool/cinema-recorder/

@@ -10,6 +10,7 @@ import com.lifequest.common.exception.ErrorCode;
 import com.lifequest.quest.domain.CompletionType;
 import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
 import com.lifequest.quest.domain.UserDailyQuest;
@@ -56,12 +57,14 @@ public class AdminQuestService {
     public AdminQuestResponse create(AdminQuestRequest request) {
         boolean active = request.active() == null || request.active();
         QuestValues values = normalize(
-                request.title(), request.description(), request.grade(), request.cadence(),
+                request.title(), request.description(),
+                request.category() == null ? QuestCategory.ETC : request.category(),
+                request.grade(), request.cadence(),
                 request.completionType(), request.expReward(), request.placeName(),
                 request.latitude(), request.longitude(), request.radiusM(),
                 request.lifedexItemId(), active);
         Quest quest = new Quest(
-                values.title, values.description, values.grade, values.cadence,
+                values.title, values.description, values.category, values.grade, values.cadence,
                 values.completionType, values.expReward, values.placeName,
                 values.latitude, values.longitude, values.radiusM, values.lifedexItemId,
                 QuestCreator.ADMIN, values.active);
@@ -78,6 +81,7 @@ public class AdminQuestService {
         QuestValues values = normalize(
                 request.title() == null ? quest.getTitle() : request.title(),
                 request.description() == null ? quest.getDescription() : request.description(),
+                request.category() == null ? quest.getCategory() : request.category(),
                 request.grade() == null ? quest.getGrade() : request.grade(),
                 request.cadence() == null ? quest.getCadence() : request.cadence(),
                 request.completionType() == null
@@ -90,7 +94,7 @@ public class AdminQuestService {
                 request.lifedexItemId() == null ? quest.getLifedexItemId() : request.lifedexItemId(),
                 request.active() == null ? quest.isActive() : request.active());
         quest.update(
-                values.title, values.description, values.grade, values.cadence,
+                values.title, values.description, values.category, values.grade, values.cadence,
                 values.completionType, values.expReward, values.placeName,
                 values.latitude, values.longitude, values.radiusM,
                 values.lifedexItemId, values.active);
@@ -134,16 +138,16 @@ public class AdminQuestService {
     }
 
     private QuestValues normalize(
-            String title, String description, QuestGrade grade, QuestCadence cadence,
+            String title, String description, QuestCategory category, QuestGrade grade, QuestCadence cadence,
             CompletionType completionType, int expReward, String placeName,
             BigDecimal latitude, BigDecimal longitude, Integer radiusM,
             Long lifedexItemId, boolean active) {
-        if (title == null || title.isBlank() || grade == null || cadence == null
+        if (title == null || title.isBlank() || category == null || grade == null || cadence == null
                 || completionType == null || !validExp(grade, expReward)) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
         if (completionType == CompletionType.SELF_REPORT) {
-            return new QuestValues(title.trim(), description, grade, cadence, completionType,
+            return new QuestValues(title.trim(), description, category, grade, cadence, completionType,
                     expReward, null, null, null, null, lifedexItemId, active);
         }
         if (placeName == null || placeName.isBlank() || latitude == null || longitude == null
@@ -154,7 +158,7 @@ public class AdminQuestService {
                 || longitude.compareTo(BigDecimal.valueOf(180)) > 0) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
-        return new QuestValues(title.trim(), description, grade, cadence, completionType,
+        return new QuestValues(title.trim(), description, category, grade, cadence, completionType,
                 expReward, placeName.trim(), latitude, longitude, radiusM, lifedexItemId, active);
     }
 
@@ -174,7 +178,7 @@ public class AdminQuestService {
     }
 
     private record QuestValues(
-            String title, String description, QuestGrade grade, QuestCadence cadence,
+            String title, String description, QuestCategory category, QuestGrade grade, QuestCadence cadence,
             CompletionType completionType, int expReward, String placeName,
             BigDecimal latitude, BigDecimal longitude, Integer radiusM,
             Long lifedexItemId, boolean active) {

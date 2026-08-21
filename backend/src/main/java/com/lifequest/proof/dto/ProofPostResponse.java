@@ -3,6 +3,7 @@ package com.lifequest.proof.dto;
 import com.lifequest.proof.ProofPostStatus;
 import com.lifequest.proof.ProofVoteChoice;
 import com.lifequest.quest.domain.QuestGrade;
+import com.lifequest.quest.domain.QuestCategory;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,7 @@ public record ProofPostResponse(
         Long questId,
         String questTitle,
         QuestGrade questGrade,
+        QuestCategory questCategory,
         String content,
         List<String> photoUrls,
         ProofPostStatus status,
