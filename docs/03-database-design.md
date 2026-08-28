@@ -285,6 +285,7 @@ erDiagram
 | id | BIGINT | PK | 퀘스트 ID |
 | title | VARCHAR(100) | NOT NULL | 퀘스트명 |
 | description | VARCHAR(500) | NULL | 설명 |
+| category | VARCHAR(30) | NOT NULL, DEFAULT ETC | HEALTH_FITNESS / DAILY_HABIT / LEARNING_GROWTH / RELATIONSHIP_COMMUNITY / FOOD_CAFE / NATURE_OUTDOOR / CULTURE_TRAVEL / ETC |
 | grade | ENUM | NOT NULL | NORMAL / RARE / EPIC / LEGENDARY |
 | cadence | ENUM | NOT NULL, DEFAULT DAILY | DAILY / WEEKLY — 배정 트랙을 가르는 기준(`05-business-rules.md` §1). 협동은 참여 형태이므로 이 축에 두지 않는다 |
 | completion_type | ENUM | NOT NULL | LOCATION(위치 인증) / SELF_REPORT(직접 완료) |

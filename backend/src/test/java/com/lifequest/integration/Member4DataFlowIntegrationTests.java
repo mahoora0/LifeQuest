@@ -10,6 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.lifequest.quest.domain.CompletionType;
 import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
 import com.lifequest.quest.domain.UserDailyQuest;
@@ -114,7 +115,8 @@ class Member4DataFlowIntegrationTests {
 
     private long assignQuest(long userId) {
         Quest quest = questRepository.save(new Quest(
-                "통합 검증 퀘스트", "도메인 연결 검증", QuestGrade.LEGENDARY,
+                "통합 검증 퀘스트", "도메인 연결 검증", QuestCategory.DAILY_HABIT,
+                QuestGrade.LEGENDARY,
                 QuestCadence.DAILY, CompletionType.SELF_REPORT, 150,
                 null, null, null, null, null, QuestCreator.SYSTEM, true));
         UserDailyQuest assignment = userDailyQuestRepository.save(new UserDailyQuest(

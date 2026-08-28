@@ -23,7 +23,10 @@ class ProofFeedScreen extends ConsumerStatefulWidget {
 class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
   final _scrollController = ScrollController();
   ProofFeedTab _tab = ProofFeedTab.needsVote;
+  ProofQuestCategory? _category;
   final _voting = <int>{};
+
+  ProofFeedFilter get _filter => (tab: _tab, category: _category);
 
   @override
   void initState() {
@@ -42,7 +45,7 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
     final position = _scrollController.position;
     // 바닥에 닿기 전에 미리 당겨 온다. 닿은 뒤에 요청하면 빈 화면을 한 번 보게 된다.
     if (position.pixels >= position.maxScrollExtent - 400) {
-      ref.read(proofFeedProvider(_tab).notifier).loadMore();
+      ref.read(proofFeedProvider(_filter).notifier).loadMore();
     }
   }
 
@@ -58,7 +61,7 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
       // 목록 전체를 다시 부르지 않고 해당 카드만 갈아 끼운다. "투표 필요" 탭에서
       // 새로 조회하면 방금 투표한 카드가 조건에서 빠져 사라지고, 사용자는 자기가
       // 무엇을 눌렀는지 확인하지 못한다.
-      ref.read(proofFeedProvider(_tab).notifier).replace(result.post);
+      ref.read(proofFeedProvider(_filter).notifier).replace(result.post);
       ref.invalidate(proofHighlightsProvider);
 
       if (!mounted) return;
@@ -78,7 +81,7 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final value = ref.watch(proofFeedProvider(_tab));
+    final value = ref.watch(proofFeedProvider(_filter));
 
     return Scaffold(
       backgroundColor: LqColors.surfacePanel,
@@ -101,13 +104,27 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
                     LqChip(
                       label: tab.label,
                       selected: tab == _tab,
-                      onTap: () => setState(() => _tab = tab),
+                      onTap: () => _selectTab(tab),
                     ),
                     if (tab != ProofFeedTab.values.last)
                       const SizedBox(width: 8),
                   ],
                 ],
               ),
+            ),
+            LqChipRow(
+              labels: [
+                '모든 주제',
+                for (final category in ProofQuestCategory.values)
+                  category.label,
+              ],
+              selectedIndex: _category == null
+                  ? 0
+                  : ProofQuestCategory.values.indexOf(_category!) + 1,
+              onSelected: (index) => _selectCategory(
+                index == 0 ? null : ProofQuestCategory.values[index - 1],
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             ),
             Expanded(
               child: LqAsyncView<ProofFeedState>(
@@ -118,12 +135,12 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
                   ProofFeedTab.all => '아직 올라온 인증이 없어요',
                   ProofFeedTab.mine => '아직 올린 인증이 없어요',
                 },
-                onRetry: () => ref.invalidate(proofFeedProvider(_tab)),
+                onRetry: () => ref.invalidate(proofFeedProvider(_filter)),
                 data: (state) => RefreshIndicator(
                   color: LqColors.primary,
                   backgroundColor: LqColors.surfaceRaised,
                   onRefresh: () =>
-                      ref.read(proofFeedProvider(_tab).notifier).refresh(),
+                      ref.read(proofFeedProvider(_filter).notifier).refresh(),
                   child: ListView.separated(
                     controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
@@ -162,5 +179,23 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
         ),
       ),
     );
+  }
+
+  void _selectTab(ProofFeedTab tab) {
+    if (_tab == tab) return;
+    setState(() => _tab = tab);
+    _resetScroll();
+  }
+
+  void _selectCategory(ProofQuestCategory? category) {
+    if (_category == category) return;
+    setState(() => _category = category);
+    _resetScroll();
+  }
+
+  void _resetScroll() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
   }
 }

@@ -8,6 +8,7 @@ import com.lifequest.proof.dto.ProofFeedResponse;
 import com.lifequest.proof.dto.ProofPostResponse;
 import com.lifequest.proof.dto.ProofVoteRequest;
 import com.lifequest.proof.dto.ProofVoteResponse;
+import com.lifequest.quest.domain.QuestCategory;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -58,11 +59,12 @@ public class QuestProofController {
     public ResponseEntity<ApiResponse<ProofFeedResponse>> feed(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "NEEDS_VOTE") ProofFeedTab tab,
+            @RequestParam(required = false) QuestCategory category,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(ApiResponse.success(
-                questProofService.feed(userId(jwt), tab, cursor, size)));
+                questProofService.feed(userId(jwt), tab, category, cursor, size)));
     }
 
     /** 작성 화면의 퀘스트 선택 목록 — 아직 인증을 올리지 않은 내 완료 기록. */

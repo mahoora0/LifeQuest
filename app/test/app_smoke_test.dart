@@ -239,7 +239,7 @@ void main() {
 
     expect(find.text('캐릭터 꾸미기'), findsOneWidget);
     expect(find.text('루키'), findsOneWidget);
-    expect(find.text('모각'), findsOneWidget);
+    expect(find.text('모각'), findsNothing);
     // 잠금 캐릭터가 비분리 ColorFilter 합성 레이어를 만들면 Android에서
     // 본문 전체가 회색으로 덮일 수 있다.
     expect(find.byType(ColorFiltered), findsNothing);
@@ -391,6 +391,7 @@ class _FakeProofRepository extends ProofRepository {
   @override
   Future<ProofFeedPage> feed({
     required ProofFeedTab tab,
+    ProofQuestCategory? category,
     int? cursor,
     int size = 10,
   }) async => const ProofFeedPage(items: []);

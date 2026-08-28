@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.lifequest.quest.domain.QuestCreator;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.repository.QuestRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -54,10 +55,12 @@ class AdminQuestIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"관리자 산책","description":"동네를 걸어요",
+                                 "category":"NATURE_OUTDOOR",
                                  "grade":"RARE","cadence":"WEEKLY",
                                  "completionType":"SELF_REPORT","expReward":40}
                                 """))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.category").value("NATURE_OUTDOOR"))
                 .andExpect(jsonPath("$.data.createdBy").value("ADMIN"))
                 .andExpect(jsonPath("$.data.active").value(true))
                 .andReturn();
@@ -78,8 +81,18 @@ class AdminQuestIntegrationTests {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("수정된 관리자 산책"))
+                .andExpect(jsonPath("$.data.category").value("NATURE_OUTDOOR"))
                 .andExpect(jsonPath("$.data.grade").value("EPIC"))
                 .andExpect(jsonPath("$.data.expReward").value(80));
+
+        mockMvc.perform(patch("/api/admin/quests/{questId}", questId.longValue())
+                        .header("Authorization", bearer(admin.token()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"category":"FOOD_CAFE"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.category").value("FOOD_CAFE"));
 
         mockMvc.perform(delete("/api/admin/quests/{questId}", questId.longValue())
                         .header("Authorization", bearer(admin.token())))
@@ -90,6 +103,8 @@ class AdminQuestIntegrationTests {
         var stored = questRepository.findById(questId.longValue()).orElseThrow();
         org.assertj.core.api.Assertions.assertThat(stored.getCreatedBy())
                 .isEqualTo(QuestCreator.ADMIN);
+        org.assertj.core.api.Assertions.assertThat(stored.getCategory())
+                .isEqualTo(QuestCategory.FOOD_CAFE);
         org.assertj.core.api.Assertions.assertThat(stored.isActive()).isFalse();
     }
 
@@ -111,6 +126,7 @@ class AdminQuestIntegrationTests {
                                  "completionType":"SELF_REPORT","expReward":10}
                                 """))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.category").value("ETC"))
                 .andReturn();
         Number questId = JsonPath.read(created.getResponse().getContentAsString(), "$.data.id");
 

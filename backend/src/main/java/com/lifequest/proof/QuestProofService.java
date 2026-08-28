@@ -11,6 +11,7 @@ import com.lifequest.proof.dto.ProofFeedResponse;
 import com.lifequest.proof.dto.ProofPostResponse;
 import com.lifequest.proof.dto.ProofVoteResponse;
 import com.lifequest.quest.domain.Quest;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestCompletion;
 import com.lifequest.quest.repository.QuestCompletionRepository;
 import com.lifequest.quest.repository.QuestRepository;
@@ -166,14 +167,15 @@ public class QuestProofService {
     }
 
     @Transactional(readOnly = true)
-    public ProofFeedResponse feed(Long userId, ProofFeedTab tab, Long cursor, int size) {
+    public ProofFeedResponse feed(
+            Long userId, ProofFeedTab tab, QuestCategory category, Long cursor, int size) {
         int pageSize = clamp(size, 1, 30);
         Pageable pageable = PageRequest.of(0, pageSize);
 
         List<QuestProofPost> posts = switch (tab) {
-            case NEEDS_VOTE -> postRepository.findNeedingVotes(userId, cursor, pageable);
-            case ALL -> postRepository.findFeed(cursor, pageable);
-            case MINE -> postRepository.findMine(userId, cursor, pageable);
+            case NEEDS_VOTE -> postRepository.findNeedingVotes(userId, category, cursor, pageable);
+            case ALL -> postRepository.findFeed(category, cursor, pageable);
+            case MINE -> postRepository.findMine(userId, category, cursor, pageable);
         };
 
         List<ProofPostResponse> items = toResponses(posts, userId);
@@ -358,6 +360,7 @@ public class QuestProofService {
                 post.getQuest().getId(),
                 post.getQuest().getTitle(),
                 post.getQuest().getGrade(),
+                post.getQuest().getCategory(),
                 post.getContent(),
                 photoUrls,
                 post.getStatus(),

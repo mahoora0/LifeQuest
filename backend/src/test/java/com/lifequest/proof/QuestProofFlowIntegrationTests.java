@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.lifequest.quest.domain.CompletionType;
 import com.lifequest.quest.domain.Quest;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestCadence;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
@@ -173,6 +174,7 @@ class QuestProofFlowIntegrationTests {
         MvcResult result = createPost(author.token(), completionId)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.questTitle").value(QUEST_TITLE))
+                .andExpect(jsonPath("$.data.questCategory").value("NATURE_OUTDOOR"))
                 .andExpect(jsonPath("$.data.photoUrls.length()").value(1))
                 .andExpect(jsonPath("$.data.status").value("VOTING"))
                 .andExpect(jsonPath("$.data.mine").value(true))
@@ -182,6 +184,67 @@ class QuestProofFlowIntegrationTests {
         assertThat(result.getResponse().getContentAsString())
                 .doesNotContain("latitude")
                 .doesNotContain("longitude");
+    }
+
+    @Test
+    void 인증_피드는_모든_탭과_커서에서_퀘스트_주제를_필터링한다() throws Exception {
+        Account author = signUp("category-author@proof.test", "주제작성자");
+        Account viewer = signUp("category-viewer@proof.test", "주제조회자");
+        long firstFood = createPostAndGetId(
+                author, QuestCategory.FOOD_CAFE, "카테고리 카페 인증 1");
+        long secondFood = createPostAndGetId(
+                author, QuestCategory.FOOD_CAFE, "카테고리 카페 인증 2");
+        long culture = createPostAndGetId(
+                author, QuestCategory.CULTURE_TRAVEL, "카테고리 전시 인증");
+
+        mockMvc.perform(get("/api/quest-proofs")
+                        .header("Authorization", "Bearer " + viewer.token())
+                        .queryParam("tab", "NEEDS_VOTE")
+                        .queryParam("category", "FOOD_CAFE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andExpect(jsonPath("$.data.items[*].questCategory")
+                        .value(org.hamcrest.Matchers.everyItem(
+                                org.hamcrest.Matchers.is("FOOD_CAFE"))));
+
+        mockMvc.perform(get("/api/quest-proofs")
+                        .header("Authorization", "Bearer " + author.token())
+                        .queryParam("tab", "MINE")
+                        .queryParam("category", "FOOD_CAFE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andExpect(jsonPath("$.data.items[*].postId")
+                        .value(org.hamcrest.Matchers.containsInAnyOrder(
+                                (int) firstFood, (int) secondFood)))
+                .andExpect(jsonPath("$.data.items[*].postId")
+                        .value(org.hamcrest.Matchers.not(
+                                org.hamcrest.Matchers.hasItem((int) culture))));
+
+        MvcResult firstPage = mockMvc.perform(get("/api/quest-proofs")
+                        .header("Authorization", "Bearer " + viewer.token())
+                        .queryParam("tab", "ALL")
+                        .queryParam("category", "FOOD_CAFE")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].questCategory").value("FOOD_CAFE"))
+                .andExpect(jsonPath("$.data.nextCursor").isNumber())
+                .andReturn();
+        String firstBody = firstPage.getResponse().getContentAsString();
+        int firstPageId = JsonPath.read(firstBody, "$.data.items[0].postId");
+        int cursor = JsonPath.read(firstBody, "$.data.nextCursor");
+
+        mockMvc.perform(get("/api/quest-proofs")
+                        .header("Authorization", "Bearer " + viewer.token())
+                        .queryParam("tab", "ALL")
+                        .queryParam("category", "FOOD_CAFE")
+                        .queryParam("cursor", String.valueOf(cursor))
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].questCategory").value("FOOD_CAFE"))
+                .andExpect(jsonPath("$.data.items[0].postId")
+                        .value(org.hamcrest.Matchers.not(firstPageId)));
     }
 
     @Test
@@ -298,6 +361,16 @@ class QuestProofFlowIntegrationTests {
                 .longValue();
     }
 
+    private long createPostAndGetId(
+            Account author, QuestCategory category, String questTitle) throws Exception {
+        long completionId = completeQuest(author, category, questTitle);
+        MvcResult result = createPost(author.token(), completionId)
+                .andExpect(status().isCreated())
+                .andReturn();
+        return ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.data.postId"))
+                .longValue();
+    }
+
     private org.springframework.test.web.servlet.ResultActions vote(
             String token, long postId, String choice) throws Exception {
 
@@ -309,10 +382,15 @@ class QuestProofFlowIntegrationTests {
 
     /** SELF_REPORT 퀘스트를 배정하고 완료해 완료 기록 ID를 돌려준다. */
     private long completeQuest(Account account) {
+        return completeQuest(account, QuestCategory.NATURE_OUTDOOR, QUEST_TITLE);
+    }
+
+    private long completeQuest(Account account, QuestCategory category, String questTitle) {
         User user = userRepository.findById(account.userId()).orElseThrow();
 
         Quest quest = questRepository.save(new Quest(
-                QUEST_TITLE, "인증 광장 픽스처", QuestGrade.NORMAL, QuestCadence.DAILY,
+                questTitle, "인증 광장 픽스처", category,
+                QuestGrade.NORMAL, QuestCadence.DAILY,
                 CompletionType.SELF_REPORT, 10,
                 null, null, null, null, null,
                 QuestCreator.SYSTEM, true));
