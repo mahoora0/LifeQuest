@@ -37,6 +37,15 @@ Future<void> main(List<String> arguments) async {
       );
     }
 
+    // 지도 키는 없어도 앱이 뜬다 — 지도 자리에 대체 화면이 그려진다. 실행을 막지 않고
+    // 알리기만 하는 이유는, 지도를 쓰지 않는 화면을 확인하려는 실행까지 함께 막히기 때문이다.
+    final naverMapClientId = environment['NAVER_MAP_CLIENT_ID']?.trim() ?? '';
+    if (naverMapClientId.isEmpty) {
+      stdout.writeln(
+        '알림: .env의 NAVER_MAP_CLIENT_ID가 비어 있어 지도가 대체 화면으로 표시됩니다.',
+      );
+    }
+
     final useLan = options.useLan || device.requiresLan;
     final apiBaseUrl =
         options.apiBaseUrl ??
@@ -66,6 +75,7 @@ Future<void> main(List<String> arguments) async {
       device.id,
       '--dart-define=API_BASE_URL=$apiBaseUrl',
       '--dart-define=GOOGLE_SERVER_CLIENT_ID=$googleClientId',
+      '--dart-define=NAVER_MAP_CLIENT_ID=$naverMapClientId',
       ...options.flutterArguments,
     ];
 

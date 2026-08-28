@@ -133,7 +133,7 @@ flowchart TD
 | Back-end | Spring Boot |
 | Database | MySQL |
 | Authentication | JWT |
-| 지도·위치 | 지도 SDK는 팀 결정 전까지 보류, Flutter Geolocator로 GPS 위치 조회 |
+| 지도·위치 | 지도 표시는 네이버 Mobile Dynamic Map(`flutter_naver_map`), GPS 위치 조회는 Flutter Geolocator |
 | 협업 도구 | GitHub, Figma, Notion |
 
 ## 11. 일정 개요

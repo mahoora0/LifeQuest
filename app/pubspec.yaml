@@ -10,6 +10,7 @@ dependencies:
   dio: ^5.10.0
   flutter:
     sdk: flutter
+  flutter_naver_map: ^1.4.4
   flutter_riverpod: ^3.3.2
   flutter_secure_storage: ^10.3.1
   # 탭·기능 아이콘은 아이콘 폰트가 아니라 stroke 2.2 SVG로 그린다(시안 규칙).
