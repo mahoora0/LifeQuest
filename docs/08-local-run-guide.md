@@ -208,8 +208,14 @@ cd backend
 아닌 사용자가 남긴 행(투표·댓글·채팅·멤버십·그룹 퀘스트 참가)은 사용자 기준으로만 지울 때
 남고, 그러면 그 부모를 지우는 다음 `DELETE`가 외래 키 위반으로 실패한다.
 
+전체가 하나의 트랜잭션이다. 중간에 실패한 채로 멈추면 어디까지 지워졌는지 알 수 없으므로
+**한 세션에서 통째로** 실행한다. `mysql` 클라이언트를 여러 번 나눠 부르면 트랜잭션이 끊겨
+효력이 없다. 오류가 나면 `COMMIT` 대신 `ROLLBACK`을 실행해 실행 전 상태로 되돌린다.
+
 ```sql
 SET @demo := '%@lifequest.test';
+
+START TRANSACTION;
 
 DELETE FROM quest_proof_votes
        WHERE voter_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
@@ -262,6 +268,8 @@ DELETE FROM refresh_tokens       WHERE user_id IN (SELECT id FROM users WHERE em
 DELETE FROM social_accounts      WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
 DELETE FROM users                WHERE email LIKE @demo;
+
+COMMIT;
 ```
 
 > 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음으로 빠진 곳이 없는지 확인한다. 두 번째
