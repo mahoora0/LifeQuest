@@ -283,9 +283,12 @@ DELETE FROM group_chat_messages
        WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
           OR group_id IN (SELECT id FROM quest_groups
                           WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+-- 초대자는 관계의 당사자가 아니다. 시연 사용자가 초대했다는 이유만으로 남의 그룹에 있는
+-- 남의 멤버십까지 지우지 않도록, 그 열은 지우는 대신 참조만 끊는다.
+UPDATE group_members SET invited_by_user_id = NULL
+       WHERE invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM group_members
        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
-          OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
           OR group_id IN (SELECT id FROM quest_groups
                           WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
 DELETE FROM quest_groups         WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
@@ -302,7 +305,6 @@ DELETE FROM user_achievements    WHERE user_id IN (SELECT id FROM users WHERE em
 DELETE FROM exp_logs             WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM refresh_tokens       WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM social_accounts      WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
-UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
 DELETE FROM users                WHERE email LIKE @demo;
 
 -- 여기까지 오류가 한 줄도 없었는지 확인한 뒤에만 COMMIT한다.
