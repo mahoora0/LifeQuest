@@ -860,16 +860,18 @@ public class DemoDataSeeder implements ApplicationRunner {
      * 사라지고, 하나도 없으면 도감이 통째로 빈 격자가 된다.
      */
     private void seedCollections(Map<String, Long> u, LocalDateTime now) {
-        List<Long> items = jdbc.queryForList(
-            "SELECT id FROM lifedex_items ORDER BY id LIMIT 8", Long.class);
-        for (int i = 0; i < items.size(); i++) {
-            // 주인공은 절반 조금 넘게, 고레벨 사용자는 더 많이 모은 상태로 둔다
+        // 주인공은 절반 조금 넘게, 고레벨 사용자는 그보다 적게 모은 상태로 둔다.
+        // 목록은 사용자마다 따로 고른다 — 한 사람의 완료 이력으로 고른 목록을 다른 사람에게
+        // 그대로 주면 그 사람의 이력과 도감이 어긋난다.
+        List<Long> demoItems = collectibleItems(u.get("demo"), 8);
+        for (int i = 0; i < demoItems.size(); i++) {
             jdbc.update("INSERT INTO user_lifedex (user_id, lifedex_item_id, collected_at) VALUES (?, ?, ?)",
-                u.get("demo"), items.get(i), now.minusDays(20L - i * 2));
-            if (i < 6) {
-                jdbc.update("INSERT INTO user_lifedex (user_id, lifedex_item_id, collected_at) VALUES (?, ?, ?)",
-                    u.get("sora"), items.get(i), now.minusDays(40L - i * 3));
-            }
+                u.get("demo"), demoItems.get(i), now.minusDays(20L - i * 2));
+        }
+        List<Long> soraItems = collectibleItems(u.get("sora"), 6);
+        for (int i = 0; i < soraItems.size(); i++) {
+            jdbc.update("INSERT INTO user_lifedex (user_id, lifedex_item_id, collected_at) VALUES (?, ?, ?)",
+                u.get("sora"), soraItems.get(i), now.minusDays(40L - i * 3));
         }
 
         List<Long> titles = jdbc.queryForList("SELECT id FROM titles ORDER BY id LIMIT 3", Long.class);
@@ -893,6 +895,30 @@ public class DemoDataSeeder implements ApplicationRunner {
                     + "VALUES (?, ?, 'LEVEL', ?, ?)",
                 u.get("demo"), profileItems.get(i), profileItems.get(i), now.minusDays(25L - i * 10));
         }
+    }
+
+    /**
+     * {@code userId}에게 미리 채워도 되는 도감을 id 순으로 {@code limit}개 고른다.
+     *
+     * <p><b>일간 퀘스트에 연결된 도감 중 그 사용자가 완료하지 않은 것은 뺀다.</b> 시연에서
+     * 오늘 배정되는 것이 바로 그 일간 위치 퀘스트이고, 그것을 완료하는 순간 "도감에 도장이
+     * 찍히는" 장면이 나온다. 미리 채워 두면 {@code INSERT IGNORE}가 0을 반환해 그 장면이
+     * 통째로 사라진다 — 오류가 아니라 정상 멱등 동작이라 어떤 테스트도 잡지 못한다.
+     *
+     * <p>개수만 정하고 어느 것인지는 id 순서에 맡기면(예전의 {@code ORDER BY id LIMIT 8})
+     * 일간 연결 도감이 앞자리라 그 넷을 통째로 삼킨다. 빼려는 성질을 조건으로 쓴다.
+     */
+    private List<Long> collectibleItems(Long userId, int limit) {
+        return jdbc.queryForList("""
+            SELECT li.id FROM lifedex_items li
+            WHERE li.id NOT IN (
+                SELECT q.lifedex_item_id FROM quests q
+                WHERE q.cadence = 'DAILY' AND q.lifedex_item_id IS NOT NULL
+                  AND q.id NOT IN (SELECT udq.quest_id FROM user_daily_quests udq
+                                   WHERE udq.user_id = ? AND udq.status = 'COMPLETED')
+            )
+            ORDER BY li.id LIMIT ?
+            """, Long.class, userId, limit);
     }
 
     // ------------------------------------------------------------------ 알림

@@ -55,13 +55,34 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
   }
 
   Future<void> _pickPhotos() async {
-    if (_photoPaths.length >= _maxPhotos) return;
+    final remaining = _maxPhotos - _photoPaths.length;
+    if (remaining <= 0) return;
 
-    final picked = await ImagePicker().pickMultiImage(
-      maxWidth: 1600,
-      imageQuality: 85,
-      limit: _maxPhotos - _photoPaths.length,
-    );
+    final List<XFile> picked;
+    try {
+      if (remaining == 1) {
+        // 남은 자리가 하나면 여러 장 고르기를 쓸 수 없다 — image_picker가 limit 1을
+        // ArgumentError로 거절한다. 마지막 한 장은 단건 선택으로 받는다.
+        final one = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1600,
+          imageQuality: 85,
+        );
+        picked = one == null ? const [] : [one];
+      } else {
+        picked = await ImagePicker().pickMultiImage(
+          maxWidth: 1600,
+          imageQuality: 85,
+          limit: remaining,
+        );
+      }
+    } on Exception catch (_) {
+      // 선택기가 열리지 않으면 화면에는 아무 일도 일어나지 않는다. 그 침묵이 가장 나쁘다.
+      // 다만 Error는 잡지 않는다 — 위의 ArgumentError처럼 코드가 틀려서 나는 것까지 삼키면
+      // 같은 결함이 재발했을 때 "네트워크 문제처럼 보이는 안내"로 위장돼 더 찾기 어려워진다.
+      if (mounted) showLqSnack(context, '사진을 불러오지 못했어요. 다시 시도해 주세요');
+      return;
+    }
     if (picked.isEmpty || !mounted) return;
 
     setState(() {
