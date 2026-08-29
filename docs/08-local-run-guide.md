@@ -179,7 +179,7 @@ cd backend
 | --- | --- |
 | 사용자 12명 | 레벨 1~22. 가입 직후(활동 0) 계정도 하나 포함 |
 | 친구 | 친구 4명 · 받은 요청 2건 · 보낸 요청 1건 · 거절된 요청 1건 |
-| 그룹 6개 | 내가 만든 곳 · 참여 중 · 초대받음 · 가입 신청 중 · 미참여 공개 · 비공개 |
+| 그룹 6개 | 주인공이 만든 곳 · 참여 중 · 초대받음 · 가입 신청 중 · 미참여 공개 · 비공개 |
 | 그룹 멤버 | 활동 중 · 승인 대기 · 초대 대기 · 탈퇴 |
 | 그룹 퀘스트 | 예정(참가 신청함/안 함) · 완료(보상 지급됨) · 취소 |
 | 그룹 채팅 | 두 그룹에 여러 사람이 주고받은 대화 |
@@ -201,21 +201,57 @@ cd backend
 
 ### 시연 데이터 회수
 
-**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 참조하는 테이블이 스물한 개이고
-대부분 `ON DELETE CASCADE`가 없어 FK 위반으로 실패한다. 아래 순서로 지운다.
+**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 외래 키로 참조하는 테이블이 스물한 개이고
+`user_achievements` 하나를 빼면 `ON DELETE CASCADE`가 없다(스키마 전체 외래 키 52개 중 `CASCADE`는
+그 하나뿐이다). 여기에 외래 키 없이 `user_id`만 가진 표 넷과 게시물의 자식 표 하나를 더해
+**스물여섯 개**를 아래 순서로 지운다.
 
 자식 행은 **사용자 기준과 부모 기준 둘 다로** 지운다. 시연 사용자의 게시물이나 그룹에 시연이
 아닌 사용자가 남긴 행(투표·댓글·채팅·멤버십·그룹 퀘스트 참가)은 사용자 기준으로만 지울 때
 남고, 그러면 그 부모를 지우는 다음 `DELETE`가 외래 키 위반으로 실패한다.
 
-전체가 하나의 트랜잭션이다. 중간에 실패한 채로 멈추면 어디까지 지워졌는지 알 수 없으므로
-**한 세션에서 통째로** 실행한다. `mysql` 클라이언트를 여러 번 나눠 부르면 트랜잭션이 끊겨
-효력이 없다. 오류가 나면 `COMMIT` 대신 `ROLLBACK`을 실행해 실행 전 상태로 되돌린다.
+#### 실행 방법
+
+**회수 전에 백엔드를 멈춘다.** 시더는 부팅할 때 한 번만 돌므로 재적재하려면 어차피 재기동이
+필요하고, 앱이 뜬 채로 사용자 행을 지우면 살아 있는 세션이 임의 오류를 낸다.
+
+아래 블록은 하나의 트랜잭션이다. **터미널에 붙여 넣지 말고 파일로 저장해 한 번에 실행한다.**
+붙여 넣으면 클라이언트가 오류 뒤에도 다음 문장을 계속 읽어 마지막 `COMMIT`까지 실행하므로,
+절반만 지워진 상태가 그대로 커밋된다. 파일로 실행하면 첫 오류에서 멈추고 `COMMIT`에 닿지
+못한 채 연결이 끊겨 서버가 되돌린다.
+
+블록을 `recover-demo.sql`로 저장한 뒤 저장소 루트에서 실행한다. 비밀번호는 `.env`의
+`DB_PASSWORD`다. `-T`가 있어야 표준 입력이 전달되고, 그 때문에 비밀번호를 물어볼 수 없으므로
+`-p` 뒤에 붙여 쓴다.
+
+```powershell
+# Windows PowerShell — PS 5.1에는 입력 리다이렉션(<)이 없으므로 파이프로 넣는다
+Get-Content -Encoding UTF8 recover-demo.sql | docker compose exec -T mysql mysql -ulifequest -p비밀번호 lifequest
+```
+
+```bash
+# macOS
+docker compose exec -T mysql mysql -ulifequest -p비밀번호 lifequest < recover-demo.sql
+```
+
+오류가 났을 때 할 일은 **`COMMIT`이 실행됐는지**로 갈린다.
+
+| 상황 | 실제 상태 | 할 일 |
+| --- | --- | --- |
+| 파일 실행이 오류를 뱉고 프롬프트로 돌아왔다 | `COMMIT`에 닿지 못해 서버가 이미 되돌렸다 | 아무것도 지워지지 않았다. 원인을 고치고 다시 실행 |
+| 세션이 열려 있고 `COMMIT`을 아직 치지 않았다 | 트랜잭션이 열려 있다 | `ROLLBACK;` |
+| `COMMIT`이 이미 실행됐다 | **되돌릴 수 없다** | 블록 끝의 확인 질의로 남은 시연 사용자를 세고, 마저 지운 뒤 재적재 |
+
+#### 회수 SQL
 
 ```sql
-SET @demo := '%@lifequest.test';
-
+-- 파일로 저장해 한 번에 실행한다. 터미널에 붙여 넣으면 오류가 나도 클라이언트가 계속 읽어
+-- 아래 COMMIT까지 실행되고, 절반만 지워진 상태가 그대로 커밋된다.
 START TRANSACTION;
+
+-- @demo는 세션 변수다. 이 블록의 일부만 잘라 새 세션에서 돌리면 email LIKE NULL이 되어
+-- 오류 없이 0행만 지워지고, 그대로 재적재하면 시더가 "이미 있다"고 보고 건너뛴다.
+SET @demo := '%@lifequest.test';
 
 DELETE FROM quest_proof_votes
        WHERE voter_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
@@ -269,28 +305,42 @@ DELETE FROM social_accounts      WHERE user_id IN (SELECT id FROM users WHERE em
 UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
 DELETE FROM users                WHERE email LIKE @demo;
 
+-- 여기까지 오류가 한 줄도 없었는지 확인한 뒤에만 COMMIT한다.
 COMMIT;
+
+-- 회수 확인. 0이 아니면 끝나지 않은 것이다. 이 상태로 demo 프로파일을 켜면 시더가 건너뛰어
+-- 로그인은 되는데 모든 화면이 빈 앱이 된다.
+SELECT COUNT(*) AS remaining_demo_users FROM users WHERE email LIKE '%@lifequest.test';
 ```
 
-> 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음으로 빠진 곳이 없는지 확인한다. 두 번째
-> 질의는 부모 기준까지 봐야 하는 자식 표를 찾는다 — 회수 대상 표를 참조하면서 그 표에는
-> 사용자 열이 없거나 다른 사용자의 행이 섞일 수 있는 곳이다.
+`quests`는 지우지 않는다. 시연 중 주간 AI 퀘스트를 채택했다면 사라진 사용자를 가리키는
+`owner_user_id`를 가진 행이 카탈로그에 남는다(외래 키가 없어 삭제를 막지 않고 아래 점검
+질의에도 잡히지 않는다). 배정 풀은 `owner_user_id IS NULL`만 보므로 시연에는 지장이 없다.
+
+> 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음 셋으로 빠진 곳이 없는지 확인한다.
 >
 > ```sql
+> -- ① users를 외래 키로 참조하는 표. 표는 21개이고 열은 24개다(친구·친구요청·멤버는 열이 둘씩).
 > SELECT k.TABLE_NAME, k.COLUMN_NAME
 > FROM information_schema.KEY_COLUMN_USAGE k
 > WHERE k.TABLE_SCHEMA = DATABASE() AND k.REFERENCED_TABLE_NAME = 'users';
 >
-> SELECT k.TABLE_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, r.DELETE_RULE
+> -- ② 외래 키 없이 user_id만 둔 표. ①에 안 나오므로 따로 봐야 한다. 이미 넷 있다
+> --    (quest_completions · user_daily_quests · quest_assignment_markers · weekly_ai_quest_claims).
+> SELECT TABLE_NAME, COLUMN_NAME
+> FROM information_schema.COLUMNS
+> WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME LIKE '%user_id'
+> ORDER BY TABLE_NAME;
+>
+> -- ③ 부모 기준으로도 지워야 하는 자식 표. 위에서 부모를 지우는 세 표를 참조하는 곳이다.
+> SELECT k.TABLE_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME
 > FROM information_schema.KEY_COLUMN_USAGE k
-> JOIN information_schema.REFERENTIAL_CONSTRAINTS r
->   ON r.CONSTRAINT_NAME = k.CONSTRAINT_NAME AND r.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA
-> WHERE k.TABLE_SCHEMA = DATABASE() AND k.REFERENCED_TABLE_NAME IS NOT NULL
-> ORDER BY k.REFERENCED_TABLE_NAME, k.TABLE_NAME;
+> WHERE k.TABLE_SCHEMA = DATABASE()
+>   AND k.REFERENCED_TABLE_NAME IN ('quest_proof_posts', 'quest_groups', 'group_quests');
 > ```
 
-지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(`uploads/proof/demo-proof-*.png`)은
-남아 있어도 무해하며 재실행 시 덮어쓴다.
+지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(백엔드 실행 디렉터리의
+`uploads/proof/demo-proof-*.png`)은 남아 있어도 무해하며 재실행 시 덮어쓴다.
 
 ## 5. Flutter 공통 실행
 
