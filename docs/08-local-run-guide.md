@@ -201,14 +201,24 @@ cd backend
 
 ### 시연 데이터 회수
 
-**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 참조하는 테이블이 열세 개이고
+**사용자 한 명을 지우는 것으로는 안 된다.** `users.id`를 참조하는 테이블이 스물한 개이고
 대부분 `ON DELETE CASCADE`가 없어 FK 위반으로 실패한다. 아래 순서로 지운다.
+
+자식 행은 **사용자 기준과 부모 기준 둘 다로** 지운다. 시연 사용자의 게시물이나 그룹에 시연이
+아닌 사용자가 남긴 행(투표·댓글·채팅·멤버십·그룹 퀘스트 참가)은 사용자 기준으로만 지울 때
+남고, 그러면 그 부모를 지우는 다음 `DELETE`가 외래 키 위반으로 실패한다.
 
 ```sql
 SET @demo := '%@lifequest.test';
 
-DELETE FROM quest_proof_votes    WHERE voter_user_id  IN (SELECT id FROM users WHERE email LIKE @demo);
-DELETE FROM quest_proof_comments WHERE author_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_proof_votes
+       WHERE voter_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR post_id IN (SELECT id FROM quest_proof_posts
+                         WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM quest_proof_comments
+       WHERE author_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR post_id IN (SELECT id FROM quest_proof_posts
+                         WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo));
 DELETE FROM quest_proof_photos   WHERE post_id IN (SELECT id FROM quest_proof_posts
                                   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo));
 DELETE FROM quest_proof_posts    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
@@ -218,9 +228,6 @@ DELETE FROM quest_assignment_markers WHERE user_id IN (SELECT id FROM users WHER
 DELETE FROM weekly_ai_quest_claims   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM quest_recommendation_candidates  WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM quest_recommendation_daily_usage WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
--- 참가자는 사용자 기준이 아니라 "지워질 그룹 퀘스트" 기준으로도 지운다. 시연 사용자가 만든
--- 퀘스트에 시연이 아닌 사용자가 참가해 있으면, 사용자 기준으로만 지울 때 그 행이 남아
--- 다음 DELETE가 외래 키 위반으로 실패한다.
 DELETE FROM group_quest_participants
        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
           OR group_quest_id IN (SELECT id FROM group_quests
@@ -230,9 +237,15 @@ DELETE FROM group_quest_participants
 DELETE FROM group_quests         WHERE group_id IN (SELECT id FROM quest_groups
                                   WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo))
                                     OR created_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
-DELETE FROM group_chat_messages  WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
-DELETE FROM group_members        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
-                                    OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM group_chat_messages
+       WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR group_id IN (SELECT id FROM quest_groups
+                          WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+DELETE FROM group_members
+       WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR group_id IN (SELECT id FROM quest_groups
+                          WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
 DELETE FROM quest_groups         WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM friendships          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
                                     OR friend_id IN (SELECT id FROM users WHERE email LIKE @demo);
@@ -251,12 +264,21 @@ UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
 DELETE FROM users                WHERE email LIKE @demo;
 ```
 
-> 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음으로 빠진 곳이 없는지 확인한다.
+> 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음으로 빠진 곳이 없는지 확인한다. 두 번째
+> 질의는 부모 기준까지 봐야 하는 자식 표를 찾는다 — 회수 대상 표를 참조하면서 그 표에는
+> 사용자 열이 없거나 다른 사용자의 행이 섞일 수 있는 곳이다.
 >
 > ```sql
 > SELECT k.TABLE_NAME, k.COLUMN_NAME
 > FROM information_schema.KEY_COLUMN_USAGE k
 > WHERE k.TABLE_SCHEMA = DATABASE() AND k.REFERENCED_TABLE_NAME = 'users';
+>
+> SELECT k.TABLE_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, r.DELETE_RULE
+> FROM information_schema.KEY_COLUMN_USAGE k
+> JOIN information_schema.REFERENTIAL_CONSTRAINTS r
+>   ON r.CONSTRAINT_NAME = k.CONSTRAINT_NAME AND r.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA
+> WHERE k.TABLE_SCHEMA = DATABASE() AND k.REFERENCED_TABLE_NAME IS NOT NULL
+> ORDER BY k.REFERENCED_TABLE_NAME, k.TABLE_NAME;
 > ```
 
 지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(`uploads/proof/demo-proof-*.png`)은
