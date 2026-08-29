@@ -860,8 +860,20 @@ public class DemoDataSeeder implements ApplicationRunner {
      * 사라지고, 하나도 없으면 도감이 통째로 빈 격자가 된다.
      */
     private void seedCollections(Map<String, Long> u, LocalDateTime now) {
-        List<Long> items = jdbc.queryForList(
-            "SELECT id FROM lifedex_items ORDER BY id LIMIT 8", Long.class);
+        // 일간 퀘스트에 연결된 도감은 완료 이력에 넣은 것만 채운다. 오늘 배정되는 퀘스트가
+        // 바로 그 일간 위치 퀘스트이고, 그것을 완료하는 순간 "도감에 도장이 찍히는" 장면이 나오는데,
+        // 여기서 미리 채워 버리면 INSERT IGNORE가 0을 반환해 그 장면이 통째로 사라진다.
+        // (id 순으로 담으면 일간 연결 도감이 앞자리라 LIMIT이 넷을 전부 삼킨다 — 순서에 기대지 않는다.)
+        List<Long> items = jdbc.queryForList("""
+            SELECT li.id FROM lifedex_items li
+            WHERE li.id NOT IN (
+                SELECT q.lifedex_item_id FROM quests q
+                WHERE q.cadence = 'DAILY' AND q.lifedex_item_id IS NOT NULL
+                  AND q.id NOT IN (SELECT udq.quest_id FROM user_daily_quests udq
+                                   WHERE udq.user_id = ? AND udq.status = 'COMPLETED')
+            )
+            ORDER BY li.id LIMIT 8
+            """, Long.class, u.get("demo"));
         for (int i = 0; i < items.size(); i++) {
             // 주인공은 절반 조금 넘게, 고레벨 사용자는 더 많이 모은 상태로 둔다
             jdbc.update("INSERT INTO user_lifedex (user_id, lifedex_item_id, collected_at) VALUES (?, ?, ?)",
