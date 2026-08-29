@@ -76,8 +76,10 @@ class _ProofFormScreenState extends ConsumerState<ProofFormScreen> {
           limit: remaining,
         );
       }
-    } catch (_) {
+    } on Exception catch (_) {
       // 선택기가 열리지 않으면 화면에는 아무 일도 일어나지 않는다. 그 침묵이 가장 나쁘다.
+      // 다만 Error는 잡지 않는다 — 위의 ArgumentError처럼 코드가 틀려서 나는 것까지 삼키면
+      // 같은 결함이 재발했을 때 "네트워크 문제처럼 보이는 안내"로 위장돼 더 찾기 어려워진다.
       if (mounted) showLqSnack(context, '사진을 불러오지 못했어요. 다시 시도해 주세요');
       return;
     }
