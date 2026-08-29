@@ -214,9 +214,14 @@ DELETE FROM quest_proof_photos   WHERE post_id IN (SELECT id FROM quest_proof_po
 DELETE FROM quest_proof_posts    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM quest_completions    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM user_daily_quests    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_assignment_markers WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM weekly_ai_quest_claims   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_recommendation_candidates  WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM quest_recommendation_daily_usage WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM group_quest_participants WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM group_quests         WHERE group_id IN (SELECT id FROM quest_groups
-                                  WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
+                                  WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo))
+                                    OR created_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM group_chat_messages  WHERE sender_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM group_members        WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
                                     OR invited_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
@@ -229,11 +234,22 @@ DELETE FROM notifications        WHERE user_id IN (SELECT id FROM users WHERE em
 DELETE FROM user_lifedex         WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM user_titles          WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM user_profile_items   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM user_character_accessories WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM user_achievements    WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM exp_logs             WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM refresh_tokens       WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+DELETE FROM social_accounts      WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 UPDATE users SET representative_title_id = NULL WHERE email LIKE @demo;
 DELETE FROM users                WHERE email LIKE @demo;
 ```
+
+> 표가 늘어나면 이 목록도 늘어난다. 실행 전에 다음으로 빠진 곳이 없는지 확인한다.
+>
+> ```sql
+> SELECT k.TABLE_NAME, k.COLUMN_NAME
+> FROM information_schema.KEY_COLUMN_USAGE k
+> WHERE k.TABLE_SCHEMA = DATABASE() AND k.REFERENCED_TABLE_NAME = 'users';
+> ```
 
 지운 뒤 `demo` 프로파일로 다시 띄우면 새로 적재된다. 인증 사진(`uploads/proof/demo-proof-*.png`)은
 남아 있어도 무해하며 재실행 시 덮어쓴다.
