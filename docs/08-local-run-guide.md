@@ -218,7 +218,15 @@ DELETE FROM quest_assignment_markers WHERE user_id IN (SELECT id FROM users WHER
 DELETE FROM weekly_ai_quest_claims   WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM quest_recommendation_candidates  WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
 DELETE FROM quest_recommendation_daily_usage WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
-DELETE FROM group_quest_participants WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo);
+-- 참가자는 사용자 기준이 아니라 "지워질 그룹 퀘스트" 기준으로도 지운다. 시연 사용자가 만든
+-- 퀘스트에 시연이 아닌 사용자가 참가해 있으면, 사용자 기준으로만 지울 때 그 행이 남아
+-- 다음 DELETE가 외래 키 위반으로 실패한다.
+DELETE FROM group_quest_participants
+       WHERE user_id IN (SELECT id FROM users WHERE email LIKE @demo)
+          OR group_quest_id IN (SELECT id FROM group_quests
+                                WHERE group_id IN (SELECT id FROM quest_groups
+                                      WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo))
+                                   OR created_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo));
 DELETE FROM group_quests         WHERE group_id IN (SELECT id FROM quest_groups
                                   WHERE owner_user_id IN (SELECT id FROM users WHERE email LIKE @demo))
                                     OR created_by_user_id IN (SELECT id FROM users WHERE email LIKE @demo);
