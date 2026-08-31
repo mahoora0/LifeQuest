@@ -89,6 +89,14 @@ class HomeQuestRow extends StatelessWidget {
                         LqRewardBadge.exp(quest.expReward),
                         if (LqFeatures.currencyEnabled)
                           LqRewardBadge.gold(quest.expReward ~/ 2),
+                        // 홈 카드는 `GET /quests/today`가 주는 두 트랙을 한 목록으로
+                        // 그린다(일간 3 + 주간 자동 2). 카드 제목 띠가 `오늘의 퀘스트`라
+                        // 일간은 문맥이 이미 말하고 있으므로, 문맥에서 벗어나는 주간에만
+                        // 표시를 붙인다 — 둘 다 붙이면 모든 행에 뱃지가 하나씩 늘어
+                        // 좁은 홈 행에서 제목이 밀린다. 뱃지는 목록(S-08)이 쓰는 주기
+                        // 뱃지를 그대로 쓴다.
+                        if (quest.cadence == QuestCadence.weekly)
+                          LqRewardBadge.tag(quest.cadence.palette),
                         if (quest.completionType.isLocation)
                           LqRewardBadge.location(),
                         if (status.isExpired) const _ExpiredBadge(),
