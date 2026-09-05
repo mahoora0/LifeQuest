@@ -65,8 +65,10 @@ class LifedexServiceIntegrationTests {
                 USER_ID, 1L, null, 7003L);
 
         assertThat(outcome.newLifedexItems()).isEmpty();
+        // 항목 수는 시드가 늘 때마다 바뀌므로 여기서 세지 않는다
+        // (수량 계약은 LifedexCatalogContractTests가 규칙으로 검사한다).
         assertThat(lifedexService.items(USER_ID, null).items())
-                .hasSize(15)
+                .isNotEmpty()
                 .noneMatch(LifedexResponse.Item::owned);
     }
 

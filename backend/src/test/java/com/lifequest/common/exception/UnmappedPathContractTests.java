@@ -1,5 +1,6 @@
 package com.lifequest.common.exception;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,12 +43,14 @@ class UnmappedPathContractTests {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.categories.length()").value(6))
                 .andExpect(jsonPath("$.data.categories[0].name").value("카페"))
-                .andExpect(jsonPath("$.data.categories[0].totalCount").value(1))
+                .andExpect(jsonPath("$.data.categories[0].totalCount").value(greaterThan(0)))
                 .andExpect(jsonPath("$.data.categories[0].ownedCount").value(0));
 
+        // 여기서 보는 것은 "경로가 매핑되어 카탈로그를 돌려주는가"다. 항목 수 계약은
+        // 시드가 늘 때마다 움직이므로 LifedexCatalogContractTests가 규칙으로 검사한다.
         mockMvc.perform(get("/api/lifedex").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items.length()").value(15));
+                .andExpect(jsonPath("$.data.items.length()").value(greaterThan(0)));
     }
 
     @Test
