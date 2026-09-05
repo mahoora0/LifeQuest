@@ -77,7 +77,7 @@ void main() {
     testWidgets('도감은 가짜 수집 현황 대신 준비 중을 보여준다', (tester) async {
       await pumpLifedex(tester, LifedexRepository(unreachableDio()));
 
-      expect(find.text('일일 퀘스트 도감은 아직 준비 중이에요'), findsOneWidget);
+      expect(find.text('위치 퀘스트 도감은 아직 준비 중이에요'), findsOneWidget);
       expect(find.textContaining('수집률'), findsNothing);
       // 탭 밖 push 화면이라 돌아갈 길은 남아야 한다.
       expect(find.bySemanticsLabel('뒤로 가기'), findsOneWidget);
@@ -94,9 +94,9 @@ void main() {
     testWidgets('도감은 카테고리와 수집 개수를 그린다', (tester) async {
       await pumpLifedex(tester, _FakeLifedexRepository());
 
-      expect(find.text('일일 퀘스트 도감은 아직 준비 중이에요'), findsNothing);
-      expect(find.text('일일 퀘스트 전용'), findsOneWidget);
-      expect(find.text('도감 표시가 있는 일일 퀘스트를 완료하면 새로운 기록이 등록돼요.'), findsOneWidget);
+      expect(find.text('위치 퀘스트 도감은 아직 준비 중이에요'), findsNothing);
+      expect(find.text('위치 퀘스트 전용'), findsOneWidget);
+      expect(find.text('지도에 표시된 곳에 다녀오면 그 장소가 도감에 남아요.'), findsOneWidget);
       // 카테고리는 필터 칩과 격자 타일 양쪽에 나온다.
       expect(find.text('카페'), findsWidgets);
       expect(find.text('공원 · 산책로'), findsWidgets);

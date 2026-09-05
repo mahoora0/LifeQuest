@@ -53,9 +53,9 @@ class _LifedexScreenState extends ConsumerState<LifedexScreen> {
               child: LqAsyncView<LifedexOverview>(
                 value: overview,
                 isEmpty: (value) => value.isEmpty,
-                emptyMessage: '아직 연결된 일일 퀘스트 도감이 없어요',
-                notReadyMessage: '일일 퀘스트 도감은 아직 준비 중이에요',
-                notReadyHint: '준비가 끝나면 일일 퀘스트로 수집한 기록이 여기 채워져요.',
+                emptyMessage: '아직 연결된 위치 퀘스트 도감이 없어요',
+                notReadyMessage: '위치 퀘스트 도감은 아직 준비 중이에요',
+                notReadyHint: '준비가 끝나면 다녀온 장소가 여기 채워져요.',
                 onRetry: () => ref.invalidate(lifedexOverviewProvider),
                 data: (value) => _Body(
                   overview: value,
@@ -143,7 +143,7 @@ class _Body extends ConsumerWidget {
         24,
       ),
       children: [
-        const _DailyQuestGuide(),
+        const _LocationQuestGuide(),
         const SizedBox(height: LqSpacing.gap),
         _CollectionSummary(overview: overview),
         const SizedBox(height: LqSpacing.gap),
@@ -175,8 +175,12 @@ class _Body extends ConsumerWidget {
   }
 }
 
-class _DailyQuestGuide extends StatelessWidget {
-  const _DailyQuestGuide();
+/// 무엇을 하면 도감이 채워지는지 알려 주는 안내 카드.
+///
+/// 수집 범위는 주기가 아니라 <b>위치 퀘스트인가</b>로 정해진다
+/// (docs/05-business-rules.md §6-1). 일간·주간 어느 쪽이든 다녀온 장소는 남는다.
+class _LocationQuestGuide extends StatelessWidget {
+  const _LocationQuestGuide();
 
   @override
   Widget build(BuildContext context) {
@@ -191,10 +195,10 @@ class _DailyQuestGuide extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('일일 퀘스트 전용', style: LqText.label),
+                Text('위치 퀘스트 전용', style: LqText.label),
                 const SizedBox(height: 4),
                 Text(
-                  '도감 표시가 있는 일일 퀘스트를 완료하면 새로운 기록이 등록돼요.',
+                  '지도에 표시된 곳에 다녀오면 그 장소가 도감에 남아요.',
                   style: LqText.bodySm,
                 ),
               ],
@@ -290,8 +294,8 @@ class _ItemGrid extends ConsumerWidget {
       child: LqAsyncView<List<LifedexItem>>(
         value: items,
         isEmpty: (value) => value.isEmpty,
-        emptyMessage: '이 카테고리에 연결된 일일 퀘스트가 아직 없어요',
-        notReadyMessage: '일일 퀘스트 도감 목록은 아직 준비 중이에요',
+        emptyMessage: '이 카테고리에 연결된 위치 퀘스트가 아직 없어요',
+        notReadyMessage: '위치 퀘스트 도감 목록은 아직 준비 중이에요',
         onRetry: () => ref.invalidate(lifedexItemsProvider(categoryId)),
         data: (value) => GridView.builder(
           shrinkWrap: true,
@@ -308,7 +312,7 @@ class _ItemGrid extends ConsumerWidget {
             final item = value[index];
             return _DexTile(
               label: item.owned ? item.name : '?',
-              caption: item.owned ? '수집' : '일일 퀘스트로 해금',
+              caption: item.owned ? '수집' : '위치 퀘스트로 해금',
               color: _blobColorFor(item.id),
               iconKey: item.iconKey ?? categoryIconKey,
               locked: !item.owned,
