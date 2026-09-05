@@ -100,19 +100,25 @@ class QuestCompletionContractTests {
         String email = "title-lifedex@lifequest.test";
         String token = signUpAndGetAccessToken(email, "도감칭호모험가");
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
-        Quest cafeQuest = questRepository.findById(25L).orElseThrow();
-        UserDailyQuest assignment = userDailyQuestRepository.save(new UserDailyQuest(
-            user.getId(), cafeQuest.getId(), LocalDate.now(), LocalDateTime.now().plusDays(7)));
 
-        mockMvc.perform(complete(assignment.getId(), token, """
-                {"latitude": 37.5445, "longitude": 127.0557, "accuracy": 10.0}
-                """))
+        // 카페 도감은 성수동 한 곳뿐이던 시절 한 번의 완료로 완성됐다. 전국 확장(V37) 이후
+        // 청주 수암골이 같은 카테고리에 들어와, 완성 칭호는 둘을 다 모아야 나온다.
+        Quest seongsu = questRepository.findById(25L).orElseThrow();
+        Quest suam = seededQuestAt("수암골 카페거리");
+
+        mockMvc.perform(completeOnSite(user, seongsu, token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.collection.newLifedexItems[0].id").value(25))
             .andExpect(jsonPath("$.data.growth.rewards[*].code").value(hasItems(
                 "QUEST_FIRST_STEP",
-                "LIFEDEX_FIRST_PAGE",
-                "LIFEDEX_CAFE_COMPLETE")));
+                "LIFEDEX_FIRST_PAGE")));
+
+        mockMvc.perform(completeOnSite(user, suam, token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.collection.newLifedexItems[0].id")
+                .value(suam.getId().intValue()))
+            .andExpect(jsonPath("$.data.growth.rewards[*].code")
+                .value(hasItem("LIFEDEX_CAFE_COMPLETE")));
     }
 
     @Test
@@ -395,6 +401,23 @@ class QuestCompletionContractTests {
             // 아이템을 구분하지 못하기 때문이다.
             .andExpect(jsonPath("$.data.collection.newAchievements[0].reward.type").value("TITLE"))
             .andExpect(jsonPath("$.data.collection.newAchievements[0].reward.code").isNotEmpty());
+    }
+
+    /** 시드가 실은 위치 퀘스트를 장소명으로 찾는다 — id는 AUTO_INCREMENT라 DB마다 다르다. */
+    private Quest seededQuestAt(String placeName) {
+        return questRepository.findAll().stream()
+            .filter(quest -> placeName.equals(quest.getPlaceName()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("시드 장소가 없다: " + placeName));
+    }
+
+    /** 그 퀘스트의 지점 한가운데에 선 채로 완료를 요청한다. */
+    private MockHttpServletRequestBuilder completeOnSite(User user, Quest quest, String token) {
+        UserDailyQuest assignment = userDailyQuestRepository.save(new UserDailyQuest(
+            user.getId(), quest.getId(), LocalDate.now(), LocalDateTime.now().plusDays(7)));
+        return complete(assignment.getId(), token, """
+            {"latitude": %s, "longitude": %s, "accuracy": 10.0}
+            """.formatted(quest.getLatitude(), quest.getLongitude()));
     }
 
     private MockHttpServletRequestBuilder complete(
