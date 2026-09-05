@@ -133,3 +133,48 @@ abstract final class LqIcons {
   /// 검색 — 시안이 인라인 SVG로 그려 둔 것을 같은 규격으로 파일화했다.
   static const search = '${_dir}search.svg';
 }
+
+/// 도감 항목의 장소 모티프 아이콘 — 규격은 [LqIcons]와 같다(24 그리드 · stroke 2.2).
+///
+/// **항목마다 한 장씩 그리지 않는다.** 도감 항목 수가 열려 있기 때문이다. 전국
+/// 위치 퀘스트 시드(V33 37건 · V34 174건)가 도감으로 올라오면 항목은 수백 개가
+/// 되지만, 그 장소들이 속하는 *유형*은 아래 17종으로 닫힌다. 새 항목은 기존
+/// 모티프를 가리키기만 하면 되고, 그림을 새로 그리는 것은 유형이 늘어날 때뿐이다.
+///
+/// DB의 `lifedex_items.icon_key` · `lifedex_categories.icon_key`가 이 키를 담는다.
+/// 키 이름 규칙과 유형별 뜻은 `docs/09-design-system.md` §2 「도감 모티프」에 있다.
+abstract final class LqLifedexIcons {
+  static const _dir = 'assets/images/icons/lifedex/';
+
+  /// 키 → SVG 경로.
+  ///
+  /// **앱이 가진 키의 목록이 곧 계약이다.** DB가 여기 없는 키를 보내더라도
+  /// [pathOf]가 null을 돌려주고 화면은 카테고리 모티프로 물러난다. 그림 없는
+  /// 키를 참조해도 화면이 깨지지 않으므로, 시드와 아트가 다른 순서로 들어와도
+  /// 된다 — 다만 그동안 그 항목은 카테고리 아이콘으로 보인다.
+  static const _byKey = <String, String>{
+    'cafe': '${_dir}cafe.svg',
+    'park_city': '${_dir}park_city.svg',
+    'park_forest': '${_dir}park_forest.svg',
+    'garden': '${_dir}garden.svg',
+    'trail': '${_dir}trail.svg',
+    'waterside': '${_dir}waterside.svg',
+    'beach': '${_dir}beach.svg',
+    'mountain': '${_dir}mountain.svg',
+    'library': '${_dir}library.svg',
+    'museum': '${_dir}museum.svg',
+    'gallery': '${_dir}gallery.svg',
+    'market': '${_dir}market.svg',
+    'street': '${_dir}street.svg',
+    'hanok': '${_dir}hanok.svg',
+    'palace': '${_dir}palace.svg',
+    'heritage': '${_dir}heritage.svg',
+    'tower': '${_dir}tower.svg',
+  };
+
+  /// [key]의 SVG 경로. 모르는 키·null이면 null.
+  static String? pathOf(String? key) => key == null ? null : _byKey[key];
+
+  /// 그림이 준비된 키 전체. 시드가 쓴 키가 이 안에 있는지 확인할 때 쓴다.
+  static Iterable<String> get keys => _byKey.keys;
+}

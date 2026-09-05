@@ -37,7 +37,8 @@ public class LifedexService implements CollectionService {
                             .filter(item -> ownedIds.contains(item.getId()))
                             .count();
                     return new LifedexCategoryResponse.Category(
-                            category.getId(), category.getName(), items.size(), ownedCount);
+                            category.getId(), category.getName(), items.size(), ownedCount,
+                            category.getIconKey());
                 })
                 .toList();
         return new LifedexCategoryResponse(categories);
@@ -52,7 +53,8 @@ public class LifedexService implements CollectionService {
         return new LifedexResponse(items.stream()
                 .map(item -> new LifedexResponse.Item(
                         item.getId(), item.getName(), item.getCategoryId(),
-                        ownedIds.contains(item.getId()), item.getDescription()))
+                        ownedIds.contains(item.getId()), item.getDescription(),
+                        item.getIconKey()))
                 .toList());
     }
 

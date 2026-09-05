@@ -118,12 +118,13 @@ erDiagram
     LIFEDEX_CATEGORIES {
         bigint id PK
         varchar name
-        varchar icon
+        varchar icon_key
     }
     LIFEDEX_ITEMS {
         bigint id PK
         bigint category_id FK
         varchar name
+        varchar icon_key
         boolean is_secret
     }
     USER_LIFEDEX {
@@ -348,7 +349,7 @@ erDiagram
 |---|---|---|---|
 | id | BIGINT | PK | ID |
 | name | VARCHAR(50) | NOT NULL | 카테고리명(여행, 음식, 카페 등) |
-| icon | VARCHAR(255) | NULL | 아이콘 리소스 |
+| icon_key | VARCHAR(40) | NULL | 카테고리 대표 장소 모티프 키. 규칙은 09-design-system §2 |
 
 **LIFEDEX_ITEMS**
 
@@ -358,6 +359,7 @@ erDiagram
 | category_id | BIGINT | FK → LIFEDEX_CATEGORIES.id | 소속 카테고리 |
 | name | VARCHAR(100) | NOT NULL | 항목명 |
 | description | VARCHAR(255) | NULL | 설명 |
+| icon_key | VARCHAR(40) | NULL | 장소 모티프 키. 비면 카테고리 키로 물러난다. 규칙은 09-design-system §2 |
 | is_secret | BOOLEAN | NOT NULL, DEFAULT FALSE | 비공개 항목 여부 |
 
 **USER_LIFEDEX**
