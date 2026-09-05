@@ -9,6 +9,7 @@ import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
 import 'package:life_quest/shared/widgets/lq_header.dart';
+import 'package:life_quest/shared/widgets/lq_icon.dart';
 import 'package:life_quest/shared/widgets/lq_image.dart';
 
 /// 카테고리별 블롭 색 — 채도가 낮은 색을 순환해서 쓴다.
@@ -160,7 +161,15 @@ class _Body extends ConsumerWidget {
             onTap: (category) => onSelectCategory(category.id),
           )
         else
-          _ItemGrid(categoryId: selectedCategoryId!),
+          _ItemGrid(
+            categoryId: selectedCategoryId!,
+            // 항목이 자기 모티프를 갖지 않을 때 물러날 자리. 카테고리를 고른
+            // 뒤에야 그리는 화면이라 여기서 이미 알고 있다.
+            categoryIconKey: categories
+                .where((c) => c.id == selectedCategoryId)
+                .map((c) => c.iconKey)
+                .firstOrNull,
+          ),
       ],
     );
   }
@@ -250,6 +259,7 @@ class _CategoryGrid extends StatelessWidget {
           label: category.name,
           caption: '${category.ownedCount}/${category.totalCount}',
           color: _blobColorFor(category.id),
+          iconKey: category.iconKey,
           locked: category.isLocked,
           onTap: () => onTap(category),
         );
@@ -259,9 +269,12 @@ class _CategoryGrid extends StatelessWidget {
 }
 
 class _ItemGrid extends ConsumerWidget {
-  const _ItemGrid({required this.categoryId});
+  const _ItemGrid({required this.categoryId, this.categoryIconKey});
 
   final int categoryId;
+
+  /// 항목에 모티프가 지정되지 않았을 때 대신 그릴 카테고리 모티프.
+  final String? categoryIconKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -297,6 +310,7 @@ class _ItemGrid extends ConsumerWidget {
               label: item.owned ? item.name : '?',
               caption: item.owned ? '수집' : '일일 퀘스트로 해금',
               color: _blobColorFor(item.id),
+              iconKey: item.iconKey ?? categoryIconKey,
               locked: !item.owned,
             );
           },
@@ -313,12 +327,16 @@ class _DexTile extends StatelessWidget {
     required this.caption,
     required this.color,
     required this.locked,
+    this.iconKey,
     this.onTap,
   });
 
   final String label;
   final String caption;
   final Color color;
+
+  /// 장소 모티프 키. 모르는 키·null이면 아이콘 없이 블롭만 그린다.
+  final String? iconKey;
   final bool locked;
   final VoidCallback? onTap;
 
@@ -350,12 +368,17 @@ class _DexTile extends StatelessWidget {
                 bottomLeft: Radius.elliptical(18, 22),
               ),
             ),
+            // 미획득은 모티프를 감춘다 — 무엇을 모았는지가 아니라 무엇이
+            // 남았는지만 보여야 다음에 갈 곳을 찾아 나서게 된다.
             child: locked
                 ? Text(
                     '?',
                     style: LqText.cardTitle.copyWith(color: LqColors.textMuted),
                   )
-                : null,
+                : switch (LqLifedexIcons.pathOf(iconKey)) {
+                    final String asset => LqIcon(asset, size: 22),
+                    null => null,
+                  },
           ),
           const SizedBox(height: 8),
           Text(

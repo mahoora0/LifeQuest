@@ -7,12 +7,17 @@ class LifedexCategory {
     required this.name,
     required this.totalCount,
     required this.ownedCount,
+    this.iconKey,
   });
 
   final int id;
   final String name;
   final int totalCount;
   final int ownedCount;
+
+  /// 카테고리 모티프 키(`LqLifedexIcons`). 항목이 자기 키를 갖지 않을 때
+  /// 항목 타일이 이 키로 물러난다.
+  final String? iconKey;
 
   bool get isLocked => ownedCount == 0;
 
@@ -24,6 +29,7 @@ class LifedexCategory {
             asInt(pick(json, ['totalCount', 'totalItemCount', 'total'])) ?? 0,
         ownedCount:
             asInt(pick(json, ['ownedCount', 'collectedCount', 'owned'])) ?? 0,
+        iconKey: asString(pick(json, ['iconKey', 'icon_key'])),
       );
 
   LifedexCategory mergeWith(LifedexCategory other) => LifedexCategory(
@@ -31,6 +37,7 @@ class LifedexCategory {
     name: name.isNotEmpty ? name : other.name,
     totalCount: totalCount != 0 ? totalCount : other.totalCount,
     ownedCount: other.ownedCount != 0 ? other.ownedCount : ownedCount,
+    iconKey: iconKey ?? other.iconKey,
   );
 }
 
@@ -42,6 +49,7 @@ class LifedexItem {
     required this.categoryId,
     required this.owned,
     this.description,
+    this.iconKey,
   });
 
   final int id;
@@ -50,12 +58,16 @@ class LifedexItem {
   final bool owned;
   final String? description;
 
+  /// 장소 모티프 키(`LqLifedexIcons`). null이면 카테고리 모티프로 물러난다.
+  final String? iconKey;
+
   factory LifedexItem.fromJson(Map<String, dynamic> json) => LifedexItem(
     id: asInt(pick(json, ['id', 'itemId'])) ?? 0,
     name: asString(pick(json, ['name', 'itemName'])) ?? '항목',
     categoryId: asInt(pick(json, ['categoryId', 'category_id'])) ?? 0,
     owned: asBool(pick(json, ['owned', 'collected', 'isCollected'])),
     description: asString(json['description']),
+    iconKey: asString(pick(json, ['iconKey', 'icon_key'])),
   );
 }
 

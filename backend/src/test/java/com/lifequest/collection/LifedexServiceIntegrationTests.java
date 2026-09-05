@@ -69,4 +69,35 @@ class LifedexServiceIntegrationTests {
                 .hasSize(15)
                 .noneMatch(LifedexResponse.Item::owned);
     }
+
+    /**
+     * 도감 아이콘 키가 시드에서 응답까지 실제로 이어지는지 본다.
+     *
+     * <p>어긋나도 앱은 죽지 않고 아이콘만 조용히 사라지므로, 열만 더하고 값을 채우지
+     * 않았거나 엔티티 매핑이 빠진 것을 화면으로는 알아채기 어렵다. 이름 규칙까지
+     * 같이 재는 이유는 키가 곧 파일명이어서, 대문자·공백이 섞이면 그 항목만
+     * 그림을 못 찾기 때문이다.
+     */
+    @Test
+    void seededIconKeysReachTheResponse() {
+        assertThat(lifedexService.items(USER_ID, null).items())
+                .allSatisfy(item -> assertThat(item.iconKey())
+                        .as("항목 %s의 모티프 키", item.name())
+                        .isNotNull()
+                        .matches("[a-z][a-z0-9_]*"))
+                .filteredOn(item -> item.id().equals(23L))
+                .singleElement()
+                .extracting(LifedexResponse.Item::iconKey)
+                .isEqualTo("waterside");
+
+        assertThat(lifedexService.categories(USER_ID).categories())
+                .allSatisfy(category -> assertThat(category.iconKey())
+                        .as("카테고리 %s의 모티프 키", category.name())
+                        .isNotNull()
+                        .matches("[a-z][a-z0-9_]*"))
+                .filteredOn(category -> category.name().equals("산 · 하천"))
+                .singleElement()
+                .extracting(LifedexCategoryResponse.Category::iconKey)
+                .isEqualTo("mountain");
+    }
 }

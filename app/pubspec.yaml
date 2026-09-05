@@ -41,6 +41,7 @@ flutter:
     - assets/images/characters/
     - assets/images/characters/rookie_accessory/
     - assets/images/icons/
+    - assets/images/icons/lifedex/
 
   # 본문 글꼴. 에이투지체(A2Z) v1.001, SIL Open Font License.
   # 출처: https://freesentation.blog/a2z (https://github.com/Freesentation/A2Z)
