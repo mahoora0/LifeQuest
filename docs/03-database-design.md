@@ -121,11 +121,11 @@ erDiagram
         varchar icon_key
     }
     LIFEDEX_ITEMS {
-        bigint id PK
+        bigint id PK "원본 퀘스트 id와 같다"
         bigint category_id FK
         varchar name
         varchar icon_key
-        boolean is_secret
+        int display_order
     }
     USER_LIFEDEX {
         bigint id PK
@@ -355,12 +355,12 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | BIGINT | PK | ID |
-| category_id | BIGINT | FK → LIFEDEX_CATEGORIES.id | 소속 카테고리 |
-| name | VARCHAR(100) | NOT NULL | 항목명 |
-| description | VARCHAR(255) | NULL | 설명 |
+| id | BIGINT | PK | ID. 항목을 만들어 낸 퀘스트의 id와 같게 둔다(비즈니스 규칙 §6-1) |
+| category_id | BIGINT | NOT NULL, FK → LIFEDEX_CATEGORIES.id | 소속 카테고리 |
+| name | VARCHAR(100) | NOT NULL, UNIQUE | 항목명(= 퀘스트의 `place_name`) |
+| description | VARCHAR(500) | NULL | 설명 |
 | icon_key | VARCHAR(40) | NULL | 장소 모티프 키. 비면 카테고리 키로 물러난다. 규칙은 09-design-system §2 |
-| is_secret | BOOLEAN | NOT NULL, DEFAULT FALSE | 비공개 항목 여부 |
+| display_order | INT | NOT NULL | 카테고리 안 정렬 순서 |
 
 **USER_LIFEDEX**
 
