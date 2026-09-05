@@ -8,6 +8,10 @@ import 'package:life_quest/features/friends/data/friend_dto.dart';
 import 'package:life_quest/features/friends/data/friend_repository.dart';
 import 'package:life_quest/features/friends/presentation/friend_journey_screen.dart';
 import 'package:life_quest/features/friends/presentation/friends_screen.dart';
+import 'package:life_quest/features/lifedex/application/lifedex_providers.dart';
+import 'package:life_quest/features/lifedex/data/lifedex_dto.dart';
+import 'package:life_quest/features/lifedex/data/lifedex_repository.dart';
+import 'package:life_quest/features/lifedex/presentation/lifedex_screen.dart';
 import 'package:life_quest/features/notification/application/notification_providers.dart';
 import 'package:life_quest/features/notification/data/notification_dto.dart';
 import 'package:life_quest/features/notification/data/notification_repository.dart';
@@ -118,6 +122,33 @@ void main() {
         _SpyFriendRepository(nickname: '가나다라마바사아자차카타파하가나다라마바'),
       );
 
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('두 줄로 접히는 장소 이름이 도감 타일을 넘치게 하지 않는다', (tester) async {
+      useDesignFrame(tester);
+      // 도감이 전국으로 넓어지면서 "서울시립미술관"처럼 타일 폭에서 두 줄이 되는
+      // 이름이 들어왔다. 타일 높이는 childAspectRatio가 고정하므로, 두 줄 이름은
+      // 한 줄 이름이 남기던 여백을 다 쓰고도 모자란다.
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            lifedexRepositoryProvider.overrideWithValue(
+              _TwoLineLifedexRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: LifedexScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 카테고리 격자(S-13)와 항목 격자(S-14)는 같은 타일을 쓴다. 둘 다 본다.
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('문화 · 전시').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('서울시립미술관'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -420,4 +451,23 @@ class _NotReadyNotificationRepository extends NotificationRepository {
       statusCode: 404,
     );
   }
+}
+
+/// 이름이 타일 폭에서 두 줄로 접히는 도감. 카테고리·항목 양쪽 다 두 줄이다.
+class _TwoLineLifedexRepository extends LifedexRepository {
+  _TwoLineLifedexRepository() : super(Dio());
+
+  @override
+  Future<LifedexOverview> fetchOverview() async => const LifedexOverview(
+    categories: [
+      LifedexCategory(id: 3, name: '문화 · 전시', totalCount: 38, ownedCount: 3),
+    ],
+  );
+
+  @override
+  Future<List<LifedexItem>> fetchItems(int categoryId) async => const [
+    LifedexItem(id: 501, name: '서울시립미술관', categoryId: 3, owned: true),
+    // 미획득 타일은 이름이 '?' 한 줄이지만 캡션이 두 줄이라, 반대쪽 한계다.
+    LifedexItem(id: 502, name: '국립중앙박물관', categoryId: 3, owned: false),
+  ];
 }
