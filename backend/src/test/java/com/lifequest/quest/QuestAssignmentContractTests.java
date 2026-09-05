@@ -222,28 +222,33 @@ class QuestAssignmentContractTests {
     /**
      * 반경 밖은 빠진다. 좌표를 위경도 범위 밖이 아니라 <b>실제로 먼 지점</b>으로 두어,
      * 필터가 도는지와 검증이 도는지를 섞지 않는다.
+     *
+     * <p><b>"1m 반경이면 0건"으로 재지 않는다.</b> 배정 풀에 무엇이 들어 있는지는 이 테스트가
+     * 정하지 못한다 — 다른 계약 테스트가 만든 SYSTEM 퀘스트 픽스처가 같은 컨텍스트·H2에
+     * 커밋된 채 남고, 그중 이 좌표에 있는 것이 추첨되면 0건 단언만 무작위로 깨진다.
+     * 필터는 정상인데 테스트가 빨개지는 자리라, <b>개수가 아니라 걸러진 결과 자체</b>를
+     * 넓은 반경의 결과와 대조한다. 배정은 주기당 한 번뿐이라 두 조회가 같은 집합을 본다.
      */
     @Test
     void 주변_퀘스트는_반경으로_걸러지고_거리가_실린다() throws Exception {
         String token = signUpAndGetAccessToken("assign-nearby@lifequest.test", "주변탐험가");
 
         // 시드 좌표는 전부 대한민국이다. 반경을 지구 규모로 두면 배정된 LOCATION이 전부 들어온다
-        MvcResult wide = mockMvc.perform(get("/api/quests/nearby")
-                .param("lat", "37.5665").param("lng", "126.9780").param("radiusKm", "20000")
-                .header("Authorization", "Bearer " + token))
-            .andExpect(status().isOk())
-            .andReturn();
+        List<Number> wide = nearbyDistances(token, 20000);
+        assertThat(wide).isSorted();
 
-        List<Double> distances = JsonPath.read(
-            wide.getResponse().getContentAsString(), "$.data.quests[*].distanceM");
-        assertThat(distances).isSorted();
+        // 같은 좌표에 1m 반경. 남는 것은 넓은 조회 결과 중 1m 이하인 것뿐이어야 한다
+        double narrowRadiusKm = 0.001;
+        double narrowRadiusM = narrowRadiusKm * 1000;
+        List<Number> narrow = nearbyDistances(token, narrowRadiusKm);
 
-        // 같은 좌표에 1m 반경이면 정확히 그 지점에 있는 퀘스트만 남는다 — 시드에는 없다
-        mockMvc.perform(get("/api/quests/nearby")
-                .param("lat", "37.5665").param("lng", "126.9780").param("radiusKm", "0.001")
-                .header("Authorization", "Bearer " + token))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.quests.length()").value(0));
+        assertThat(narrow)
+            .as("반경 밖이 실려 오면 지도가 닿을 수 없는 퀘스트를 그린다")
+            .allSatisfy(distance -> assertThat(distance.doubleValue()).isLessThanOrEqualTo(narrowRadiusM));
+        assertThat(narrow)
+            .as("반경 안인데 빠지면 필터가 과하게 잘라낸 것이다")
+            .containsExactlyElementsOf(
+                wide.stream().filter(distance -> distance.doubleValue() <= narrowRadiusM).toList());
     }
 
     @Test
@@ -266,6 +271,21 @@ class QuestAssignmentContractTests {
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
+    }
+
+    /**
+     * 서울시청 좌표에서 {@code radiusKm}로 주변 조회를 하고 거리 목록만 꺼낸다. 첫 호출이
+     * 배정까지 만드는 진입점이라, 같은 토큰으로 두 번 부르면 두 번째는 같은 집합을 다시 거른다.
+     */
+    private List<Number> nearbyDistances(String token, double radiusKm) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/quests/nearby")
+                .param("lat", "37.5665").param("lng", "126.9780")
+                .param("radiusKm", String.valueOf(radiusKm))
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.data.quests[*].distanceM");
     }
 
     private MvcResult getToday(String token) throws Exception {
