@@ -490,7 +490,7 @@ class _MyRecordCard extends ConsumerWidget {
             label: '도감',
             caption: _caption(
               lifedex,
-              (value) => '일일 퀘스트 · ${value.ownedCount}개 수집',
+              (value) => '위치 퀘스트 · ${value.ownedCount}개 수집',
             ),
             onTap: () => context.push('/lifedex'),
           ),

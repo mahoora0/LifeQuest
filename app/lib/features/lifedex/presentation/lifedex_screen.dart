@@ -24,6 +24,19 @@ const _blobColors = <Color>[
 
 Color _blobColorFor(int id) => _blobColors[id.abs() % _blobColors.length];
 
+/// 카테고리 격자(S-13)와 항목 격자(S-14)가 함께 쓰는 배치.
+///
+/// 두 격자는 같은 `_DexTile`을 그리므로 비율이 갈리면 필터를 바꿀 때 타일 높이가
+/// 튄다. 비율은 0.84가 아니라 0.8이다 — 타일 높이는 폭에서 나오는데 이름이 두
+/// 줄로 접히면(전국 확장이 들여온 "서울시립미술관" 같은 7자 이름) 0.84에서는
+/// 1.8px가 모자라 넘친다.
+const _dexGrid = SliverGridDelegateWithFixedCrossAxisCount(
+  crossAxisCount: 3,
+  mainAxisSpacing: 10,
+  crossAxisSpacing: 10,
+  childAspectRatio: 0.8,
+);
+
 /// S-13 LifeDex 도감 / S-14 카테고리 상세.
 class LifedexScreen extends ConsumerStatefulWidget {
   const LifedexScreen({super.key});
@@ -247,12 +260,7 @@ class _CategoryGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.84,
-      ),
+      gridDelegate: _dexGrid,
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
@@ -298,12 +306,7 @@ class _ItemGrid extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 0.84,
-          ),
+          gridDelegate: _dexGrid,
           itemCount: value.length,
           itemBuilder: (context, index) {
             final item = value[index];
