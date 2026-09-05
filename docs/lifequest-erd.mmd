@@ -65,6 +65,12 @@ flowchart LR
         GQP["group_quest_participants<br/><b>FK</b> group_quest_id, user_id"]
     end
 
+    subgraph ACHIEVE["9. 업적"]
+        ACH["achievements<br/><b>FK</b> target_quest_id,<br/>target_lifedex_category_id"]
+        AST["achievement_steps<br/><b>FK</b> achievement_id, reward_title_id"]
+        UACH["user_achievements<br/><b>FK</b> user_id, achievement_id"]
+    end
+
     U -->|user_id| SA
     U -->|user_id| RT
     U -->|user_id| NT
@@ -125,11 +131,18 @@ flowchart LR
     GQ -->|group_quest_id| GQP
     U -->|user_id| GQP
 
+    ACH -->|achievement_id| AST
+    ACH -->|achievement_id| UACH
+    U -->|user_id| UACH
+    Q -->|target_quest_id| ACH
+    LC -->|target_lifedex_category_id| ACH
+    TI -->|reward_title_id| AST
+
     classDef core fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172554
     classDef catalog fill:#ecfdf5,stroke:#059669,color:#064e3b
     classDef history fill:#fff7ed,stroke:#ea580c,color:#7c2d12
     class U,Q,G core
-    class AC,TI,PI,LR,LC,LI catalog
-    class EL,QC,QAM,QRU,WAQC,QPP,QPH,QPV,QPC,NT history
+    class AC,TI,PI,LR,LC,LI,ACH,AST catalog
+    class EL,QC,QAM,QRU,WAQC,QPP,QPH,QPV,QPC,NT,UACH history
 
     linkStyle default stroke:#64748b,stroke-width:1.5px
