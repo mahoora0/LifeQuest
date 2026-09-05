@@ -197,10 +197,7 @@ class _LocationQuestGuide extends StatelessWidget {
               children: [
                 Text('위치 퀘스트 전용', style: LqText.label),
                 const SizedBox(height: 4),
-                Text(
-                  '지도에 표시된 곳에 다녀오면 그 장소가 도감에 남아요.',
-                  style: LqText.bodySm,
-                ),
+                Text('지도에 표시된 곳에 다녀오면 그 장소가 도감에 남아요.', style: LqText.bodySm),
               ],
             ),
           ),
