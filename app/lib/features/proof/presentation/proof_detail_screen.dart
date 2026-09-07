@@ -203,7 +203,7 @@ class _PostBody extends StatelessWidget {
           ProofQuestBadge(
             title: post.questTitle,
             grade: post.questGrade,
-            categoryLabel: post.questCategory.label,
+            category: post.questCategory,
           ),
           const SizedBox(height: 12),
           ProofPhotoCarousel(photoUrls: post.photoUrls),

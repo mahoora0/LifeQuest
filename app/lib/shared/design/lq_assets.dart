@@ -178,3 +178,42 @@ abstract final class LqLifedexIcons {
   /// 그림이 준비된 키 전체. 시드가 쓴 키가 이 안에 있는지 확인할 때 쓴다.
   static Iterable<String> get keys => _byKey.keys;
 }
+
+/// 퀘스트 대표 카테고리 아이콘 — 규격은 [LqIcons]와 같다(24 그리드 · stroke 2.2).
+///
+/// **퀘스트마다 한 장씩 그리지 않는다.** 이유는 도감 모티프와 같지만 방향이 반대다.
+/// 도감은 항목 수가 열려 있어 유형으로 묶었고, 퀘스트는 카테고리가 DB CHECK 제약
+/// (`ck_quests_category`)으로 8종에 닫혀 있어 더 잘게 나눌 여지가 없다. 퀘스트가
+/// 수백 개로 늘어도 그림은 이 8장 그대로다.
+///
+/// 키는 `quests.category`의 wire 값을 소문자로 내린 것이고 파일명과 1:1이다
+/// (`HEALTH_FITNESS` → `quest/health_fitness.svg`). 대문자 wire를 그대로 넘겨도
+/// 되도록 [pathOf]가 내려서 찾는다 — 호출부가 `.toLowerCase()`를 잊어 아이콘만
+/// 조용히 사라지는 일을 막는다.
+abstract final class LqQuestIcons {
+  static const _dir = 'assets/images/icons/quest/';
+
+  static const _byKey = <String, String>{
+    'health_fitness': '${_dir}health_fitness.svg',
+    'daily_habit': '${_dir}daily_habit.svg',
+    'learning_growth': '${_dir}learning_growth.svg',
+    'relationship_community': '${_dir}relationship_community.svg',
+    'food_cafe': '${_dir}food_cafe.svg',
+    'nature_outdoor': '${_dir}nature_outdoor.svg',
+    'culture_travel': '${_dir}culture_travel.svg',
+    'etc': '${_dir}etc.svg',
+  };
+
+  /// [category]의 SVG 경로. 대소문자를 가리지 않으며, 모르는 값·null이면 null.
+  ///
+  /// 서버가 카테고리를 늘려도 화면이 깨지지 않도록 null을 돌려주는 쪽을 택했다.
+  /// 그림을 반드시 채워야 하는 자리는 호출부에서 [etc]로 물러난다.
+  static String? pathOf(String? category) =>
+      category == null ? null : _byKey[category.toLowerCase()];
+
+  /// 분류가 없거나 모르는 카테고리가 왔을 때 물러날 자리.
+  static const String etc = '${_dir}etc.svg';
+
+  /// 그림이 준비된 키 전체.
+  static Iterable<String> get keys => _byKey.keys;
+}

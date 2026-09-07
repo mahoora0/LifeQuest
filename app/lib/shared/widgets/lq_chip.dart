@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_icon.dart';
 import 'package:life_quest/shared/widgets/lq_pressable.dart';
 
 /// 필터 칩(pill).
@@ -12,14 +14,31 @@ class LqChip extends StatelessWidget {
     required this.label,
     required this.selected,
     this.onTap,
+    this.icon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onTap;
 
+  /// 라벨 앞에 붙는 선 아이콘의 자산 경로([LqIcons]·[LqQuestIcons]).
+  ///
+  /// 색은 글자와 같이 뒤집히므로 선택 상태별 파일을 따로 두지 않는다.
+  final String? icon;
+
   @override
   Widget build(BuildContext context) {
+    final foreground = selected ? LqColors.onDark : LqColors.textSecondary;
+    final text = Text(
+      label,
+      style: TextStyle(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        color: foreground,
+      ),
+    );
+
     return LqPressable(
       onTap: onTap,
       // 칩도 섀도가 없다. 탭 아이템보다는 작게 줄인다.
@@ -38,15 +57,16 @@ class LqChip extends StatelessWidget {
             ),
           ),
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-              color: selected ? LqColors.onDark : LqColors.textSecondary,
-            ),
-          ),
+          child: icon == null
+              ? text
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LqIcon(icon!, size: 16, color: foreground),
+                    const SizedBox(width: 6),
+                    text,
+                  ],
+                ),
         ),
       ),
     );
@@ -61,12 +81,20 @@ class LqChipRow extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.padding = const EdgeInsets.symmetric(horizontal: LqSpacing.screen),
-  });
+    this.icons,
+  }) : assert(
+         icons == null || icons.length == labels.length,
+         '아이콘을 주려면 라벨과 같은 길이여야 한다 — 짧으면 뒤쪽 칩만 조용히 아이콘을 잃는다',
+       );
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final EdgeInsetsGeometry padding;
+
+  /// 칩별 아이콘 자산 경로. [labels]와 같은 길이여야 하고, 아이콘이 없는 칩은
+  /// 그 자리를 null로 둔다("모든 주제"처럼 카테고리가 아닌 칩).
+  final List<String?>? icons;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +110,7 @@ class LqChipRow extends StatelessWidget {
             label: labels[index],
             selected: index == selectedIndex,
             onTap: () => onSelected(index),
+            icon: icons?[index],
           ),
         ),
       ),

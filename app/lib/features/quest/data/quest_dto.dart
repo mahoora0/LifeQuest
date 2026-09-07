@@ -105,6 +105,7 @@ class Quest {
     required this.expReward,
     this.cadence = QuestCadence.daily,
     this.description,
+    this.category,
     this.grade,
     this.placeName,
     this.latitude,
@@ -117,6 +118,14 @@ class Quest {
   final int id;
   final String title;
   final String? description;
+
+  /// 대표 주제(`QUESTS.category`)의 wire 값. 목록 행 아이콘을 고르는 근거다.
+  ///
+  /// enum으로 파싱하지 않고 원문을 그대로 둔다 — 서버가 카테고리를 늘렸을 때
+  /// 앱이 모르는 값을 `ETC`로 접어버리면, 그림이 없다는 사실이 "기타 퀘스트"로
+  /// 둔갑해 화면에서 구분되지 않는다. 모르는 값은 모르는 채로 두고
+  /// `LqQuestIcons.pathOf`가 null을 돌려주게 한다.
+  final String? category;
   final String? grade;
   final QuestCadence cadence;
   final QuestCompletionType completionType;
@@ -150,6 +159,7 @@ class Quest {
       id: idOverride ?? asInt(pick(json, ['questId', 'id'])) ?? 0,
       title: asString(pick(json, ['title', 'questTitle', 'name'])) ?? '퀘스트',
       description: asString(pick(json, ['description', 'questDescription'])),
+      category: asString(pick(json, ['category', 'questCategory'])),
       grade: asString(json['grade']),
       cadence: QuestCadence.parse(pick(json, ['cadence', 'questCadence'])),
       completionType: QuestCompletionType.parse(

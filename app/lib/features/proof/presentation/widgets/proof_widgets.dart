@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/features/proof/data/proof_dto.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
+import 'package:life_quest/shared/widgets/lq_icon.dart';
 
 /// 판정 상태 배지의 색과 문구.
 ///
@@ -69,12 +71,15 @@ class ProofQuestBadge extends StatelessWidget {
     super.key,
     required this.title,
     this.grade,
-    this.categoryLabel,
+    this.category,
   });
 
   final String title;
   final String? grade;
-  final String? categoryLabel;
+
+  /// 퀘스트의 대표 주제. 라벨과 아이콘이 같은 값에서 나오도록 enum째로 받는다 —
+  /// 문자열 라벨만 받으면 아이콘을 붙일 때 호출부마다 짝을 다시 맞춰야 한다.
+  final ProofQuestCategory? category;
 
   static const _gradeColors = <String, Color>{
     'NORMAL': LqColors.gradeNormal,
@@ -98,7 +103,7 @@ class ProofQuestBadge extends StatelessWidget {
             style: LqText.cardTitle,
           ),
         ),
-        if (categoryLabel != null) ...[
+        if (category != null) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -107,7 +112,18 @@ class ProofQuestBadge extends StatelessWidget {
               borderRadius: LqShape.pillRadius,
               border: Border.all(color: LqColors.borderMuted),
             ),
-            child: Text(categoryLabel!, style: LqText.caption),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LqIcon(
+                  LqQuestIcons.pathOf(category!.wire) ?? LqQuestIcons.etc,
+                  size: 14,
+                  color: LqColors.textSecondary,
+                ),
+                const SizedBox(width: 5),
+                Text(category!.label, style: LqText.caption),
+              ],
+            ),
           ),
         ],
       ],
