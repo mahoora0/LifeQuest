@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:life_quest/features/quest/data/quest_dto.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_card.dart';
+import 'package:life_quest/shared/widgets/lq_icon.dart';
 import 'package:life_quest/shared/widgets/lq_reward_badge.dart';
 import 'package:life_quest/shared/widgets/lq_swipe_action.dart';
 
@@ -13,8 +15,8 @@ import 'package:life_quest/shared/widgets/lq_swipe_action.dart';
 /// 행은 시안대로 각자 `divider` 테두리를 두른 카드다. 배경은 지정하지 않고
 /// 부모 카드의 `surfaceCard`를 그대로 쓴다 — 테두리만으로 경계를 만든다.
 ///
-/// 좌측 아이콘 타일은 목록(S-08)과 같은 [_IconTile]이다. 퀘스트별 그림은
-/// 서버가 주지 않으므로(`QUESTS.icon`이 스키마에 없다) 제목 첫 글자를 쓴다.
+/// 좌측 아이콘 타일은 목록(S-08)과 같은 [_IconTile]이다. 퀘스트마다의 그림은
+/// 없고(`QUESTS.icon`이 스키마에 없다) 대표 주제(`category`) 아이콘을 쓴다.
 class HomeQuestRow extends StatelessWidget {
   const HomeQuestRow({
     super.key,
@@ -60,7 +62,7 @@ class HomeQuestRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _IconTile(title: quest.title),
+              _IconTile(title: quest.title, category: quest.category),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -347,7 +349,7 @@ class QuestListRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _IconTile(title: quest.title),
+          _IconTile(title: quest.title, category: quest.category),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -413,13 +415,20 @@ class _ExpiredBadge extends StatelessWidget {
 }
 
 /// 행 좌측의 38 정사각 타일 — 홈([HomeQuestRow])과 목록([QuestListRow])이 함께 쓴다.
+///
+/// 대표 주제([Quest.category])가 있으면 그 아이콘을, 없으면 제목 첫 글자를 그린다.
+/// 첫 글자를 지우지 않고 남겨 두는 것은 `category`를 아직 싣지 않는 서버와도
+/// 화면이 성립하게 하기 위해서다 — 그때 빈 타일이 되면 목록 전체가 무너져 보인다.
 class _IconTile extends StatelessWidget {
-  const _IconTile({required this.title});
+  const _IconTile({required this.title, this.category});
 
   final String title;
+  final String? category;
 
   @override
   Widget build(BuildContext context) {
+    final icon = LqQuestIcons.pathOf(category);
+
     return Container(
       width: 38,
       height: 38,
@@ -429,10 +438,12 @@ class _IconTile extends StatelessWidget {
         borderRadius: LqShape.tileRadius,
         border: Border.all(color: LqColors.ink, width: LqShape.borderWidth),
       ),
-      child: Text(
-        title.isEmpty ? '?' : title.characters.first,
-        style: LqText.cardTitle.copyWith(fontSize: 18),
-      ),
+      child: icon == null
+          ? Text(
+              title.isEmpty ? '?' : title.characters.first,
+              style: LqText.cardTitle.copyWith(fontSize: 18),
+            )
+          : LqIcon(icon, size: 22),
     );
   }
 }

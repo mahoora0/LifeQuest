@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:life_quest/features/proof/application/proof_providers.dart';
 import 'package:life_quest/features/proof/data/proof_dto.dart';
 import 'package:life_quest/features/proof/presentation/widgets/proof_card.dart';
+import 'package:life_quest/shared/design/lq_assets.dart';
 import 'package:life_quest/shared/design/lq_tokens.dart';
 import 'package:life_quest/shared/widgets/lq_async_view.dart';
 import 'package:life_quest/shared/widgets/lq_chip.dart';
@@ -117,6 +118,12 @@ class _ProofFeedScreenState extends ConsumerState<ProofFeedScreen> {
                 '모든 주제',
                 for (final category in ProofQuestCategory.values)
                   category.label,
+              ],
+              // "모든 주제"는 카테고리가 아니라 해제 버튼이라 아이콘을 두지 않는다.
+              icons: [
+                null,
+                for (final category in ProofQuestCategory.values)
+                  LqQuestIcons.pathOf(category.wire),
               ],
               selectedIndex: _category == null
                   ? 0

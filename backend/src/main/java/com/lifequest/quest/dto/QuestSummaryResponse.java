@@ -3,6 +3,7 @@ package com.lifequest.quest.dto;
 import com.lifequest.quest.domain.CompletionType;
 import com.lifequest.quest.domain.Quest;
 import com.lifequest.quest.domain.QuestCadence;
+import com.lifequest.quest.domain.QuestCategory;
 import com.lifequest.quest.domain.QuestCreator;
 import com.lifequest.quest.domain.QuestGrade;
 import com.lifequest.quest.domain.UserDailyQuest;
@@ -13,6 +14,9 @@ import java.math.BigDecimal;
  * 퀘스트 원본 요약. {@code GET /quests/today}의 각 항목과 {@code GET /quests/{questId}} 상세가
  * 같은 모양을 쓴다(docs/04-api-spec.md §3).
  *
+ * <p>{@code category}는 컬럼이 {@code NOT NULL DEFAULT 'ETC'}(V35)이라 절대 비지 않는다. 앱은 이
+ * 값으로 목록 행의 아이콘을 고르며, 모르는 값이 오면 아이콘을 그리지 않고 물러난다.
+ *
  * <p>좌표·반경은 {@code SELF_REPORT} 퀘스트에서 {@code null}이다. 앱은 <b>반경을 모르면
  * 클라이언트 판정을 건너뛰고 서버에 맡기도록</b> 되어 있으므로(`quest_dto.dart` {@code hasRadius}),
  * 값이 없을 때 임의의 기본값을 채워 보내면 안 된다 — 실제로는 인증 가능한 퀘스트를 앱이
@@ -22,6 +26,7 @@ public record QuestSummaryResponse(
     Long questId,
     String title,
     String description,
+    QuestCategory category,
     QuestGrade grade,
     QuestCadence cadence,
     CompletionType completionType,
@@ -45,6 +50,7 @@ public record QuestSummaryResponse(
             quest.getId(),
             quest.getTitle(),
             quest.getDescription(),
+            quest.getCategory(),
             quest.getGrade(),
             quest.getCadence(),
             quest.getCompletionType(),
@@ -71,6 +77,7 @@ public record QuestSummaryResponse(
             quest.getId(),
             quest.getTitle(),
             quest.getDescription(),
+            quest.getCategory(),
             quest.getGrade(),
             quest.getCadence(),
             quest.getCompletionType(),
